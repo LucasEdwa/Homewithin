@@ -6,6 +6,11 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Pressable,
+  Switch,
+  Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -16,12 +21,16 @@ import { Button } from '@/components/ui/Button';
 import { useSession } from '@/context/SessionContext';
 import { EmergencyButton } from '@/components/EmergencyButton';
 import { getBookmarkedResources } from '@/services/resources';
+import { syncProfile } from '@/services/matching';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
 import type { Resource } from '@/types';
 
 export default function ProfileScreen() {
-  const { profile, reset } = useSession();
+  const { profile, setProfile, reset, pinEnabled, disguiseEnabled } = useSession();
   const [bookmarks, setBookmarks] = useState<Resource[]>([]);
+  const [hidingPending, setHidingPending] = useState(false);
+
+  console.log('[ProfileScreen] render — profile?', !!profile, 'hideFromSearch=', profile?.hideFromSearch, 'pending=', hidingPending);
 
   useFocusEffect(
     useCallback(() => {
@@ -32,6 +41,58 @@ export default function ProfileScreen() {
   function handleDeleteAccount() {
     reset();
     router.replace('/welcome');
+  }
+
+  async function handleToggleHideFromSearch(next: boolean) {
+    console.log('[hide-toggle] onValueChange fired with', next, 'profile?', !!profile, 'pending?', hidingPending);
+    if (!profile || hidingPending) return;
+    const prev = profile.hideFromSearch;
+    if (prev === next) return;
+
+    // Optimistic update so the switch feels instant.
+    setHidingPending(true);
+    const optimistic = { ...profile, hideFromSearch: next };
+    console.log('[hide-toggle] calling setProfile with hideFromSearch=', next);
+    await setProfile(optimistic);
+    console.log('[hide-toggle] setProfile resolved');
+
+    try {
+      await syncProfile(optimistic);
+      console.log('[hide-toggle] syncProfile resolved');
+    } catch (e: any) {
+      // Roll back on failure.
+      await setProfile({ ...profile, hideFromSearch: prev });
+      Alert.alert(
+        'Could not update',
+        'Please check your connection and try again.'
+      );
+      console.error('Hide-from-search sync failed:', e?.message);
+    } finally {
+      setHidingPending(false);
+    }
+  }
+
+  function handlePinRow() {
+    if (!pinEnabled) {
+      router.push({ pathname: '/pin', params: { mode: 'setup' } });
+      return;
+    }
+    const options = ['Change PIN', 'Remove PIN', 'Cancel'];
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
+        (idx) => {
+          if (idx === 0) router.push({ pathname: '/pin', params: { mode: 'change' } });
+          if (idx === 1) router.push({ pathname: '/pin', params: { mode: 'remove' } });
+        }
+      );
+    } else {
+      Alert.alert('PIN lock', undefined, [
+        { text: 'Change PIN', onPress: () => router.push({ pathname: '/pin', params: { mode: 'change' } }) },
+        { text: 'Remove PIN', style: 'destructive', onPress: () => router.push({ pathname: '/pin', params: { mode: 'remove' } }) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
   }
 
   return (
@@ -52,13 +113,53 @@ export default function ProfileScreen() {
         {/* Privacy Settings */}
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Privacy</Text>
+          <Pressable
+            onPress={() => {
+              console.log('[hide-toggle] row pressed, current=', !!profile?.hideFromSearch);
+              handleToggleHideFromSearch(!profile?.hideFromSearch);
+            }}
+            disabled={!profile || hidingPending}
+            style={styles.toggleRow}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: !!profile?.hideFromSearch, disabled: !profile || hidingPending }}
+          >
+            <View style={styles.toggleInfo} pointerEvents="none">
+              <Text style={styles.rowLabel}>Hide from search</Text>
+              <Text style={styles.toggleHint}>
+                {profile?.hideFromSearch
+                  ? 'You won\'t appear in anyone\'s matches. Existing chats stay open.'
+                  : 'People searching for an intention you offer can find you.'}
+              </Text>
+            </View>
+            <View pointerEvents="none">
+              <Switch
+                value={!!profile?.hideFromSearch}
+                onValueChange={handleToggleHideFromSearch}
+                disabled={!profile || hidingPending}
+                trackColor={{ false: '#D1D5DB', true: Colors.safeBlue }}
+                thumbColor={Platform.OS === 'android' ? Colors.white : undefined}
+                ios_backgroundColor="#D1D5DB"
+                accessibilityLabel="Hide from search"
+              />
+            </View>
+          </Pressable>
+          <SettingRow label="PIN lock" value={pinEnabled ? 'On' : 'Set up'} onPress={handlePinRow} />
+          <SettingRow label="App disguise mode" value={disguiseEnabled ? 'On' : 'Off'} onPress={() => router.push('/disguise')} />
           <SettingRow
-            label="Hide from search"
-            value={profile?.hideFromSearch ? 'On' : 'Off'}
-            onPress={() => {}}
+            label="Blocked users"
+            value=""
+            onPress={() => router.push('/blocked-users')}
           />
-          <SettingRow label="PIN lock" value="Set up" onPress={() => {}} />
-          <SettingRow label="App disguise mode" value="Configure" onPress={() => {}} />
+        </Card>
+
+        {/* Matching preferences */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Matching</Text>
+          <SettingRow
+            label="What I'm open to"
+            value={`${profile?.intentions?.length ?? 0} selected`}
+            onPress={() => router.push('/intentions')}
+          />
         </Card>
 
         {/* Data */}
@@ -161,6 +262,16 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 15, color: Colors.textPrimary },
   rowRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   rowValue: { fontSize: 14, color: Colors.textMuted },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  toggleInfo: { flex: 1 },
+  toggleHint: { fontSize: 12, color: Colors.textMuted, lineHeight: 16, marginTop: 2 },
   danger: { gap: Spacing.sm, alignItems: 'center' },
   dangerHint: { fontSize: 12, color: Colors.textMuted, textAlign: 'center' },
   privacyNote: { backgroundColor: Colors.softGreen + '18', borderLeftWidth: 3, borderLeftColor: Colors.softGreen },

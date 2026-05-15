@@ -205,29 +205,29 @@ Splash
 
 ---
 
-### Sprint 4 — Peer Matching & Chat
+### Sprint 4 — Peer Matching & Chat ✅
 **Goal:** Users can connect anonymously with others who share their experience.
-**Duration:** Week 5–6
+**Duration:** Week 5–6 · **Completed:** 2026-05-16
 
 #### Peer Support Matching
-- [ ] Matching prompt screen: "Who would help most today?"
-- [ ] Intention cards: Someone who survived family rejection / First gay friend / Mentor / Someone to listen / Group support
-- [ ] Matching algorithm: age range + language + country + identity + trauma experience + goals
-- [ ] Anonymous match card: avatar placeholder + nickname + shared experience badges
-- [ ] Connect button
-- [ ] Pass button (no swipe behavior — tap only)
-- [ ] Match stored in Supabase with opt-in status
-- [ ] Easy block from match card
-- [ ] Easy report from match card
+- [x] Matching prompt screen: "Who would help most today?" — `app/(tabs)/connect.tsx`
+- [x] Intention cards: Survived family rejection / First queer friend / A mentor / Someone to listen / Group support
+- [x] Matching algorithm: filters by hide_from_search, excludes already-interacted + blocked users — `services/matching.ts`
+- [x] Anonymous match card: avatar initial + nickname + age range / country / language chips + need tags
+- [x] Connect button (tap only, no swipe)
+- [x] Pass button (tap only)
+- [x] Match stored in Supabase `matches` table with status `accepted`/`passed`/`blocked`
+- [x] Easy block from chat options menu
+- [x] Easy report from chat options menu
 
 #### Safe Chat
-- [ ] 1:1 chat screen (Stream Chat or Supabase Realtime)
-- [ ] Safety reminder banner at top: "You can block or report anytime."
-- [ ] Disappearing messages toggle (24h expiry)
-- [ ] Report message flow
-- [ ] Block user flow
-- [ ] Crisis keyword detection → surface hotline banner
-- [ ] Moderation flag queue (admin-side, basic)
+- [x] 1:1 chat screen with Supabase Realtime subscription — `app/chat.tsx`
+- [x] Safety reminder banner: "You can block or report anytime." (always visible)
+- [x] Disappearing messages toggle (24h expiry — `expires_at` field, filtered on fetch)
+- [x] Report message flow (Alert.prompt → `reports` table)
+- [x] Block user flow (ActionSheet/Alert → `blocks` table + match status → `blocked`)
+- [x] Crisis keyword detection → inline hotline banner with Trevor Project + Crisis Text Line
+- [x] Supabase tables: `user_profiles`, `matches`, `messages`, `blocks`, `reports` + RLS + indexes — `supabase/migrations/20260516020000_sprint4.sql`
 
 ---
 

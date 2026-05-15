@@ -42,7 +42,7 @@ export function MoodChart({ checkIns }: MoodChartProps) {
                   style={[
                     styles.bar,
                     { height: barHeight, backgroundColor: color },
-                    score === 0 && styles.emptyBar,
+                    !entry && styles.emptyBar,
                   ]}
                 />
               </View>

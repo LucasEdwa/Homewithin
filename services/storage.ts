@@ -5,6 +5,10 @@ const ONBOARDING_KEY = 'hw_onboarding_complete';
 const SESSION_KEY = 'hw_session';
 const SAFETY_PLAN_KEY = 'hw_safety_plan';
 const PIN_KEY = 'hw_pin';
+const DISGUISE_ENABLED_KEY = 'hw_disguise_enabled';
+const DISGUISE_STYLE_KEY = 'hw_disguise_style';
+
+export type DisguiseStyle = 'weather' | 'calculator' | 'notes';
 
 // Check-ins: one entry per day, keyed by date
 const CHECKIN_DATES_KEY = 'hw_checkin_dates';
@@ -53,6 +57,31 @@ export async function verifyPin(pin: string): Promise<boolean> {
 export async function hasPin(): Promise<boolean> {
   const stored = await SecureStore.getItemAsync(PIN_KEY);
   return !!stored;
+}
+
+export async function deletePin() {
+  await SecureStore.deleteItemAsync(PIN_KEY);
+}
+
+// ─── Disguise mode ──────────────────────────────────────────────────────────
+
+export async function getDisguiseEnabled(): Promise<boolean> {
+  const value = await SecureStore.getItemAsync(DISGUISE_ENABLED_KEY);
+  return value === 'true';
+}
+
+export async function setDisguiseEnabled(enabled: boolean) {
+  await SecureStore.setItemAsync(DISGUISE_ENABLED_KEY, enabled ? 'true' : 'false');
+}
+
+export async function getDisguiseStyle(): Promise<DisguiseStyle> {
+  const value = await SecureStore.getItemAsync(DISGUISE_STYLE_KEY);
+  if (value === 'calculator' || value === 'notes' || value === 'weather') return value;
+  return 'weather';
+}
+
+export async function setDisguiseStyle(style: DisguiseStyle) {
+  await SecureStore.setItemAsync(DISGUISE_STYLE_KEY, style);
 }
 
 export async function deleteSensitiveData() {

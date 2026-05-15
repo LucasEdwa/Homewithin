@@ -6,16 +6,20 @@ import { Colors } from '@/constants/Colors';
 import { useSession } from '@/context/SessionContext';
 
 export default function SplashScreen() {
-  const { onboardingComplete, loading } = useSession();
+  const { onboardingComplete, loading, locked, disguiseEnabled } = useSession();
 
   useEffect(() => {
     if (loading) return;
-    if (onboardingComplete) {
+    if (disguiseEnabled) {
+      router.replace('/decoy');
+    } else if (locked) {
+      router.replace('/lock');
+    } else if (onboardingComplete) {
       router.replace('/(tabs)');
     } else {
       router.replace('/welcome');
     }
-  }, [loading, onboardingComplete]);
+  }, [loading, onboardingComplete, locked, disguiseEnabled]);
 
   return (
     <View style={styles.container}>

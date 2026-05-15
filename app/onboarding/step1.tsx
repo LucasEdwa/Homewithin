@@ -48,6 +48,7 @@ export default function OnboardingStep1() {
       country: country.trim(),
       hideFromSearch,
       needs: [],
+      intentions: [],
       isAnonymous: true,
     });
     router.push('/onboarding/step2');

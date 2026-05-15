@@ -107,6 +107,63 @@ export interface Resource {
   createdAt: string;
 }
 
+// ─── Peer Matching & Chat ────────────────────────────────────────────────────
+
+export const INTENTION_IDS = [
+  'family_rejection',
+  'first_friend',
+  'mentor',
+  'listener',
+  'support_group',
+] as const;
+export type IntentionId = (typeof INTENTION_IDS)[number];
+
+export interface IntentionOption {
+  id: IntentionId;
+  label: string;
+  description: string;
+  icon: string;
+  color: string;
+}
+
+export const INTENTIONS: IntentionOption[] = [
+  { id: 'family_rejection', label: 'Survived family rejection', description: 'Someone who\'s been through it',    icon: 'heart-dislike-outline',  color: '#D9534F' },
+  { id: 'first_friend',     label: 'First queer friend',        description: 'Someone like me to connect with',  icon: 'people-circle-outline',  color: '#5B8DEF' },
+  { id: 'mentor',           label: 'A mentor',                  description: 'Someone further along the path',   icon: 'school-outline',         color: '#7BC9A7' },
+  { id: 'listener',         label: 'Someone to listen',         description: 'I just need to be heard',          icon: 'chatbubbles-outline',    color: '#B8A8E3' },
+  { id: 'support_group',    label: 'Group support',             description: 'A circle I can belong to',         icon: 'people-outline',         color: '#E8844E' },
+];
+
+export type MatchStatus = 'accepted' | 'passed' | 'blocked';
+
+export interface PeerProfile {
+  userId: string;
+  nickname: string;
+  ageRange?: string;
+  language?: string;
+  country?: string;
+  needs: string[];
+}
+
+export interface Match {
+  id: string;
+  requesterId: string;
+  targetId: string;
+  intention: IntentionId;
+  status: MatchStatus;
+  createdAt: string;
+  peer?: PeerProfile;
+}
+
+export interface Message {
+  id: string;
+  matchId: string;
+  senderId: string;
+  body: string;
+  expiresAt?: string;
+  createdAt: string;
+}
+
 export interface JournalEntry {
   id: string;
   date: string; // YYYY-MM-DD
