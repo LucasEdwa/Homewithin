@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  Switch,
-  TouchableOpacity,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const AGE_RANGES = ['Under 18', '18–24', '25–34', '35–44', '45+'];
 const LANGUAGES = ['English', 'Portuguese', 'Spanish', 'French', 'German', 'Other'];

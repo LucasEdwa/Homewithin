@@ -1,21 +1,21 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  Pressable,
-  Switch,
-  Platform,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import type { DisguiseStyle } from '@/services/storage';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React from 'react';
+import {
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
+} from 'react-native';
 
 const STYLES: Array<{ id: DisguiseStyle; label: string; icon: keyof typeof Ionicons.glyphMap; description: string }> = [
   { id: 'weather',    label: 'Weather',    icon: 'partly-sunny-outline',     description: 'A simple weather screen.' },

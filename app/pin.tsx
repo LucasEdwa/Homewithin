@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { PinPad } from '@/components/ui/PinPad';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
-import { PinPad } from '@/components/ui/PinPad';
-import { setPin, verifyPin, deletePin, hasPin } from '@/services/storage';
 import { useSession } from '@/context/SessionContext';
+import { deletePin, setPin, verifyPin } from '@/services/storage';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Mode = 'setup' | 'change' | 'remove';
 

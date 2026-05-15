@@ -1,8 +1,7 @@
-import { Stack } from 'expo-router';
+import { SessionProvider, useSession } from '@/context/SessionContext';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { router } from 'expo-router';
-import { SessionProvider, useSession } from '@/context/SessionContext';
 
 function LockGate({ children }: { children: React.ReactNode }) {
   const { locked, loading } = useSession();

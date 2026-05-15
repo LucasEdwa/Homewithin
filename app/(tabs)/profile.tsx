@@ -1,29 +1,29 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Pressable,
-  Switch,
-  Alert,
-  ActionSheetIOS,
-  Platform,
-} from 'react-native';
+import { EmergencyButton } from '@/components/EmergencyButton';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Spacing } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
+import { syncProfile } from '@/services/matching';
+import { getBookmarkedResources } from '@/services/resources';
+import type { Resource } from '@/types';
+import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { useSession } from '@/context/SessionContext';
-import { EmergencyButton } from '@/components/EmergencyButton';
-import { getBookmarkedResources } from '@/services/resources';
-import { syncProfile } from '@/services/matching';
-import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
-import type { Resource } from '@/types';
+import React, { useCallback, useState } from 'react';
+import {
+    ActionSheetIOS,
+    Alert,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 export default function ProfileScreen() {
   const { profile, setProfile, reset, pinEnabled, disguiseEnabled } = useSession();

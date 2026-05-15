@@ -1,5 +1,5 @@
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { renderWithSession } from '../helpers/renderWithSession';
 
 jest.mock('@/services/matching', () => ({

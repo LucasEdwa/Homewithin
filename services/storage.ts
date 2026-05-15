@@ -1,30 +1,30 @@
-import * as SecureStore from 'expo-secure-store';
-import type { CheckIn, JournalEntry } from '@/types';
+import type { CheckIn, JournalEntry } from "@/types";
+import * as SecureStore from "expo-secure-store";
 
-const ONBOARDING_KEY = 'hw_onboarding_complete';
-const SESSION_KEY = 'hw_session';
-const SAFETY_PLAN_KEY = 'hw_safety_plan';
-const PIN_KEY = 'hw_pin';
-const DISGUISE_ENABLED_KEY = 'hw_disguise_enabled';
-const DISGUISE_STYLE_KEY = 'hw_disguise_style';
+const ONBOARDING_KEY = "hw_onboarding_complete";
+const SESSION_KEY = "hw_session";
+const SAFETY_PLAN_KEY = "hw_safety_plan";
+const PIN_KEY = "hw_pin";
+const DISGUISE_ENABLED_KEY = "hw_disguise_enabled";
+const DISGUISE_STYLE_KEY = "hw_disguise_style";
 
-export type DisguiseStyle = 'weather' | 'calculator' | 'notes';
+export type DisguiseStyle = "weather" | "calculator" | "notes";
 
 // Check-ins: one entry per day, keyed by date
-const CHECKIN_DATES_KEY = 'hw_checkin_dates';
+const CHECKIN_DATES_KEY = "hw_checkin_dates";
 const checkinKey = (date: string) => `hw_checkin_${date}`;
 
 // Journal entries: keyed by UUID
-const JOURNAL_IDS_KEY = 'hw_journal_ids';
+const JOURNAL_IDS_KEY = "hw_journal_ids";
 const journalKey = (id: string) => `hw_journal_${id}`;
 
 export async function markOnboardingComplete() {
-  await SecureStore.setItemAsync(ONBOARDING_KEY, 'true');
+  await SecureStore.setItemAsync(ONBOARDING_KEY, "true");
 }
 
 export async function isOnboardingComplete(): Promise<boolean> {
   const value = await SecureStore.getItemAsync(ONBOARDING_KEY);
-  return value === 'true';
+  return value === "true";
 }
 
 export async function saveSession(data: object) {
@@ -67,17 +67,21 @@ export async function deletePin() {
 
 export async function getDisguiseEnabled(): Promise<boolean> {
   const value = await SecureStore.getItemAsync(DISGUISE_ENABLED_KEY);
-  return value === 'true';
+  return value === "true";
 }
 
 export async function setDisguiseEnabled(enabled: boolean) {
-  await SecureStore.setItemAsync(DISGUISE_ENABLED_KEY, enabled ? 'true' : 'false');
+  await SecureStore.setItemAsync(
+    DISGUISE_ENABLED_KEY,
+    enabled ? "true" : "false",
+  );
 }
 
 export async function getDisguiseStyle(): Promise<DisguiseStyle> {
   const value = await SecureStore.getItemAsync(DISGUISE_STYLE_KEY);
-  if (value === 'calculator' || value === 'notes' || value === 'weather') return value;
-  return 'weather';
+  if (value === "calculator" || value === "notes" || value === "weather")
+    return value;
+  return "weather";
 }
 
 export async function setDisguiseStyle(style: DisguiseStyle) {
@@ -105,7 +109,10 @@ async function getCheckinDates(): Promise<string[]> {
 export async function saveCheckIn(entry: CheckIn): Promise<void> {
   const dates = await getCheckinDates();
   if (!dates.includes(entry.date)) {
-    await SecureStore.setItemAsync(CHECKIN_DATES_KEY, JSON.stringify([entry.date, ...dates]));
+    await SecureStore.setItemAsync(
+      CHECKIN_DATES_KEY,
+      JSON.stringify([entry.date, ...dates]),
+    );
   }
   await SecureStore.setItemAsync(checkinKey(entry.date), JSON.stringify(entry));
 }
@@ -116,13 +123,13 @@ export async function getCheckIns(): Promise<CheckIn[]> {
     dates.map(async (date) => {
       const raw = await SecureStore.getItemAsync(checkinKey(date));
       return raw ? (JSON.parse(raw) as CheckIn) : null;
-    })
+    }),
   );
   return entries.filter(Boolean) as CheckIn[];
 }
 
 export async function getTodayCheckIn(): Promise<CheckIn | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   const raw = await SecureStore.getItemAsync(checkinKey(today));
   return raw ? JSON.parse(raw) : null;
 }
@@ -146,7 +153,10 @@ async function getJournalIds(): Promise<string[]> {
 export async function saveJournalEntry(entry: JournalEntry): Promise<void> {
   const ids = await getJournalIds();
   if (!ids.includes(entry.id)) {
-    await SecureStore.setItemAsync(JOURNAL_IDS_KEY, JSON.stringify([entry.id, ...ids]));
+    await SecureStore.setItemAsync(
+      JOURNAL_IDS_KEY,
+      JSON.stringify([entry.id, ...ids]),
+    );
   }
   await SecureStore.setItemAsync(journalKey(entry.id), JSON.stringify(entry));
 }
@@ -157,26 +167,31 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
     ids.map(async (id) => {
       const raw = await SecureStore.getItemAsync(journalKey(id));
       return raw ? (JSON.parse(raw) as JournalEntry) : null;
-    })
+    }),
   );
-  return (entries.filter(Boolean) as JournalEntry[]).sort(
-    (a, b) => b.createdAt.localeCompare(a.createdAt)
+  return (entries.filter(Boolean) as JournalEntry[]).sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt),
   );
 }
 
 export async function deleteJournalEntry(id: string): Promise<void> {
   const ids = await getJournalIds();
-  await SecureStore.setItemAsync(JOURNAL_IDS_KEY, JSON.stringify(ids.filter((i) => i !== id)));
+  await SecureStore.setItemAsync(
+    JOURNAL_IDS_KEY,
+    JSON.stringify(ids.filter((i) => i !== id)),
+  );
   await SecureStore.deleteItemAsync(journalKey(id));
 }
 
 export async function exportJournalAsText(): Promise<string> {
   const entries = await getJournalEntries();
-  if (entries.length === 0) return 'No journal entries yet.';
+  if (entries.length === 0) return "No journal entries yet.";
   return entries
     .map((e) => {
-      const tags = e.emotionTags.length ? `[${e.emotionTags.join(', ')}]\n` : '';
+      const tags = e.emotionTags.length
+        ? `[${e.emotionTags.join(", ")}]\n`
+        : "";
       return `── ${e.date} ──\n${tags}${e.body}`;
     })
-    .join('\n\n');
+    .join("\n\n");
 }

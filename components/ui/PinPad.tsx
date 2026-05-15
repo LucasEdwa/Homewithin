@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
+import { Spacing } from '@/constants/Spacing';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const PIN_LENGTH = 4;
 const KEYS: (string | 'back')[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];

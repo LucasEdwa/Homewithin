@@ -1,18 +1,18 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
 import {
-  markOnboardingComplete,
-  isOnboardingComplete,
-  saveSession,
-  getSession,
-  hasPin as storageHasPin,
-  getDisguiseEnabled as storageGetDisguiseEnabled,
-  setDisguiseEnabled as storageSetDisguiseEnabled,
-  getDisguiseStyle as storageGetDisguiseStyle,
-  setDisguiseStyle as storageSetDisguiseStyle,
-  type DisguiseStyle,
+    getSession,
+    isOnboardingComplete,
+    markOnboardingComplete,
+    saveSession,
+    getDisguiseEnabled as storageGetDisguiseEnabled,
+    getDisguiseStyle as storageGetDisguiseStyle,
+    hasPin as storageHasPin,
+    setDisguiseEnabled as storageSetDisguiseEnabled,
+    setDisguiseStyle as storageSetDisguiseStyle,
+    type DisguiseStyle,
 } from '@/services/storage';
 import { supabase } from '@/services/supabase';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
 export interface UserProfile {
   nickname: string;

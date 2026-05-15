@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { PinPad } from '@/components/ui/PinPad';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
-import { PinPad } from '@/components/ui/PinPad';
-import { verifyPin } from '@/services/storage';
 import { useSession } from '@/context/SessionContext';
+import { verifyPin } from '@/services/storage';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 export default function LockScreen() {
   const { onboardingComplete, unlock } = useSession();

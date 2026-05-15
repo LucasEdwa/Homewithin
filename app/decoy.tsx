@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
-import { router } from 'expo-router';
 import { useSession } from '@/context/SessionContext';
+import { router } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 // Tap secret: 5 quick taps on the title within 2 seconds to reveal the app.
 const SECRET_TAPS = 5;

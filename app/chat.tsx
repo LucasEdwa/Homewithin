@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ActionSheetIOS,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
-import { sendMessage, getMessages, subscribeToMessages, containsCrisisKeywords } from '@/services/chat';
-import { blockUser, reportMessage, getMatchPeerId } from '@/services/matching';
+import { Radius, Spacing } from '@/constants/Spacing';
+import { containsCrisisKeywords, getMessages, sendMessage, subscribeToMessages } from '@/services/chat';
+import { blockUser, getMatchPeerId, reportMessage } from '@/services/matching';
 import { supabase } from '@/services/supabase';
 import type { Message } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    ActionSheetIOS,
+    Alert,
+    FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const CRISIS_HOTLINE = 'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Line: text HOME to 741741';
 
