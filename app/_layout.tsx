@@ -13,6 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="safety" />
         <Stack.Screen name="checkin" />
         <Stack.Screen name="journal-entry" />
+        <Stack.Screen name="article" />
         <Stack.Screen name="emergency" options={{ presentation: 'modal' }} />
         <Stack.Screen name="decoy" />
         <Stack.Screen name="(tabs)" />

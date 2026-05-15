@@ -188,19 +188,20 @@ Splash
 
 ---
 
-### Sprint 3 — Resource Library
+### Sprint 3 — Resource Library ✅
 **Goal:** Immediate educational value for users who are not yet ready to connect with others.
-**Duration:** Week 4
+**Duration:** Week 4 · **Completed:** 2026-05-16
 
 #### Resource Library
-- [ ] Search bar
-- [ ] Category filter tabs: Family rejection / Internalized shame / Religious trauma / Boundaries / Coming out safely / Crisis help
-- [ ] Article card: Title, 2-line summary, Read button
-- [ ] Article detail screen (Markdown or rich text)
-- [ ] Bookmark article feature
-- [ ] Bookmarks list in Profile
-- [ ] Seed library with at least 12 articles (2 per category)
-- [ ] Supabase table for resources (title, body, category, language)
+- [x] Search bar — `app/(tabs)/resources.tsx`
+- [x] Category filter tabs: Family rejection / Internalized shame / Religious trauma / Boundaries / Coming out safely / Crisis help
+- [x] Article card: Title, 2-line summary, category badge, read time, bookmark indicator
+- [x] Article detail screen with share + bookmark toggle — `app/article.tsx`
+- [x] Bookmark article feature (SecureStore, `hw_bookmarks` key) — `services/resources.ts`
+- [x] Bookmarks list in Profile — `app/(tabs)/profile.tsx`
+- [x] Seed library with 12 articles (2 per category) — `constants/articles.ts`
+- [x] Supabase table for resources (title, body, category, language) + RLS — `supabase/migrations/20260516010000_sprint3.sql`
+- [x] Offline fallback: always shows local seed articles when Supabase unreachable
 
 ---
 

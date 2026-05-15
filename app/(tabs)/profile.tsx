@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,26 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useSession } from '@/context/SessionContext';
 import { EmergencyButton } from '@/components/EmergencyButton';
+import { getBookmarkedResources } from '@/services/resources';
+import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
+import type { Resource } from '@/types';
 
 export default function ProfileScreen() {
   const { profile, reset } = useSession();
+  const [bookmarks, setBookmarks] = useState<Resource[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getBookmarkedResources().then(setBookmarks);
+    }, [])
+  );
 
   function handleDeleteAccount() {
     reset();
@@ -57,6 +67,31 @@ export default function ProfileScreen() {
           <SettingRow label="Export journal & check-ins" value="" onPress={() => {}} />
           <SettingRow label="Notification preferences" value="" onPress={() => {}} />
         </Card>
+
+        {/* Bookmarks */}
+        {bookmarks.length > 0 && (
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>Saved articles</Text>
+            {bookmarks.map((article) => {
+              const color = CATEGORY_COLORS[article.category];
+              return (
+                <TouchableOpacity
+                  key={article.id}
+                  style={styles.bookmarkRow}
+                  onPress={() => router.push({ pathname: '/article', params: { id: article.id } })}
+                  accessibilityLabel={article.title}
+                >
+                  <View style={[styles.bookmarkDot, { backgroundColor: color }]} />
+                  <View style={styles.bookmarkInfo}>
+                    <Text style={styles.bookmarkTitle} numberOfLines={1}>{article.title}</Text>
+                    <Text style={styles.bookmarkCat}>{CATEGORY_LABELS[article.category]}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                </TouchableOpacity>
+              );
+            })}
+          </Card>
+        )}
 
         {/* Danger zone */}
         <View style={styles.danger}>
@@ -131,4 +166,16 @@ const styles = StyleSheet.create({
   privacyNote: { backgroundColor: Colors.softGreen + '18', borderLeftWidth: 3, borderLeftColor: Colors.softGreen },
   privacyTitle: { fontSize: 15, fontWeight: '600', color: Colors.softGreen },
   privacyText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  bookmarkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    gap: Spacing.sm,
+  },
+  bookmarkDot: { width: 8, height: 8, borderRadius: 4 },
+  bookmarkInfo: { flex: 1 },
+  bookmarkTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  bookmarkCat: { fontSize: 12, color: Colors.textMuted },
 });
