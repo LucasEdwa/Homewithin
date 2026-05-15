@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,15 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
 import { EmergencyButton } from '@/components/EmergencyButton';
 import { useSession } from '@/context/SessionContext';
+import { getTodayCheckIn } from '@/services/storage';
+import { MOOD_ICONS, MOOD_COLORS, MOOD_LABELS } from '@/types';
+import type { CheckIn } from '@/types';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -38,9 +41,16 @@ interface DashCardProps {
 
 export default function HomeScreen() {
   const { profile, safetyLevel } = useSession();
+  const [todayCheckIn, setTodayCheckIn] = React.useState<CheckIn | null>(null);
   const name = profile?.nickname ?? 'Friend';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  useFocusEffect(
+    useCallback(() => {
+      getTodayCheckIn().then(setTodayCheckIn);
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -60,12 +70,27 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* Today's mood quick status */}
+        {todayCheckIn && (
+          <TouchableOpacity
+            style={styles.moodStrip}
+            onPress={() => router.push('/checkin')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name={MOOD_ICONS[todayCheckIn.moodScore]} size={20} color={MOOD_COLORS[todayCheckIn.moodScore]} />
+            <Text style={styles.moodStripText}>
+              Today: <Text style={{ color: MOOD_COLORS[todayCheckIn.moodScore], fontWeight: '700' }}>{MOOD_LABELS[todayCheckIn.moodScore]}</Text>
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+          </TouchableOpacity>
+        )}
+
         <View style={styles.cards}>
-          <DashCard icon="happy-outline"          title="Daily Check-in"      description="Track your mood and feelings"    color={Colors.safeBlue}      onPress={() => router.push('/(tabs)/journal')} />
-          <DashCard icon="book-outline"            title="Write in Journal"    description="Your private space to express"   color={Colors.mutedLavender} onPress={() => router.push('/(tabs)/journal')} />
-          <DashCard icon="people-outline"          title="Support Matches"     description="Find people who understand"      color={Colors.softGreen}     onPress={() => router.push('/(tabs)/connect')} />
-          <DashCard icon="library-outline"         title="Resources for You"   description="Guides, articles, and tools"     color={Colors.safeBlue}      onPress={() => router.push('/(tabs)/resources')} />
-          <DashCard icon="shield-checkmark-outline" title="Safety Assessment"  description="Check in on your safety"         color={Colors.alertRed}      onPress={() => router.push('/safety')} />
+          <DashCard icon="happy-outline"            title="Daily Check-in"     description="Track your mood and feelings"   color={Colors.safeBlue}      onPress={() => router.push('/checkin')} />
+          <DashCard icon="book-outline"             title="Write in Journal"   description="Your private space to express"  color={Colors.mutedLavender} onPress={() => router.push('/journal-entry')} />
+          <DashCard icon="people-outline"           title="Support Matches"    description="Find people who understand"     color={Colors.softGreen}     onPress={() => router.push('/(tabs)/connect')} />
+          <DashCard icon="library-outline"          title="Resources for You"  description="Guides, articles, and tools"    color={Colors.safeBlue}      onPress={() => router.push('/(tabs)/resources')} />
+          <DashCard icon="shield-checkmark-outline" title="Safety Assessment"  description="Check in on your safety"        color={Colors.alertRed}      onPress={() => router.push('/safety')} />
         </View>
 
         <Card style={styles.affirmation}>
@@ -118,6 +143,21 @@ const styles = StyleSheet.create({
   },
   safetyDot: { width: 8, height: 8, borderRadius: 4 },
   safetyLabel: { fontSize: 13, fontWeight: '600' },
+  moodStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  moodStripText: { flex: 1, fontSize: 14, color: Colors.textSecondary },
   cards: { gap: Spacing.sm },
   dashCard: {
     flexDirection: 'row',

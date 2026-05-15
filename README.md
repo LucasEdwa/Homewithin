@@ -151,39 +151,40 @@ Splash
 
 ---
 
-### Sprint 2 — Emotional Tracking & Journal
+### Sprint 2 — Emotional Tracking & Journal ✅
 **Goal:** Users can track their daily emotional state and write privately.
-**Duration:** Week 3
+**Duration:** Week 3 · **Completed:** 2026-05-16
 
 #### Daily Check-In
-- [ ] Mood emoji row (5 states)
-- [ ] Anxiety slider
-- [ ] Loneliness slider
-- [ ] Safety slider
-- [ ] Text prompt: "What has been hardest today?"
-- [ ] Save check-in to Supabase
-- [ ] Mood history list view
-- [ ] Basic trend chart (last 7 days)
-- [ ] Trigger tracking tags (family, work, identity, loneliness, fear, hope)
+- [x] Mood picker row (5 states: Terrible → Great with Ionicons) — `app/checkin.tsx`
+- [x] Anxiety slider (1–10, Calm → Overwhelmed) — `components/ui/RangeSlider.tsx`
+- [x] Loneliness slider (1–10, Connected → Isolated)
+- [x] Safety slider (1–10, Unsafe → Safe)
+- [x] Text prompt: "What has been hardest today?"
+- [x] Save check-in to Supabase (authenticated) + SecureStore (offline-first) — `services/storage.ts`
+- [x] Mood history list view — `app/(tabs)/journal.tsx`
+- [x] Basic trend chart (last 7 days) — `components/ui/MoodChart.tsx`
+- [x] Trigger tracking tags (family, work, identity, loneliness, fear, hope) — `types/index.ts`
 
 #### Private Journal
-- [ ] Full-screen text area with "Write anything. This is private." placeholder
-- [ ] Voice note recording (Expo AV)
-- [ ] Emotion tag picker (fear, shame, hope, anger, relief)
-- [ ] Save entry (encrypted via Expo SecureStore or Supabase RLS)
-- [ ] Journal entry list with date + mood tag
-- [ ] Export journal as text file
-- [ ] Hidden journal — accessible only via PIN
+- [x] Full-screen text area with "Write anything. This is private." placeholder — `app/journal-entry.tsx`
+- [ ] Voice note recording (Expo AV) — deferred, expo-av not installed
+- [x] Emotion tag picker (fear, shame, hope, anger, relief)
+- [x] Save entry (encrypted via Expo SecureStore, one key per entry)
+- [x] Journal entry list with date + emotion tags
+- [x] Export journal as text file (native Share sheet)
+- [x] Hidden journal — accessible only via PIN (modal PIN flow)
 
 #### Home Dashboard
-- [ ] Greeting: "How are you feeling today?"
-- [ ] Card: Daily Check-in
-- [ ] Card: Write in Journal
-- [ ] Card: Support Matches
-- [ ] Card: Resources for You
-- [ ] Card: Safety Status (green/yellow/red indicator)
-- [ ] Floating Emergency button (above bottom nav)
-- [ ] Bottom Navigation: Home / Journal / Connect / Resources / Profile
+- [x] Greeting: "How are you feeling today?"
+- [x] Card: Daily Check-in → routes to `/checkin`
+- [x] Card: Write in Journal → routes to `/journal-entry`
+- [x] Card: Support Matches
+- [x] Card: Resources for You
+- [x] Card: Safety Status (green/yellow/red indicator from session context)
+- [x] Today's mood strip — shows today's check-in mood inline on Home
+- [x] Floating Emergency button (above bottom nav)
+- [x] Bottom Navigation: Home / Journal / Connect / Resources / Profile
 
 ---
 

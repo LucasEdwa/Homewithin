@@ -11,6 +11,8 @@ export default function RootLayout() {
         <Stack.Screen name="signin" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="safety" />
+        <Stack.Screen name="checkin" />
+        <Stack.Screen name="journal-entry" />
         <Stack.Screen name="emergency" options={{ presentation: 'modal' }} />
         <Stack.Screen name="decoy" />
         <Stack.Screen name="(tabs)" />

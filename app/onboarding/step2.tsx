@@ -13,6 +13,7 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Button } from '@/components/ui/Button';
 import { useSession } from '@/context/SessionContext';
+import { supabase } from '@/services/supabase';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -53,6 +54,18 @@ export default function OnboardingStep2() {
       await setProfile({ ...profile, needs: Array.from(selected), isAnonymous: true });
     }
     await completeOnboarding();
+
+    // Give anonymous users a real Supabase UUID so their data syncs to the DB.
+    // If they later sign up with email, the anonymous account can be upgraded.
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+      if (!user) {
+        await supabase.auth.signInAnonymously().catch((e) =>
+          console.warn('Anonymous sign-in failed:', e?.message)
+        );
+      }
+    }
+
     router.replace('/safety');
   }
 
