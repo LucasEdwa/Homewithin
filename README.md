@@ -12,27 +12,27 @@ HomeWithin helps LGBTQ+ people navigate crisis, heal emotionally, find peer supp
 
 The product is built around 4 pillars:
 
-| Pillar | Question |
-|---|---|
-| Safety | Am I safe right now? |
-| Healing | How do I recover emotionally? |
-| Connection | How do I find people like me? |
-| Growth | How do I build a chosen family? |
+| Pillar     | Question                        |
+| ---------- | ------------------------------- |
+| Safety     | Am I safe right now?            |
+| Healing    | How do I recover emotionally?   |
+| Connection | How do I find people like me?   |
+| Growth     | How do I build a chosen family? |
 
 ---
 
 ## Tech Stack
 
-| Layer | Choice |
-|---|---|
-| Mobile | Expo (React Native) |
-| Auth | Supabase Auth |
-| Database | Supabase Postgres |
-| Storage | Supabase Storage |
-| Secure local data | Expo SecureStore |
-| Push notifications | Expo Notifications |
-| Chat | Stream Chat or Supabase Realtime |
-| AI | OpenAI API |
+| Layer              | Choice                           |
+| ------------------ | -------------------------------- |
+| Mobile             | Expo (React Native)              |
+| Auth               | Supabase Auth                    |
+| Database           | Supabase Postgres                |
+| Storage            | Supabase Storage                 |
+| Secure local data  | Expo SecureStore                 |
+| Push notifications | Expo Notifications               |
+| Chat               | Stream Chat or Supabase Realtime |
+| AI                 | OpenAI API                       |
 
 ---
 
@@ -40,14 +40,14 @@ The product is built around 4 pillars:
 
 ### Colors
 
-| Name | Hex | Usage |
-|---|---|---|
-| Safe Blue | `#5B8DEF` | Primary actions |
-| Soft Green | `#7BC9A7` | Positive states |
-| Muted Lavender | `#B8A8E3` | Accent |
-| Warm White | `#FAF9F7` | Background |
-| Soft Gray | `#F2F4F7` | Cards |
-| Alert Red | `#D9534F` | Emergency only |
+| Name           | Hex       | Usage           |
+| -------------- | --------- | --------------- |
+| Safe Blue      | `#5B8DEF` | Primary actions |
+| Soft Green     | `#7BC9A7` | Positive states |
+| Muted Lavender | `#B8A8E3` | Accent          |
+| Warm White     | `#FAF9F7` | Background      |
+| Soft Gray      | `#F2F4F7` | Cards           |
+| Alert Red      | `#D9534F` | Emergency only  |
 
 ### Typography (Inter / SF Pro)
 
@@ -92,8 +92,11 @@ Splash
 ## Roadmap
 
 ### Phase 1 — Core survival + trust (MVP)
+
 ### Phase 2 — Human connection
+
 ### Phase 3 — Healing & recovery
+
 ### Phase 4 — Community ecosystem
 
 ---
@@ -103,10 +106,12 @@ Splash
 ---
 
 ### Sprint 1 — Foundation & Safety Core ✅
+
 **Goal:** Users can enter safely, assess their risk, and access emergency tools.
 **Duration:** Week 1–2 · **Completed:** 2026-05-15
 
 #### Setup
+
 - [x] Initialize Expo project with TypeScript
 - [x] Configure Supabase project (auth, database, storage) — `services/supabase.ts`
 - [x] Set up Expo SecureStore for local token storage — `services/storage.ts`
@@ -116,12 +121,14 @@ Splash
 - [x] Create base UI components: Button (primary, secondary, danger), Card, Input, Slider, Tag
 
 #### Splash & Welcome Screen
+
 - [x] Splash screen with app logo and tagline "You are safe here." — `app/index.tsx`
 - [x] Quick Exit button (top-right) — closes app or switches to decoy screen — `app/decoy.tsx`
 - [x] "Start anonymously" CTA — `app/welcome.tsx`
 - [x] "Sign in" CTA — `app/signin.tsx`
 
 #### Anonymous Onboarding
+
 - [x] Step 1 form: Nickname, Pronouns, Age range, Language, Country — `app/onboarding/step1.tsx`
 - [x] "Hide my profile from search" toggle
 - [x] Step 2: Need selection cards (Emotional safety, Healing, Someone to talk to, Gay friends, Support group, Crisis help) — `app/onboarding/step2.tsx`
@@ -131,6 +138,7 @@ Splash
 - [x] No profile photo required at any step
 
 #### Safety Assessment
+
 - [x] Mood slider: Unsafe ←→ Safe — `app/safety.tsx`
 - [x] Question cards: Lives with family / Phone access risk / Currently in danger / Trusted contact available
 - [x] Safety score algorithm (green / yellow / red)
@@ -141,6 +149,7 @@ Splash
 - [x] Emergency resources by country (static list, expandable later) — `constants/hotlines.ts`
 
 #### Emergency Mode
+
 - [x] Floating emergency button visible across all main screens — `components/EmergencyButton.tsx`
 - [x] Emergency screen: Call support / Safety plan / Quick hide / Delete sensitive data / Contact trusted person — `app/emergency.tsx`
 - [x] Quick Exit: one tap closes app entirely
@@ -152,10 +161,12 @@ Splash
 ---
 
 ### Sprint 2 — Emotional Tracking & Journal ✅
+
 **Goal:** Users can track their daily emotional state and write privately.
 **Duration:** Week 3 · **Completed:** 2026-05-16
 
 #### Daily Check-In
+
 - [x] Mood picker row (5 states: Terrible → Great with Ionicons) — `app/checkin.tsx`
 - [x] Anxiety slider (1–10, Calm → Overwhelmed) — `components/ui/RangeSlider.tsx`
 - [x] Loneliness slider (1–10, Connected → Isolated)
@@ -167,6 +178,7 @@ Splash
 - [x] Trigger tracking tags (family, work, identity, loneliness, fear, hope) — `types/index.ts`
 
 #### Private Journal
+
 - [x] Full-screen text area with "Write anything. This is private." placeholder — `app/journal-entry.tsx`
 - [ ] Voice note recording (Expo AV) — deferred, expo-av not installed
 - [x] Emotion tag picker (fear, shame, hope, anger, relief)
@@ -176,6 +188,7 @@ Splash
 - [x] Hidden journal — accessible only via PIN (modal PIN flow)
 
 #### Home Dashboard
+
 - [x] Greeting: "How are you feeling today?"
 - [x] Card: Daily Check-in → routes to `/checkin`
 - [x] Card: Write in Journal → routes to `/journal-entry`
@@ -189,10 +202,12 @@ Splash
 ---
 
 ### Sprint 3 — Resource Library ✅
+
 **Goal:** Immediate educational value for users who are not yet ready to connect with others.
 **Duration:** Week 4 · **Completed:** 2026-05-16
 
 #### Resource Library
+
 - [x] Search bar — `app/(tabs)/resources.tsx`
 - [x] Category filter tabs: Family rejection / Internalized shame / Religious trauma / Boundaries / Coming out safely / Crisis help
 - [x] Article card: Title, 2-line summary, category badge, read time, bookmark indicator
@@ -206,10 +221,12 @@ Splash
 ---
 
 ### Sprint 4 — Peer Matching & Chat ✅
+
 **Goal:** Users can connect anonymously with others who share their experience.
 **Duration:** Week 5–6 · **Completed:** 2026-05-16
 
 #### Peer Support Matching
+
 - [x] Matching prompt screen: "Who would help most today?" — `app/(tabs)/connect.tsx`
 - [x] Intention cards: Survived family rejection / First queer friend / A mentor / Someone to listen / Group support
 - [x] Matching algorithm: filters by hide_from_search, excludes already-interacted + blocked users — `services/matching.ts`
@@ -221,6 +238,7 @@ Splash
 - [x] Easy report from chat options menu
 
 #### Safe Chat
+
 - [x] 1:1 chat screen with Supabase Realtime subscription — `app/chat.tsx`
 - [x] Safety reminder banner: "You can block or report anytime." (always visible)
 - [x] Disappearing messages toggle (24h expiry — `expires_at` field, filtered on fetch)
@@ -231,25 +249,28 @@ Splash
 
 ---
 
-### Sprint 5 — Support Circles (Beta)
-**Goal:** Small group spaces that feel safer than large public feeds.
-**Duration:** Week 7
+### Sprint 5 — Support Circles (Beta) ✅
 
-- [ ] Support circle cards: name, member count, join button
-- [ ] Seed circles: Family Rejection Survivors / Newly Out / Building Confidence / Religious Trauma
-- [ ] Circle size cap: 4–8 members per circle
-- [ ] Group chat screen (same chat component as 1:1)
-- [ ] Circle rules / intro screen on first join
-- [ ] Leave circle option
-- [ ] Report in circle
+**Goal:** Small group spaces that feel safer than large public feeds.
+**Duration:** Week 7 · **Completed:** 2026-05-16
+
+- [x] Support circle cards: name, member count, join button — `app/circles.tsx`
+- [x] Seed circles: Family Rejection Survivors / Newly Out / Building Confidence / Religious Trauma — `supabase/migrations/20260516040000_sprint5.sql`
+- [x] Circle size cap: 4–8 members per circle (DB trigger `enforce_circle_cap`)
+- [x] Group chat screen (mirrors 1:1 chat component) — `app/circle.tsx`
+- [x] Circle rules / intro screen on first join — `app/circle-intro.tsx`
+- [x] Leave circle option (chat options menu)
+- [x] Report in circle (report circle or individual message via long-press)
 
 ---
 
 ### Sprint 6 — Healing Programs & AI Companion
+
 **Goal:** Structured recovery paths and gentle AI support.
 **Duration:** Week 8–9
 
 #### Guided Healing Programs
+
 - [ ] Program list: Healing from parental rejection / Rebuilding self-worth / Learning to trust / Reducing shame / Creating boundaries
 - [ ] Daily lesson cards (title + body + reflection prompt)
 - [ ] Mark lesson complete
@@ -257,6 +278,7 @@ Splash
 - [ ] Supabase table: programs, lessons, user_progress
 
 #### AI Support Companion
+
 - [ ] Chat-like UI for AI companion
 - [ ] System prompt: warm, grounding, non-therapeutic support role
 - [ ] Can reflect feelings, suggest grounding exercises, summarize journal patterns, recommend resources
@@ -268,6 +290,7 @@ Splash
 ---
 
 ### Sprint 7 — Chosen Family Builder
+
 **Goal:** Help users intentionally map and grow their support network.
 **Duration:** Week 10
 
@@ -280,10 +303,12 @@ Splash
 ---
 
 ### Sprint 8 — Local Resources & Events
+
 **Goal:** Connect users to real-world support when they are ready.
 **Duration:** Week 11
 
 #### Local LGBTQ+ Resources
+
 - [ ] Optional location permission request
 - [ ] Resource types: LGBTQ centers / shelters / therapists / legal aid / support groups
 - [ ] Filterable list (no map required in MVP)
@@ -291,6 +316,7 @@ Splash
 - [ ] Link to external website or phone
 
 #### Events & Connection
+
 - [ ] Online circles board (curated, not user-created in v1)
 - [ ] Workshops list
 - [ ] Local meetup cards (when location available)
@@ -298,10 +324,12 @@ Splash
 ---
 
 ### Sprint 9 — Progress Dashboard & Polish
+
 **Goal:** Show users how far they've come and refine the full experience.
 **Duration:** Week 12
 
 #### Progress Dashboard
+
 - [ ] Mood trend over 30 days
 - [ ] Safety improvement indicator
 - [ ] Connections made count
@@ -310,6 +338,7 @@ Splash
 - [ ] Onboarding completion badge
 
 #### Profile & Privacy
+
 - [ ] Change nickname
 - [ ] PIN lock toggle
 - [ ] App disguise mode toggle
@@ -319,6 +348,7 @@ Splash
 - [ ] Privacy explanation screen: "You control your visibility."
 
 #### Final Polish
+
 - [ ] Accessibility audit: contrast, tap targets, screen reader labels
 - [ ] Trauma-informed copy review across all screens
 - [ ] Animations: gentle fade-ins, no jarring transitions
@@ -369,6 +399,7 @@ Splash
 This is a collaborative build. Every feature shipped is potentially life-saving.
 
 When in doubt, default to:
+
 - **Less data** over more
 - **Anonymous** over identified
 - **Calm** over engaging

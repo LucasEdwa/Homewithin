@@ -1,24 +1,23 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { EmergencyButton } from '@/components/EmergencyButton';
+import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
+import { connectMatch, findMatches, getMyMatches, passMatch, syncProfile } from '@/services/matching';
+import type { IntentionId, Match, PeerProfile } from '@/types';
+import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
-import { Card } from '@/components/ui/Card';
-import { EmergencyButton } from '@/components/EmergencyButton';
-import { useSession } from '@/context/SessionContext';
-import { syncProfile, findMatches, connectMatch, passMatch, getMyMatches } from '@/services/matching';
-import { INTENTIONS } from '@/types';
-import type { IntentionId, PeerProfile, Match } from '@/types';
+import React, { useCallback, useState } from 'react';
+import {
+    ActivityIndicator,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 type View_ = 'intentions' | 'browsing' | 'empty';
 
@@ -182,6 +181,24 @@ export default function ConnectScreen() {
             ))}
           </View>
         )}
+
+        {/* Support circles entry */}
+        <TouchableOpacity
+          style={styles.circlesEntry}
+          onPress={() => router.push('/circles')}
+          activeOpacity={0.85}
+          accessibilityLabel="Browse support circles"
+          testID="circles-entry"
+        >
+          <View style={styles.circlesEntryIcon}>
+            <Ionicons name="people" size={22} color={Colors.mutedLavender} />
+          </View>
+          <View style={styles.circlesEntryText}>
+            <Text style={styles.circlesEntryTitle}>Support circles</Text>
+            <Text style={styles.circlesEntrySub}>Small groups of 4–8 people. Safer than public feeds.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+        </TouchableOpacity>
 
         {/* Safety note */}
         <Card style={styles.safetyNote}>
@@ -386,4 +403,22 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.softGreen,
   },
   safetyText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
+  circlesEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  circlesEntryIcon: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: Colors.mutedLavender + '22',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  circlesEntryText: { flex: 1 },
+  circlesEntryTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  circlesEntrySub: { fontSize: 12, color: Colors.textMuted, marginTop: 2, lineHeight: 16 },
 });

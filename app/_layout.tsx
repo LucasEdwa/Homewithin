@@ -27,6 +27,9 @@ export default function RootLayout() {
           <Stack.Screen name="journal-entry" />
           <Stack.Screen name="article" />
           <Stack.Screen name="chat" />
+          <Stack.Screen name="circles" />
+          <Stack.Screen name="circle" />
+          <Stack.Screen name="circle-intro" options={{ presentation: 'modal' }} />
           <Stack.Screen name="blocked-users" />
           <Stack.Screen name="intentions" />
           <Stack.Screen name="pin" />
