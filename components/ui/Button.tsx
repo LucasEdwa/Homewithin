@@ -21,6 +21,7 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 export function Button({
@@ -32,6 +33,7 @@ export function Button({
   style,
   textStyle,
   accessibilityLabel,
+  testID,
 }: ButtonProps) {
   return (
     <TouchableOpacity
@@ -41,6 +43,7 @@ export function Button({
       activeOpacity={0.8}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'secondary' || variant === 'ghost' ? Colors.safeBlue : Colors.white} />

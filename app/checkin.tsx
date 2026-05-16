@@ -125,8 +125,13 @@ export default function CheckInScreen() {
     setRecentCheckIns(await getRecentCheckIns(7));
     setLoading(false);
 
+    const moodVal = mood;
     Alert.alert('Saved', 'Your check-in has been saved.', [
-      { text: 'OK', onPress: () => router.back() },
+      { text: 'Done', onPress: () => router.back() },
+      {
+        text: 'Get a gentle reflection',
+        onPress: () => router.replace({ pathname: '/ai-companion', params: { moodScore: String(moodVal) } }),
+      },
     ]);
   }
 

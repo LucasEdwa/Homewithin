@@ -220,6 +220,42 @@ export interface Circle {
   createdAt: string;
 }
 
+// ─── Healing Programs ────────────────────────────────────────────────────────
+
+export interface Lesson {
+  id: string;
+  programId: string;
+  order: number;
+  title: string;
+  body: string;
+  reflectionPrompt: string;
+  readTime: number;
+}
+
+export interface Program {
+  id: string;
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+  lessons: Lesson[];
+}
+
+export interface LessonProgress {
+  lessonId: string;
+  programId: string;
+  completedAt: string;
+}
+
+// ─── AI Companion ─────────────────────────────────────────────────────────────
+
+export interface AIMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  body: string;
+  createdAt: string;
+}
+
 export interface CircleMessage {
   id: string;
   circleId: string;

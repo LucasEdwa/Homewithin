@@ -127,12 +127,23 @@ export default function JournalEntryScreen() {
       }
     }
 
+    const preview = entry.body.slice(0, 200);
     await loadEntries();
     setLoading(false);
     setShowList(true);
     setBody('');
     setEmotionTags([]);
     setIsHidden(false);
+
+    if (!entry.isHidden) {
+      Alert.alert('Saved', 'Your journal entry has been saved.', [
+        { text: 'Done' },
+        {
+          text: 'Get an AI insight',
+          onPress: () => router.push({ pathname: '/ai-companion', params: { journalPreview: preview } }),
+        },
+      ]);
+    }
   }
 
   async function handleDelete(entryId: string) {

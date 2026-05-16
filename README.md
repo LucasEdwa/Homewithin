@@ -271,21 +271,23 @@ Splash
 
 #### Guided Healing Programs
 
-- [ ] Program list: Healing from parental rejection / Rebuilding self-worth / Learning to trust / Reducing shame / Creating boundaries
-- [ ] Daily lesson cards (title + body + reflection prompt)
-- [ ] Mark lesson complete
-- [ ] Program progress bar
-- [ ] Supabase table: programs, lessons, user_progress
+- [x] Program list: Healing from parental rejection / Rebuilding self-worth / Learning to trust / Reducing shame / Creating boundaries
+- [x] Daily lesson cards (title + body + reflection prompt)
+- [x] Mark lesson complete
+- [x] Program progress bar
+- [x] Supabase table: user_progress (client-side programs/lessons in constants/programs.ts)
 
 #### AI Support Companion
 
-- [ ] Chat-like UI for AI companion
-- [ ] System prompt: warm, grounding, non-therapeutic support role
-- [ ] Can reflect feelings, suggest grounding exercises, summarize journal patterns, recommend resources
-- [ ] "AI is not a therapist" disclaimer — visible always
-- [ ] Optional after Daily Check-in: "Would you like a gentle reflection?"
-- [ ] Optional after Journal save: "Would you like an AI insight?"
-- [ ] OpenAI API integration with rate limiting per user
+- [x] Chat-like UI for AI companion
+- [x] System prompt: warm, grounding, non-therapeutic support role
+- [x] Can reflect feelings, suggest grounding exercises, summarize journal patterns, recommend resources
+- [x] "AI is not a therapist" disclaimer — visible always
+- [x] Optional after Daily Check-in: "Would you like a gentle reflection?"
+- [x] Optional after Journal save: "Would you like an AI insight?"
+- [x] OpenAI API integration with rate limiting per user (20/day client-side via SecureStore)
+- [x] Supabase Edge Function proxy (ai-companion) — API key server-side only
+      (Untested with ai - yet to do it)
 
 ---
 
