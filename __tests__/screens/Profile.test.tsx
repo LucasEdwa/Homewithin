@@ -10,6 +10,15 @@ jest.mock('@/services/resources', () => ({
   getBookmarkedResources: jest.fn().mockResolvedValue([]),
 }));
 
+jest.mock('@/services/account', () => ({
+  deleteAccount: jest.fn().mockResolvedValue({
+    localCleared: true,
+    remoteCleared: true,
+    signedOut: true,
+    errors: [],
+  }),
+}));
+
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useFocusEffect: (cb: () => void) => {
@@ -26,7 +35,10 @@ jest.mock('@/components/EmergencyButton', () => ({
 }));
 
 import ProfileScreen from '@/app/(tabs)/profile';
+import * as accountService from '@/services/account';
 import * as matchingService from '@/services/matching';
+import { router } from 'expo-router';
+import { Alert } from 'react-native';
 
 const baseProfile = {
   nickname: 'River',
@@ -99,5 +111,68 @@ describe('ProfileScreen — Hide from search toggle', () => {
     expect(matchingService.syncProfile).toHaveBeenCalledWith(
       expect.objectContaining({ hideFromSearch: false })
     );
+  });
+});
+
+describe('ProfileScreen — Delete account', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('shows a confirmation alert and does nothing on cancel', () => {
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const reset = jest.fn();
+    renderWithSession(<ProfileScreen />, { profile: baseProfile as any, reset });
+
+    fireEvent.press(screen.getByText('Delete account & all data'));
+
+    expect(spy).toHaveBeenCalled();
+    const [title, , buttons] = spy.mock.calls[0];
+    expect(title).toMatch(/Delete account/i);
+    expect(buttons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: 'Cancel' }),
+        expect.objectContaining({ style: 'destructive' }),
+      ])
+    );
+    // Cancel by simulating cancel button press.
+    const cancelBtn = (buttons as any[]).find((b) => b.text === 'Cancel');
+    cancelBtn.onPress?.();
+    expect(accountService.deleteAccount).not.toHaveBeenCalled();
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it('runs deleteAccount, resets session, and navigates to /welcome on confirm', async () => {
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const reset = jest.fn();
+    renderWithSession(<ProfileScreen />, { profile: baseProfile as any, reset });
+
+    fireEvent.press(screen.getByText('Delete account & all data'));
+    const buttons = spy.mock.calls[0][2] as any[];
+    const destructive = buttons.find((b) => b.style === 'destructive');
+    await destructive.onPress();
+
+    await waitFor(() => {
+      expect(accountService.deleteAccount).toHaveBeenCalled();
+      expect(reset).toHaveBeenCalled();
+      expect(router.replace).toHaveBeenCalledWith('/welcome');
+    });
+  });
+
+  it('still resets and navigates if deleteAccount throws', async () => {
+    (accountService.deleteAccount as jest.Mock).mockRejectedValueOnce(new Error('boom'));
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const reset = jest.fn();
+    renderWithSession(<ProfileScreen />, { profile: baseProfile as any, reset });
+
+    fireEvent.press(screen.getByText('Delete account & all data'));
+    const buttons = spy.mock.calls[0][2] as any[];
+    const destructive = buttons.find((b) => b.style === 'destructive');
+    await destructive.onPress();
+
+    await waitFor(() => {
+      expect(reset).toHaveBeenCalled();
+      expect(router.replace).toHaveBeenCalledWith('/welcome');
+    });
   });
 });

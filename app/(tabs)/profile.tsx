@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
+import { deleteAccount } from '@/services/account';
 import { syncProfile } from '@/services/matching';
 import { getBookmarkedResources } from '@/services/resources';
 import type { Resource } from '@/types';
@@ -12,23 +13,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-    ActionSheetIOS,
-    Alert,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  ActionSheetIOS,
+  Alert,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function ProfileScreen() {
   const { profile, setProfile, reset, pinEnabled, disguiseEnabled } = useSession();
   const [bookmarks, setBookmarks] = useState<Resource[]>([]);
   const [hidingPending, setHidingPending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   console.log('[ProfileScreen] render — profile?', !!profile, 'hideFromSearch=', profile?.hideFromSearch, 'pending=', hidingPending);
 
@@ -39,8 +41,33 @@ export default function ProfileScreen() {
   );
 
   function handleDeleteAccount() {
-    reset();
-    router.replace('/welcome');
+    if (deleting) return;
+    Alert.alert(
+      'Delete account & all data?',
+      'This permanently removes your profile, matches, messages, journal entries, check-ins, safety plan, bookmarks, PIN and disguise settings. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete everything',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              const result = await deleteAccount();
+              if (result.errors.length > 0) {
+                console.warn('deleteAccount finished with errors:', result.errors);
+              }
+            } catch (e: any) {
+              console.error('deleteAccount threw:', e?.message);
+            } finally {
+              reset();
+              setDeleting(false);
+              router.replace('/welcome');
+            }
+          },
+        },
+      ]
+    );
   }
 
   async function handleToggleHideFromSearch(next: boolean) {
@@ -197,9 +224,11 @@ export default function ProfileScreen() {
         {/* Danger zone */}
         <View style={styles.danger}>
           <Button
-            label="Delete account & all data"
+            label={deleting ? 'Deleting…' : 'Delete account & all data'}
             variant="danger"
             onPress={handleDeleteAccount}
+            loading={deleting}
+            disabled={deleting}
           />
           <Text style={styles.dangerHint}>
             This will permanently wipe all your data and sign you out.
