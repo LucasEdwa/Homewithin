@@ -334,3 +334,81 @@ export interface SupportPerson {
   notes?: string;
   createdAt: string;
 }
+
+// ─── Local Resources & Events ─────────────────────────────────────────────────
+
+export const LOCAL_RESOURCE_TYPES = [
+  'lgbtq_center',
+  'shelter',
+  'therapist',
+  'legal_aid',
+  'support_group',
+] as const;
+export type LocalResourceType = (typeof LOCAL_RESOURCE_TYPES)[number];
+
+export const LOCAL_RESOURCE_TYPE_LABELS: Record<LocalResourceType, string> = {
+  lgbtq_center: 'LGBTQ+ Center',
+  shelter: 'Shelter',
+  therapist: 'Therapist',
+  legal_aid: 'Legal Aid',
+  support_group: 'Support Group',
+};
+
+export const LOCAL_RESOURCE_TYPE_ICONS: Record<LocalResourceType, string> = {
+  lgbtq_center: 'heart-circle-outline',
+  shelter: 'home-outline',
+  therapist: 'medical-outline',
+  legal_aid: 'briefcase-outline',
+  support_group: 'people-outline',
+};
+
+export const LOCAL_RESOURCE_TYPE_COLORS: Record<LocalResourceType, string> = {
+  lgbtq_center: '#5B8DEF',
+  shelter: '#7BC9A7',
+  therapist: '#B8A8E3',
+  legal_aid: '#E8844E',
+  support_group: '#D9534F',
+};
+
+export interface LocalResource {
+  id: string;
+  name: string;
+  type: LocalResourceType;
+  description: string;
+  country: string;
+  region?: string;
+  city?: string;
+  website?: string;
+  phone?: string;
+  email?: string;
+  lat?: number;
+  lng?: number;
+}
+
+export type WorkshopFormat = 'online' | 'in_person' | 'hybrid';
+
+export interface Workshop {
+  id: string;
+  title: string;
+  description: string;
+  host: string;
+  format: WorkshopFormat;
+  date?: string;
+  recurring?: string;
+  link?: string;
+  category?: string;
+  free: boolean;
+}
+
+export interface LocalMeetup {
+  id: string;
+  title: string;
+  description: string;
+  city: string;
+  country: string;
+  date?: string;
+  link?: string;
+  lat?: number;
+  lng?: number;
+  recurring?: string;
+}

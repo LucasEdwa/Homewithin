@@ -304,24 +304,27 @@ Splash
 
 ---
 
-### Sprint 8 — Local Resources & Events
+### Sprint 8 — Local Resources & Events ✅
 
 **Goal:** Connect users to real-world support when they are ready.
-**Duration:** Week 11
+**Duration:** Week 11 · **Completed:** 2026-05-17
 
 #### Local LGBTQ+ Resources
 
-- [ ] Optional location permission request
-- [ ] Resource types: LGBTQ centers / shelters / therapists / legal aid / support groups
-- [ ] Filterable list (no map required in MVP)
-- [ ] Static dataset per country (expandable)
-- [ ] Link to external website or phone
+- [x] Optional location permission request (expo-location dynamic import, graceful fallback) — `services/localResources.ts`
+- [x] Resource types: LGBTQ centers / shelters / therapists / legal aid / support groups — `types/index.ts`
+- [x] Filterable list by type chip + country picker — `app/local-resources.tsx`
+- [x] Static dataset: 30+ resources across US, Brazil, UK, Canada, Australia, Germany — `constants/localResources.ts`
+- [x] Link to external website or phone via `Linking` — tap Website / Call buttons on each card
+- [x] Supabase tables for future CMS: `local_resources`, `workshops`, `local_meetups` + RLS — `supabase/migrations/20260517010000_sprint8.sql`
 
 #### Events & Connection
 
-- [ ] Online circles board (curated, not user-created in v1)
-- [ ] Workshops list
-- [ ] Local meetup cards (when location available)
+- [x] Online circles board (curated, not user-created in v1) — workshops tab in `app/events.tsx`
+- [x] Workshops list: 6 recurring online circles (Coming Out, Family Rejection, Chosen Family, Mindfulness, Trans+ Café, Grief Circle) — `constants/localResources.ts`
+- [x] Local meetup cards with city + recurring info — meetups tab in `app/events.tsx`
+- [x] Country-aware meetup filtering (falls back to full list when country not in dataset)
+- [x] Dashboard cards: Local Resources + Events & Circles — `app/(tabs)/index.tsx`
 
 ---
 

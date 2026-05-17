@@ -34,6 +34,8 @@ export default function RootLayout() {
           <Stack.Screen name="programs" />
           <Stack.Screen name="program" />
           <Stack.Screen name="ai-companion" />
+          <Stack.Screen name="local-resources" />
+          <Stack.Screen name="events" />
           <Stack.Screen name="blocked-users" />
           <Stack.Screen name="intentions" />
           <Stack.Screen name="pin" />

@@ -1,0 +1,370 @@
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  SectionList,
+  TouchableOpacity,
+  Linking,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { Colors } from '@/constants/Colors';
+import { Spacing, Radius } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
+import { getWorkshops, getMeetups } from '@/services/localResources';
+import type { Workshop, LocalMeetup, WorkshopFormat } from '@/types';
+
+type Tab = 'workshops' | 'meetups';
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
+const FORMAT_ICONS: Record<WorkshopFormat, IoniconsName> = {
+  online: 'wifi-outline',
+  in_person: 'location-outline',
+  hybrid: 'git-network-outline',
+};
+const FORMAT_COLORS: Record<WorkshopFormat, string> = {
+  online: Colors.safeBlue,
+  in_person: Colors.softGreen,
+  hybrid: '#B8A8E3',
+};
+const FORMAT_LABELS: Record<WorkshopFormat, string> = {
+  online: 'Online',
+  in_person: 'In Person',
+  hybrid: 'Hybrid',
+};
+
+export default function EventsScreen() {
+  const { profile } = useSession();
+  const [activeTab, setActiveTab] = useState<Tab>('workshops');
+  const country = profile?.country ?? 'United States';
+
+  const workshops = getWorkshops();
+  const meetups = getMeetups(country);
+
+  const openLink = useCallback((url: string) => {
+    Linking.openURL(url).catch(() =>
+      Alert.alert('Could not open link', 'Please check your internet connection.')
+    );
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Events & Circles</Text>
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabs}>
+        <TouchableOpacity
+          testID="tab-workshops"
+          style={[styles.tab, activeTab === 'workshops' && styles.tabActive]}
+          onPress={() => setActiveTab('workshops')}
+        >
+          <Ionicons
+            name="layers-outline"
+            size={16}
+            color={activeTab === 'workshops' ? Colors.safeBlue : Colors.textMuted}
+          />
+          <Text style={[styles.tabText, activeTab === 'workshops' && styles.tabTextActive]}>
+            Online Circles
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="tab-meetups"
+          style={[styles.tab, activeTab === 'meetups' && styles.tabActive]}
+          onPress={() => setActiveTab('meetups')}
+        >
+          <Ionicons
+            name="map-outline"
+            size={16}
+            color={activeTab === 'meetups' ? Colors.safeBlue : Colors.textMuted}
+          />
+          <Text style={[styles.tabText, activeTab === 'meetups' && styles.tabTextActive]}>
+            Local Meetups
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === 'workshops' ? (
+        <WorkshopsList workshops={workshops} onOpenLink={openLink} />
+      ) : (
+        <MeetupsList meetups={meetups} country={country} onOpenLink={openLink} />
+      )}
+    </SafeAreaView>
+  );
+}
+
+// ── Workshops list ─────────────────────────────────────────────────────────────
+
+interface WorkshopsListProps {
+  workshops: Workshop[];
+  onOpenLink: (url: string) => void;
+}
+
+function WorkshopsList({ workshops, onOpenLink }: WorkshopsListProps) {
+  if (workshops.length === 0) {
+    return (
+      <View style={styles.empty} testID="workshops-empty">
+        <Ionicons name="calendar-outline" size={48} color={Colors.textMuted} />
+        <Text style={styles.emptyText}>No circles available yet.</Text>
+        <Text style={styles.emptyHint}>Check back soon!</Text>
+      </View>
+    );
+  }
+
+  return (
+    <SectionList
+      sections={[{ title: 'Upcoming & Recurring', data: workshops }]}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.list}
+      renderSectionHeader={({ section }) => (
+        <Text style={styles.sectionHeader}>{section.title}</Text>
+      )}
+      renderItem={({ item }) => (
+        <WorkshopCard workshop={item} onOpenLink={onOpenLink} />
+      )}
+    />
+  );
+}
+
+interface WorkshopCardProps {
+  workshop: Workshop;
+  onOpenLink: (url: string) => void;
+}
+
+function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
+  const color = FORMAT_COLORS[workshop.format];
+
+  return (
+    <View style={styles.card} testID={`workshop-${workshop.id}`}>
+      <View style={styles.cardTopRow}>
+        <View style={[styles.formatBadge, { backgroundColor: color + '18' }]}>
+          <Ionicons name={FORMAT_ICONS[workshop.format]} size={12} color={color} />
+          <Text style={[styles.formatText, { color }]}>{FORMAT_LABELS[workshop.format]}</Text>
+        </View>
+        {workshop.free && (
+          <View style={styles.freeBadge}>
+            <Text style={styles.freeText}>Free</Text>
+          </View>
+        )}
+      </View>
+
+      <Text style={styles.cardTitle}>{workshop.title}</Text>
+      <Text style={styles.cardDesc}>{workshop.description}</Text>
+
+      <View style={styles.metaRow}>
+        <Ionicons name="person-outline" size={13} color={Colors.textMuted} />
+        <Text style={styles.metaText}>{workshop.host}</Text>
+      </View>
+
+      {workshop.recurring && (
+        <View style={styles.metaRow}>
+          <Ionicons name="repeat-outline" size={13} color={Colors.textMuted} />
+          <Text style={styles.metaText}>{workshop.recurring}</Text>
+        </View>
+      )}
+
+      {workshop.link && (
+        <TouchableOpacity
+          testID={`join-${workshop.id}`}
+          style={styles.joinBtn}
+          onPress={() => onOpenLink(workshop.link!)}
+          accessibilityLabel={`Join ${workshop.title}`}
+        >
+          <Ionicons name="arrow-forward-circle-outline" size={16} color={Colors.white} />
+          <Text style={styles.joinBtnText}>Join Circle</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+// ── Meetups list ───────────────────────────────────────────────────────────────
+
+interface MeetupsListProps {
+  meetups: LocalMeetup[];
+  country: string;
+  onOpenLink: (url: string) => void;
+}
+
+function MeetupsList({ meetups, country, onOpenLink }: MeetupsListProps) {
+  if (meetups.length === 0) {
+    return (
+      <View style={styles.empty} testID="meetups-empty">
+        <Ionicons name="map-outline" size={48} color={Colors.textMuted} />
+        <Text style={styles.emptyText}>No meetups found near you.</Text>
+        <Text style={styles.emptyHint}>
+          Check back later or explore online circles above.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <SectionList
+      sections={[{ title: `Near ${country}`, data: meetups }]}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.list}
+      renderSectionHeader={({ section }) => (
+        <Text style={styles.sectionHeader}>{section.title}</Text>
+      )}
+      renderItem={({ item }) => (
+        <MeetupCard meetup={item} onOpenLink={onOpenLink} />
+      )}
+    />
+  );
+}
+
+interface MeetupCardProps {
+  meetup: LocalMeetup;
+  onOpenLink: (url: string) => void;
+}
+
+function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
+  return (
+    <View style={styles.card} testID={`meetup-${meetup.id}`}>
+      <View style={styles.metaRow}>
+        <Ionicons name="location-outline" size={13} color={Colors.softGreen} />
+        <Text style={[styles.metaText, { color: Colors.softGreen, fontWeight: '600' }]}>
+          {meetup.city}, {meetup.country}
+        </Text>
+      </View>
+
+      <Text style={styles.cardTitle}>{meetup.title}</Text>
+      <Text style={styles.cardDesc}>{meetup.description}</Text>
+
+      {meetup.recurring && (
+        <View style={styles.metaRow}>
+          <Ionicons name="repeat-outline" size={13} color={Colors.textMuted} />
+          <Text style={styles.metaText}>{meetup.recurring}</Text>
+        </View>
+      )}
+
+      {meetup.link && (
+        <TouchableOpacity
+          testID={`rsvp-${meetup.id}`}
+          style={[styles.joinBtn, { backgroundColor: Colors.softGreen }]}
+          onPress={() => onOpenLink(meetup.link!)}
+          accessibilityLabel={`RSVP to ${meetup.title}`}
+        >
+          <Ionicons name="calendar-outline" size={16} color={Colors.white} />
+          <Text style={styles.joinBtnText}>RSVP / View</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.warmWhite },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  backBtn: { padding: 4 },
+  title: { flex: 1, fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
+
+  tabs: {
+    flexDirection: 'row',
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.md,
+    padding: 4,
+    gap: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.sm,
+  },
+  tabActive: { backgroundColor: Colors.white },
+  tabText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  tabTextActive: { color: Colors.safeBlue },
+
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: Spacing.sm,
+  },
+  list: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
+
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    gap: Spacing.xs + 2,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    flexWrap: 'wrap',
+  },
+  formatBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+  },
+  formatText: { fontSize: 11, fontWeight: '600' },
+  freeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.softGreen + '20',
+  },
+  freeText: { fontSize: 11, fontWeight: '600', color: Colors.softGreen },
+
+  cardTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, lineHeight: 22 },
+  cardDesc: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  metaText: { fontSize: 13, color: Colors.textMuted },
+
+  joinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.safeBlue,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    marginTop: Spacing.xs,
+  },
+  joinBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
+
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  emptyText: { fontSize: 17, fontWeight: '600', color: Colors.textSecondary, textAlign: 'center' },
+  emptyHint: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
+});
