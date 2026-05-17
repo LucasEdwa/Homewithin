@@ -6,12 +6,37 @@ jest.mock('@/services/ai', () => ({
   getHistory: jest.fn(),
   clearHistory: jest.fn(),
   checkRateLimit: jest.fn(),
+  buildSystemPrompt: jest.fn().mockReturnValue('system prompt'),
   AI_DISCLAIMER: 'AI is not a therapist or crisis counselor. If you are in danger, use the emergency button.',
 }));
 
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
   useLocalSearchParams: () => ({}),
+}));
+
+jest.mock('@/context/SessionContext', () => ({
+  useSession: () => ({
+    profile: { nickname: 'TestUser', country: 'Brazil', needs: [] },
+    safetyLevel: null,
+  }),
+}));
+
+jest.mock('@/services/storage', () => ({
+  getCheckIns: jest.fn().mockResolvedValue([]),
+  getJournalEntries: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('@/services/programs', () => ({
+  getAllProgramsWithProgress: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('@/services/matching', () => ({
+  getMyMatches: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('@/services/chosenFamily', () => ({
+  getSupportPeople: jest.fn().mockResolvedValue([]),
 }));
 
 import AICompanionScreen from '@/app/ai-companion';

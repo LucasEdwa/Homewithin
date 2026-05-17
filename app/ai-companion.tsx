@@ -17,36 +17,71 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
 import { EmergencyButton } from '@/components/EmergencyButton';
+import { useSession } from '@/context/SessionContext';
 import {
   sendAIMessage,
   getHistory,
   clearHistory,
   checkRateLimit,
+  buildSystemPrompt,
   AI_DISCLAIMER,
 } from '@/services/ai';
-import type { AIContext } from '@/services/ai';
+import type { AIContext, UserContext } from '@/services/ai';
+import { getCheckIns, getJournalEntries } from '@/services/storage';
+import { getAllProgramsWithProgress } from '@/services/programs';
+import { getMyMatches } from '@/services/matching';
+import { getSupportPeople } from '@/services/chosenFamily';
 import type { AIMessage } from '@/types';
 
-const SUGGESTED_STARTERS = [
-  'I\'ve been feeling really alone lately.',
+const DEFAULT_STARTERS = [
+  "I've been feeling really alone lately.",
   'I want to talk about my family.',
   'Can you help me with a breathing exercise?',
-  'I\'m struggling with shame today.',
+  "I'm struggling with shame today.",
 ];
 
+function buildPersonalisedStarters(ctx: UserContext): string[] {
+  const starters: string[] = [];
+
+  if (ctx.safetyLevel === 'red' || ctx.safetyLevel === 'yellow') {
+    starters.push("I want to talk about feeling safe right now.");
+  }
+  if (ctx.moodTrend === 'declining') {
+    starters.push("I've been having a hard week. Can we talk?");
+  }
+  if (ctx.recentEmotionTags?.includes('shame')) {
+    starters.push("I'm dealing with a lot of shame and I don't know what to do.");
+  }
+  if (ctx.recentEmotionTags?.includes('fear')) {
+    starters.push("There's something I'm scared of and I need to talk it through.");
+  }
+  if ((ctx.connectionsCount ?? 0) === 0 && (ctx.chosenFamilyCount ?? 0) === 0) {
+    starters.push("I feel really alone. I don't have anyone to talk to.");
+  }
+  if ((ctx.journalStreak ?? 0) >= 3) {
+    starters.push(`I've been writing for ${ctx.journalStreak} days. I want to reflect on what I've noticed.`);
+  }
+
+  // Fill remaining slots with defaults so there are always 4 starters
+  for (const s of DEFAULT_STARTERS) {
+    if (starters.length >= 4) break;
+    if (!starters.includes(s)) starters.push(s);
+  }
+
+  return starters.slice(0, 4);
+}
+
 export default function AICompanionScreen() {
-  const params = useLocalSearchParams<{ moodScore?: string; journalPreview?: string; context?: string }>();
+  const { profile, safetyLevel } = useSession();
+  const params = useLocalSearchParams<{ moodScore?: string; journalPreview?: string }>();
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userContext, setUserContext] = useState<UserContext | null>(null);
+  const [starters, setStarters] = useState<string[]>(DEFAULT_STARTERS);
   const listRef = useRef<FlatList>(null);
-
-  const aiContext: AIContext = {
-    moodScore: params.moodScore ? parseInt(params.moodScore, 10) : undefined,
-    journalPreview: params.journalPreview,
-  };
 
   useEffect(() => {
     (async () => {
@@ -54,8 +89,103 @@ export default function AICompanionScreen() {
       setMessages(history);
       setRemaining(rem);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
+
+      // Gather all user data in parallel to build personalized context
+      const [checkIns, journalEntries, programs, matches, family] = await Promise.all([
+        getCheckIns().catch(() => []),
+        getJournalEntries().catch(() => []),
+        getAllProgramsWithProgress().catch(() => []),
+        getMyMatches().catch(() => []),
+        getSupportPeople().catch(() => []),
+      ]);
+
+      // Sort check-ins newest first
+      const sortedCheckIns = [...checkIns].sort((a, b) => b.date.localeCompare(a.date));
+      const last7 = sortedCheckIns.slice(0, 7);
+
+      // Mood average (last 7) and trend
+      let recentMoodAvg: number | undefined;
+      let moodTrend: UserContext['moodTrend'] = null;
+      if (last7.length > 0) {
+        const avg = last7.reduce((s: number, c: { moodScore: number }) => s + c.moodScore, 0) / last7.length;
+        recentMoodAvg = parseFloat(avg.toFixed(1));
+        if (last7.length >= 4) {
+          const half = Math.floor(last7.length / 2);
+          const recentHalf = last7.slice(0, half);
+          const olderHalf = last7.slice(half);
+          const avgRecent = recentHalf.reduce((s: number, c: { moodScore: number }) => s + c.moodScore, 0) / recentHalf.length;
+          const avgOlder = olderHalf.reduce((s: number, c: { moodScore: number }) => s + c.moodScore, 0) / olderHalf.length;
+          const delta = avgRecent - avgOlder;
+          moodTrend = delta > 0.3 ? 'improving' : delta < -0.3 ? 'declining' : 'stable';
+        }
+      }
+
+      // Most common emotion tags across all journal entries
+      const tagCounts: Record<string, number> = {};
+      journalEntries.forEach((e: { emotionTags: string[] }) => {
+        e.emotionTags.forEach((t: string) => { tagCounts[t] = (tagCounts[t] ?? 0) + 1; });
+      });
+      const recentEmotionTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([tag]) => tag);
+
+      // Journal streak (consecutive days up to today)
+      const dateSets = new Set(journalEntries.map((e: { date: string }) => e.date));
+      let journalStreak = 0;
+      const cursor = new Date();
+      while (dateSets.has(cursor.toISOString().split('T')[0])) {
+        journalStreak++;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+
+      // Compact journal summaries for pattern matching (newest first, up to 20)
+      const journalSummaries = [...journalEntries]
+        .sort((a: { date: string }, b: { date: string }) => b.date.localeCompare(a.date))
+        .slice(0, 20)
+        .map((e: { date: string; emotionTags: string[]; body: string }) => ({
+          date: e.date,
+          tags: e.emotionTags,
+          snippet: e.body.slice(0, 150).replace(/\n/g, ' '),
+        }));
+
+      // Full mood history for pattern matching (newest first, up to 30)
+      const moodHistory = sortedCheckIns
+        .slice(0, 30)
+        .map((c: { date: string; moodScore: number }) => ({ date: c.date, score: c.moodScore }));
+
+      const ctx: UserContext = {
+        nickname: profile?.nickname,
+        country: profile?.country,
+        needs: profile?.needs,
+        safetyLevel,
+        recentMoodAvg,
+        moodTrend,
+        currentMoodScore: params.moodScore ? parseInt(params.moodScore, 10) : undefined,
+        journalStreak,
+        recentEmotionTags,
+        journalPreview: params.journalPreview,
+        programProgress: programs.map((p: { title: string; completed: number; total: number }) => ({
+          title: p.title,
+          completed: p.completed,
+          total: p.total,
+        })),
+        connectionsCount: matches.length,
+        chosenFamilyCount: family.length,
+        journalSummaries,
+        moodHistory,
+      };
+      setUserContext(ctx);
+
+      // Personalized starters based on context
+      setStarters(buildPersonalisedStarters(ctx));
     })();
   }, []);
+
+  const aiContext: AIContext = {
+    moodScore: params.moodScore ? parseInt(params.moodScore, 10) : undefined,
+    journalPreview: params.journalPreview,
+    userContext: userContext ?? undefined,
+  };
 
   async function handleSend(text?: string) {
     const body = (text ?? input).trim();
@@ -138,7 +268,7 @@ export default function AICompanionScreen() {
             showStarters ? (
               <View style={styles.starters}>
                 <Text style={styles.startersTitle}>What's on your mind?</Text>
-                {SUGGESTED_STARTERS.map((s) => (
+                {starters.map((s: string) => (
                   <TouchableOpacity
                     key={s}
                     style={styles.starter}

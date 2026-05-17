@@ -27,8 +27,10 @@ import {
   removeSupportPerson,
   getNextSuggestedRole,
 } from '@/services/chosenFamily';
+import { getMyMatches } from '@/services/matching';
+import { listCircles } from '@/services/circles';
 import { SUPPORT_ROLES } from '@/types';
-import type { SupportPerson, SupportRoleMeta } from '@/types';
+import type { SupportPerson, SupportRoleMeta, Match, Circle } from '@/types';
 
 type EditState = {
   role: SupportRoleMeta;
@@ -37,15 +39,24 @@ type EditState = {
 
 export default function ChosenFamilyScreen() {
   const [people, setPeople] = useState<SupportPerson[]>([]);
+  const [acceptedMatches, setAcceptedMatches] = useState<Match[]>([]);
+  const [joinedCircles, setJoinedCircles] = useState<Circle[]>([]);
   const [editState, setEditState] = useState<EditState | null>(null);
   const [nickname, setNickname] = useState('');
   const [contactInfo, setContactInfo] = useState('');
   const [notes, setNotes] = useState('');
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [selectedMatchUserId, setSelectedMatchUserId] = useState<string | null>(null);
+  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      getSupportPeople().then(setPeople);
+      Promise.all([getSupportPeople(), getMyMatches(), listCircles()]).then(([p, m, c]) => {
+        setPeople(p);
+        setAcceptedMatches(m.filter((match) => match.status === 'accepted'));
+        setJoinedCircles(c.filter((circle) => circle.isMember));
+      });
     }, [])
   );
 
@@ -54,6 +65,9 @@ export default function ChosenFamilyScreen() {
     setNickname(existing?.nickname ?? '');
     setContactInfo(existing?.contactInfo ?? '');
     setNotes(existing?.notes ?? '');
+    setSelectedMatchId(existing?.matchId ?? null);
+    setSelectedMatchUserId(existing?.matchUserId ?? null);
+    setSelectedCircleId(existing?.circleId ?? null);
   }
 
   function closeModal() {
@@ -61,6 +75,32 @@ export default function ChosenFamilyScreen() {
     setNickname('');
     setContactInfo('');
     setNotes('');
+    setSelectedMatchId(null);
+    setSelectedMatchUserId(null);
+    setSelectedCircleId(null);
+  }
+
+  function selectMatch(match: Match) {
+    setNickname(match.peer?.nickname ?? 'App user');
+    setSelectedMatchId(match.id);
+    setSelectedMatchUserId(match.peer?.userId ?? null);
+    setSelectedCircleId(null);
+  }
+
+  function clearMatchSelection() {
+    setSelectedMatchId(null);
+    setSelectedMatchUserId(null);
+  }
+
+  function selectCircle(circle: Circle) {
+    setNickname(circle.name);
+    setSelectedCircleId(circle.id);
+    setSelectedMatchId(null);
+    setSelectedMatchUserId(null);
+  }
+
+  function clearCircleSelection() {
+    setSelectedCircleId(null);
   }
 
   async function handleSave() {
@@ -84,6 +124,9 @@ export default function ChosenFamilyScreen() {
         role: editState.role.id,
         contactInfo: contactInfo.trim() || undefined,
         notes: notes.trim() || undefined,
+        matchId: selectedMatchId ?? undefined,
+        matchUserId: selectedMatchUserId ?? undefined,
+        circleId: selectedCircleId ?? undefined,
       });
     }
 
@@ -129,6 +172,16 @@ export default function ChosenFamilyScreen() {
     } else {
       Alert.alert('Cannot open', 'Unable to open this contact method on your device.');
     }
+  }
+
+  function handleChat(person: SupportPerson) {
+    if (!person.matchId) return;
+    router.push({ pathname: '/chat', params: { matchId: person.matchId, peerNickname: person.nickname } } as any);
+  }
+
+  function handleOpenCircle(person: SupportPerson) {
+    if (!person.circleId) return;
+    router.push({ pathname: '/circle', params: { circleId: person.circleId, name: person.nickname } } as any);
   }
 
   const filledCount = people.length;
@@ -202,6 +255,8 @@ export default function ChosenFamilyScreen() {
               onEdit={() => person && openAdd(roleMeta, person)}
               onRemove={() => person && handleRemove(person)}
               onContact={() => person && handleContact(person, roleMeta.contactType)}
+              onChat={() => person && handleChat(person)}
+              onOpenCircle={() => person && handleOpenCircle(person)}
             />
           );
         })}
@@ -231,14 +286,86 @@ export default function ChosenFamilyScreen() {
             </View>
 
             <View style={styles.fields}>
+              {/* Circles picker — only for community_group role when adding */}
+              {!editState?.existing && editState?.role.id === 'community_group' && joinedCircles.length > 0 && (
+                <View>
+                  <Text style={styles.fieldLabel}>From your circles</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.matchScroll}>
+                    {joinedCircles.map((circle) => {
+                      const isSelected = selectedCircleId === circle.id;
+                      return (
+                        <TouchableOpacity
+                          key={circle.id}
+                          style={[styles.matchChip, isSelected && styles.matchChipSelected]}
+                          onPress={() => isSelected ? clearCircleSelection() : selectCircle(circle)}
+                          accessibilityLabel={`Select ${circle.name}`}
+                          testID={`circle-chip-${circle.id}`}
+                        >
+                          <View style={styles.matchChipAvatar}>
+                            <Ionicons name="people-outline" size={14} color={Colors.mutedLavender} />
+                          </View>
+                          <View>
+                            <Text style={[styles.matchChipName, isSelected && styles.matchChipNameSelected]}>{circle.name}</Text>
+                            <Text style={styles.matchChipSub}>{circle.memberCount} member{circle.memberCount !== 1 ? 's' : ''}</Text>
+                          </View>
+                          {isSelected && <Ionicons name="checkmark-circle" size={16} color={Colors.safeBlue} />}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                  <View style={styles.orDivider}>
+                    <View style={styles.orLine} />
+                    <Text style={styles.orText}>or enter manually</Text>
+                    <View style={styles.orLine} />
+                  </View>
+                </View>
+              )}
+
+              {/* Matches picker — only shown when adding a non-community_group person */}
+              {!editState?.existing && editState?.role.id !== 'community_group' && acceptedMatches.length > 0 && (
+                <View>
+                  <Text style={styles.fieldLabel}>From your support matches</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.matchScroll}>
+                    {acceptedMatches.map((match) => {
+                      const isSelected = selectedMatchId === match.id;
+                      const peerNick = match.peer?.nickname ?? 'App user';
+                      const peerCountry = match.peer?.country;
+                      return (
+                        <TouchableOpacity
+                          key={match.id}
+                          style={[styles.matchChip, isSelected && styles.matchChipSelected]}
+                          onPress={() => isSelected ? clearMatchSelection() : selectMatch(match)}
+                          accessibilityLabel={`Select ${peerNick}`}
+                          testID={`match-chip-${match.id}`}
+                        >
+                          <View style={styles.matchChipAvatar}>
+                            <Text style={styles.matchChipAvatarText}>{peerNick[0].toUpperCase()}</Text>
+                          </View>
+                          <View>
+                            <Text style={[styles.matchChipName, isSelected && styles.matchChipNameSelected]}>{peerNick}</Text>
+                            {peerCountry ? <Text style={styles.matchChipSub}>{peerCountry}</Text> : null}
+                          </View>
+                          {isSelected && <Ionicons name="checkmark-circle" size={16} color={Colors.safeBlue} />}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                  <View style={styles.orDivider}>
+                    <View style={styles.orLine} />
+                    <Text style={styles.orText}>or add manually</Text>
+                    <View style={styles.orLine} />
+                  </View>
+                </View>
+              )}
+
               <Text style={styles.fieldLabel}>Nickname *</Text>
               <TextInput
                 style={styles.fieldInput}
                 value={nickname}
-                onChangeText={setNickname}
+                onChangeText={(v) => { setNickname(v); if (selectedMatchId) clearMatchSelection(); }}
                 placeholder="What do you call them?"
                 placeholderTextColor={Colors.textMuted}
-                autoFocus
+                autoFocus={acceptedMatches.length === 0 || !!editState?.existing}
                 maxLength={40}
                 accessibilityLabel="Nickname"
                 testID="cf-nickname-input"
@@ -300,6 +427,8 @@ function RoleCard({
   onEdit,
   onRemove,
   onContact,
+  onChat,
+  onOpenCircle,
 }: {
   roleMeta: SupportRoleMeta;
   person: SupportPerson | null;
@@ -307,8 +436,12 @@ function RoleCard({
   onEdit: () => void;
   onRemove: () => void;
   onContact: () => void;
+  onChat: () => void;
+  onOpenCircle: () => void;
 }) {
   const filled = person !== null;
+  const isAppUser = filled && !!person!.matchId;
+  const isLinkedCircle = filled && !!person!.circleId;
 
   return (
     <TouchableOpacity
@@ -323,7 +456,15 @@ function RoleCard({
         </View>
 
         <View style={styles.roleBody}>
-          <Text style={styles.roleLabel}>{roleMeta.label}</Text>
+          <View style={styles.roleLabelRow}>
+            <Text style={styles.roleLabel}>{roleMeta.label}</Text>
+            {isAppUser && (
+              <View style={styles.appUserBadge}>
+                <Ionicons name="people-outline" size={10} color={Colors.safeBlue} />
+                <Text style={styles.appUserBadgeText}>App</Text>
+              </View>
+            )}
+          </View>
           {filled ? (
             <Text style={styles.roleName}>{person!.nickname}</Text>
           ) : (
@@ -335,7 +476,25 @@ function RoleCard({
         </View>
 
         <View style={styles.roleActions}>
-          {filled && roleMeta.contactType !== 'none' && person!.contactInfo ? (
+          {isLinkedCircle ? (
+            <TouchableOpacity
+              onPress={(e) => { e.stopPropagation?.(); onOpenCircle(); }}
+              style={[styles.contactBtn, { backgroundColor: Colors.mutedLavender + '22' }]}
+              accessibilityLabel={`Open ${person?.nickname} circle`}
+              testID={`circle-btn-${roleMeta.id}`}
+            >
+              <Ionicons name="people-outline" size={16} color={Colors.mutedLavender} />
+            </TouchableOpacity>
+          ) : isAppUser ? (
+            <TouchableOpacity
+              onPress={(e) => { e.stopPropagation?.(); onChat(); }}
+              style={[styles.contactBtn, { backgroundColor: Colors.safeBlue + '18' }]}
+              accessibilityLabel={`Chat with ${person?.nickname}`}
+              testID={`chat-btn-${roleMeta.id}`}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.safeBlue} />
+            </TouchableOpacity>
+          ) : filled && roleMeta.contactType !== 'none' && person!.contactInfo ? (
             <TouchableOpacity
               onPress={(e) => { e.stopPropagation?.(); onContact(); }}
               style={[styles.contactBtn, { backgroundColor: roleMeta.color + '18' }]}
@@ -474,6 +633,50 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   addChipText: { fontSize: 12, fontWeight: '600' },
+  roleLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  appUserBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: Colors.safeBlue + '18',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: Radius.full,
+  },
+  appUserBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.safeBlue, textTransform: 'uppercase' },
+  // Matches picker
+  matchScroll: { marginBottom: Spacing.xs },
+  matchChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    marginRight: Spacing.xs,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  matchChipSelected: {
+    borderColor: Colors.safeBlue,
+    backgroundColor: Colors.safeBlue + '0D',
+  },
+  matchChipAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.mutedLavender + '33',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  matchChipAvatarText: { fontSize: 13, fontWeight: '700', color: Colors.mutedLavender },
+  matchChipName: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
+  matchChipNameSelected: { color: Colors.safeBlue },
+  matchChipSub: { fontSize: 11, color: Colors.textMuted },
+  orDivider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginVertical: Spacing.sm },
+  orLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  orText: { fontSize: 11, color: Colors.textMuted, fontWeight: '500' },
   // Modal
   modalWrap: {
     flex: 1,

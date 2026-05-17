@@ -333,6 +333,9 @@ export interface SupportPerson {
   contactInfo?: string;
   notes?: string;
   createdAt: string;
+  matchId?: string;    // linked peer match ID (for in-app chat)
+  matchUserId?: string; // peer's userId for display
+  circleId?: string;   // linked support circle ID (for community_group role)
 }
 
 // ─── Local Resources & Events ─────────────────────────────────────────────────

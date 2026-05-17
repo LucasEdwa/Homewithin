@@ -91,35 +91,33 @@ describe('sendAIMessage', () => {
     expect(error).toMatch(/daily limit/i);
   });
 
-  it('returns config error when no Supabase and no API key', async () => {
-    const origEnv = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-    delete process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+  it('returns config error when no API key', async () => {
+    const origEnv = process.env.EXPO_PUBLIC_AI_API_KEY;
+    delete process.env.EXPO_PUBLIC_AI_API_KEY;
 
     const { message, error } = await sendAIMessage('Hello');
     expect(message).toBeNull();
     expect(error).toMatch(/not configured/i);
 
-    process.env.EXPO_PUBLIC_OPENAI_API_KEY = origEnv;
+    process.env.EXPO_PUBLIC_AI_API_KEY = origEnv;
   });
 
   it('appends user message to history before API call', async () => {
-    const origEnv = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-    delete process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+    const origEnv = process.env.EXPO_PUBLIC_AI_API_KEY;
+    delete process.env.EXPO_PUBLIC_AI_API_KEY;
 
     await sendAIMessage('Test message');
     const history = await getHistory();
     expect(history.some((m) => m.role === 'user' && m.body === 'Test message')).toBe(true);
 
-    process.env.EXPO_PUBLIC_OPENAI_API_KEY = origEnv;
+    process.env.EXPO_PUBLIC_AI_API_KEY = origEnv;
   });
 
   it('with mocked fetch: stores assistant reply in history', async () => {
-    process.env.EXPO_PUBLIC_OPENAI_API_KEY = 'sk-test-fake';
+    process.env.EXPO_PUBLIC_AI_API_KEY = 'test-fake-key';
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        choices: [{ message: { content: 'I hear you.' } }],
-      }),
+      json: async () => ({ reply: 'I hear you.' }),
     }) as any;
 
     const { message, error } = await sendAIMessage('Hello there');
@@ -130,19 +128,19 @@ describe('sendAIMessage', () => {
     const history = await getHistory();
     expect(history.some((m) => m.role === 'assistant' && m.body === 'I hear you.')).toBe(true);
 
-    delete process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+    delete process.env.EXPO_PUBLIC_AI_API_KEY;
     jest.restoreAllMocks();
   });
 
   it('returns error string when fetch throws', async () => {
-    process.env.EXPO_PUBLIC_OPENAI_API_KEY = 'sk-test-fake';
+    process.env.EXPO_PUBLIC_AI_API_KEY = 'test-fake-key';
     global.fetch = jest.fn().mockRejectedValue(new Error('Network error')) as any;
 
     const { message, error } = await sendAIMessage('Hello');
     expect(message).toBeNull();
     expect(error).toMatch(/something went wrong/i);
 
-    delete process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+    delete process.env.EXPO_PUBLIC_AI_API_KEY;
     jest.restoreAllMocks();
   });
 });

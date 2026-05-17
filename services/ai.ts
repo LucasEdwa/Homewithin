@@ -1,11 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from './supabase';
 import type { AIMessage } from '@/types';
 
 const HISTORY_KEY = 'hw_ai_history';
 const RATE_KEY = 'hw_ai_timestamps';
+const SESSION_ID_KEY = 'hw_ai_session_id';
+const SESSION_NEW_KEY = 'hw_ai_session_new'; // 'true' until first message sent
 const MAX_PER_DAY = 20;
-const MAX_HISTORY = 20; // messages kept in context
+const MAX_HISTORY = 20;
+
+// AI endpoint — put EXPO_PUBLIC_AI_API_KEY=haven_ZGLIl6ClRzbu1SK614zC in .env
+const AI_ENDPOINT = 'https://app.second-horizon.com/chat';
 
 export const AI_DISCLAIMER =
   'AI is not a therapist or crisis counselor. If you are in danger, use the emergency button.';
@@ -60,6 +64,8 @@ export async function getHistory(): Promise<AIMessage[]> {
 
 export async function clearHistory(): Promise<void> {
   await SecureStore.deleteItemAsync(HISTORY_KEY);
+  await SecureStore.deleteItemAsync(SESSION_ID_KEY);
+  await SecureStore.deleteItemAsync(SESSION_NEW_KEY);
 }
 
 async function appendHistory(message: AIMessage): Promise<void> {
@@ -70,22 +76,135 @@ async function appendHistory(message: AIMessage): Promise<void> {
 
 // ─── AI call ─────────────────────────────────────────────────────────────────
 
+export interface UserContext {
+  nickname?: string;
+  country?: string;
+  needs?: string[];
+  safetyLevel?: 'green' | 'yellow' | 'red' | null;
+
+  // Mood
+  recentMoodAvg?: number;       // avg of last 7 check-ins (1–5)
+  moodTrend?: 'improving' | 'declining' | 'stable' | null;
+  currentMoodScore?: number;    // from today's check-in or nav param
+
+  // Journal
+  journalStreak?: number;
+  recentEmotionTags?: string[]; // most frequent tags from last 5 entries
+  journalPreview?: string;      // snippet from the entry that triggered opening
+
+  // Programs
+  programProgress?: Array<{ title: string; completed: number; total: number }>;
+
+  // Connections
+  connectionsCount?: number;
+  chosenFamilyCount?: number;
+
+  // Full history for pattern matching
+  journalSummaries?: Array<{ date: string; tags: string[]; snippet: string }>;
+  moodHistory?: Array<{ date: string; score: number }>;
+}
+
+/** Builds the full personalized system prompt from live user data. */
+export function buildSystemPrompt(ctx: UserContext): string {
+  const MOOD_LABELS = ['', 'Terrible', 'Bad', 'Okay', 'Good', 'Great'];
+
+  const profileBlock = [
+    ctx.nickname ? `Name (anonymous): ${ctx.nickname}` : null,
+    ctx.country ? `Country: ${ctx.country}` : null,
+    ctx.needs?.length ? `Working through: ${ctx.needs.map((n) => n.replace(/_/g, ' ')).join(', ')}` : null,
+  ].filter(Boolean).join('\n');
+
+  const safetyLabel = ctx.safetyLevel === 'green'
+    ? 'safe (green) — they seem stable'
+    : ctx.safetyLevel === 'yellow'
+    ? 'some risk (yellow) — offer gentle check-ins on safety'
+    : ctx.safetyLevel === 'red'
+    ? 'high risk (red) — prioritise safety, offer hotline, do not ignore'
+    : 'unknown';
+
+  const moodLabel = ctx.recentMoodAvg != null
+    ? `avg ${ctx.recentMoodAvg.toFixed(1)}/5 over last 7 check-ins — ${ctx.moodTrend ?? 'no trend data'}`
+    : 'no mood data yet';
+
+  const currentMood = ctx.currentMoodScore
+    ? `Today's mood: ${MOOD_LABELS[ctx.currentMoodScore] ?? ctx.currentMoodScore}/5`
+    : null;
+
+  const journalBlock = [
+    ctx.journalStreak != null ? `Journal streak: ${ctx.journalStreak} day${ctx.journalStreak !== 1 ? 's' : ''}` : null,
+    ctx.recentEmotionTags?.length
+      ? `Recurring emotion tags: ${ctx.recentEmotionTags.slice(0, 5).join(', ')}`
+      : null,
+    ctx.journalPreview
+      ? `From their latest journal entry: "${ctx.journalPreview.slice(0, 200)}…"`
+      : null,
+  ].filter(Boolean).join('\n');
+
+  const programBlock = ctx.programProgress?.length
+    ? ctx.programProgress
+        .filter((p) => p.completed > 0)
+        .map((p) => `• ${p.title}: ${p.completed}/${p.total} lessons`)
+        .join('\n') || 'No programs started yet'
+    : 'No healing programs started yet';
+
+  const connectionBlock = [
+    ctx.connectionsCount != null ? `Peer connections: ${ctx.connectionsCount}` : null,
+    ctx.chosenFamilyCount != null ? `Chosen family members mapped: ${ctx.chosenFamilyCount}` : null,
+  ].filter(Boolean).join('\n');
+
+  const journalTimeline = ctx.journalSummaries?.length
+    ? ctx.journalSummaries
+        .slice(0, 20)
+        .map((j) => `[${j.date}] tags: ${j.tags.join(', ') || 'none'} — "${j.snippet}"`)
+        .join('\n')
+    : null;
+
+  const moodHistoryBlock = ctx.moodHistory?.length
+    ? ctx.moodHistory
+        .slice(0, 30)
+        .map((m) => `${m.date}: ${MOOD_LABELS[m.score] ?? m.score}`)
+        .join(', ')
+    : null;
+
+  return `${SYSTEM_PROMPT}
+
+─── USER CONTEXT ───────────────────────────────
+${profileBlock || 'Anonymous user'}
+
+Safety level: ${safetyLabel}
+Mood: ${moodLabel}
+${currentMood ?? ''}
+
+${journalBlock || 'No journal history yet'}
+
+Healing programs in progress:
+${programBlock}
+
+${connectionBlock || 'No connections yet'}
+────────────────────────────────────────────────
+${journalTimeline ? `\n─── JOURNAL HISTORY (newest first) ────────────\n${journalTimeline}\n────────────────────────────────────────────────` : ''}
+${moodHistoryBlock ? `\n─── MOOD HISTORY ───────────────────────────────\n${moodHistoryBlock}\n────────────────────────────────────────────────` : ''}
+
+Use this context to respond in a personalized way. You do not need to state back all these facts — just let them inform your empathy and suggestions.
+
+IMPORTANT — Pattern matching: When the user's message echoes a theme, feeling, or situation that appears in their journal history or mood pattern, gently acknowledge that connection if it feels natural. For example: "It sounds like this has been weighing on you for a while" or "I notice this theme of [X] has come up for you before." Never recite journal content back verbatim — use it only to deepen your empathy and understanding. If safety is yellow or red, weave in gentle safety check-ins. If they have recurring shame or fear tags, approach those topics with extra care. If they are early in healing programs, encourage progress. If they have no connections yet, gently acknowledge loneliness without pressure.`;
+}
+
+// ── Legacy AIContext for backward compatibility with nav params ────────────────
 export interface AIContext {
   moodScore?: number;
-  recentMood?: string;
   journalPreview?: string;
+  userContext?: UserContext;
 }
 
 export async function sendAIMessage(
   userText: string,
   context?: AIContext
 ): Promise<{ message: AIMessage | null; error?: string }> {
-  const { allowed, remaining } = await checkRateLimit();
+  const { allowed } = await checkRateLimit();
   if (!allowed) {
     return { message: null, error: `Daily limit reached (${MAX_PER_DAY} messages/day). Come back tomorrow.` };
   }
-
-  const history = await getHistory();
 
   const userMessage: AIMessage = {
     id: `user-${Date.now()}`,
@@ -95,47 +214,69 @@ export async function sendAIMessage(
   };
   await appendHistory(userMessage);
 
-  // Build context prefix if provided
-  let contextNote = '';
-  if (context?.moodScore) {
-    const labels = ['', 'Terrible', 'Bad', 'Okay', 'Good', 'Great'];
-    contextNote += `[User's current mood: ${labels[context.moodScore] ?? context.moodScore}/5] `;
-  }
-  if (context?.journalPreview) {
-    contextNote += `[From their recent journal: "${context.journalPreview.slice(0, 150)}…"] `;
+  // Build system prompt — use rich UserContext if available, fall back to basic
+  let systemContent: string;
+  if (context?.userContext) {
+    // Merge nav params into the rich context
+    const richCtx: UserContext = {
+      ...context.userContext,
+      currentMoodScore: context.moodScore ?? context.userContext.currentMoodScore,
+      journalPreview: context.journalPreview ?? context.userContext.journalPreview,
+    };
+    systemContent = buildSystemPrompt(richCtx);
+  } else {
+    // Fallback: basic context note (old behaviour)
+    let contextNote = '';
+    if (context?.moodScore) {
+      const labels = ['', 'Terrible', 'Bad', 'Okay', 'Good', 'Great'];
+      contextNote += `[User's current mood: ${labels[context.moodScore] ?? context.moodScore}/5] `;
+    }
+    if (context?.journalPreview) {
+      contextNote += `[From their recent journal: "${context.journalPreview.slice(0, 150)}…"] `;
+    }
+    systemContent = SYSTEM_PROMPT + (contextNote ? `\n\nContext: ${contextNote}` : '');
   }
 
-  const openaiMessages = [
-    { role: 'system', content: SYSTEM_PROMPT + (contextNote ? `\n\nContext: ${contextNote}` : '') },
-    ...history.slice(-10).map((m) => ({ role: m.role, content: m.body })),
-    { role: 'user', content: userText },
-  ];
+  // ── Session ID (server tracks conversation history via this ID) ──────────────
+  let sessionId = await SecureStore.getItemAsync(SESSION_ID_KEY);
+  if (!sessionId) {
+    sessionId = `hw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    await SecureStore.setItemAsync(SESSION_ID_KEY, sessionId);
+    // Mark as a fresh session so we inject context on the first real message
+    await SecureStore.setItemAsync(SESSION_NEW_KEY, 'true');
+  }
+
+  // On a brand-new session, prepend the system context to the first user message.
+  // The server sees this as background info; the UI only shows the bare user text.
+  const isNewSession = (await SecureStore.getItemAsync(SESSION_NEW_KEY)) === 'true';
+  const messageToSend = isNewSession
+    ? `${systemContent}\n\n---\n\n${userText}`
+    : userText;
+
+  if (isNewSession) {
+    await SecureStore.setItemAsync(SESSION_NEW_KEY, 'false');
+  }
+
+  const AI_API_KEY = process.env.EXPO_PUBLIC_AI_API_KEY ?? '';
+  if (!AI_API_KEY) {
+    return { message: null, error: 'AI companion not configured. Add EXPO_PUBLIC_AI_API_KEY to .env.' };
+  }
 
   try {
     let responseText: string;
 
-    if (supabase) {
-      // Call via Supabase Edge Function (server-side key, safe)
-      const { data, error } = await supabase.functions.invoke('ai-companion', {
-        body: { messages: openaiMessages },
-      });
-      if (error) throw new Error(error.message);
-      responseText = data?.reply ?? 'Sorry, I couldn\'t respond right now.';
-    } else {
-      // Direct fallback for local dev (requires EXPO_PUBLIC_OPENAI_API_KEY — insecure in production)
-      const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-      if (!apiKey) {
-        return { message: null, error: 'AI companion not configured. Add EXPO_PUBLIC_OPENAI_API_KEY to .env.' };
-      }
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: 'gpt-4o-mini', messages: openaiMessages, max_tokens: 300, temperature: 0.75 }),
-      });
-      if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
-      const json = await res.json();
-      responseText = json.choices?.[0]?.message?.content ?? 'No response.';
-    }
+    const res = await fetch(AI_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': AI_API_KEY,
+      },
+      body: JSON.stringify({ session_id: sessionId, message: messageToSend }),
+    });
+
+    if (!res.ok) throw new Error(`AI endpoint error ${res.status}`);
+    const json = await res.json();
+    responseText = json.reply ?? "I'm here with you. Could you say that again?";
 
     await recordUsage();
 
