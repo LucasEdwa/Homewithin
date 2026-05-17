@@ -264,3 +264,73 @@ export interface CircleMessage {
   body: string;
   createdAt: string;
 }
+
+// ─── Chosen Family ────────────────────────────────────────────────────────────
+
+export type SupportRole =
+  | 'trusted_friend'
+  | 'mentor'
+  | 'therapist'
+  | 'emergency_contact'
+  | 'community_group';
+
+export interface SupportRoleMeta {
+  id: SupportRole;
+  label: string;
+  icon: string;
+  description: string;
+  color: string;
+  contactType: 'phone' | 'sms' | 'none';
+}
+
+export const SUPPORT_ROLES: SupportRoleMeta[] = [
+  {
+    id: 'trusted_friend',
+    label: 'Trusted Friend',
+    icon: 'heart-outline',
+    description: 'Someone who knows and accepts you',
+    color: '#5B8DEF',
+    contactType: 'sms',
+  },
+  {
+    id: 'mentor',
+    label: 'Mentor',
+    icon: 'school-outline',
+    description: 'A guide on your healing journey',
+    color: '#B8A8E3',
+    contactType: 'sms',
+  },
+  {
+    id: 'therapist',
+    label: 'Therapist',
+    icon: 'medical-outline',
+    description: 'Professional mental health support',
+    color: '#7BC9A7',
+    contactType: 'phone',
+  },
+  {
+    id: 'emergency_contact',
+    label: 'Emergency Contact',
+    icon: 'shield-checkmark-outline',
+    description: 'First person to call in a crisis',
+    color: '#D9534F',
+    contactType: 'phone',
+  },
+  {
+    id: 'community_group',
+    label: 'Community Group',
+    icon: 'people-outline',
+    description: 'A group where you belong',
+    color: '#E8844E',
+    contactType: 'none',
+  },
+];
+
+export interface SupportPerson {
+  id: string;
+  nickname: string;
+  role: SupportRole;
+  contactInfo?: string;
+  notes?: string;
+  createdAt: string;
+}

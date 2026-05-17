@@ -92,6 +92,7 @@ export default function HomeScreen() {
           <DashCard icon="library-outline"          title="Resources for You"  description="Guides, articles, and tools"    color={Colors.safeBlue}      onPress={() => router.push('/(tabs)/resources')} />
           <DashCard icon="shield-checkmark-outline" title="Safety Assessment"  description="Check in on your safety"        color={Colors.alertRed}      onPress={() => router.push('/safety')} />
           <DashCard icon="layers-outline"           title="Healing Programs"   description="Structured paths for recovery"  color="#B8A8E3"              onPress={() => router.push('/programs')} />
+          <DashCard icon="git-network-outline"     title="Chosen Family"      description="Map your support network"       color="#E8844E"              onPress={() => router.push('/chosen-family')} />
           <DashCard icon="sparkles-outline"         title="AI Companion"       description="Talk through what's on your mind" color={Colors.mutedLavender} onPress={() => router.push('/ai-companion')} />
         </View>
 

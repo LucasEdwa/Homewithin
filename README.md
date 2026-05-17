@@ -291,16 +291,16 @@ Splash
 
 ---
 
-### Sprint 7 — Chosen Family Builder
+### Sprint 7 — Chosen Family Builder ✅
 
 **Goal:** Help users intentionally map and grow their support network.
-**Duration:** Week 10
+**Duration:** Week 10 · **Completed:** 2026-05-16
 
-- [ ] Visual support map: trusted friend / mentor / therapist / emergency contact / community group
-- [ ] Add person to map: nickname + role + contact info (stored locally)
-- [ ] Contact trusted person shortcut (links to SMS or call)
-- [ ] Suggest "next step" based on empty map slots
-- [ ] Milestone: "You've added your first trusted person"
+- [x] Visual support map: trusted friend / mentor / therapist / emergency contact / community group — `app/chosen-family.tsx`
+- [x] Add person to map: nickname + role + contact info (stored locally) — `services/chosenFamily.ts`
+- [x] Contact trusted person shortcut (links to SMS or call via `Linking`)
+- [x] Suggest "next step" based on empty map slots
+- [x] Milestone: "You've added your first trusted person" (Alert on first add)
 
 ---
 

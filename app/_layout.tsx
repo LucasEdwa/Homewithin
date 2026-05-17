@@ -30,6 +30,7 @@ export default function RootLayout() {
           <Stack.Screen name="circles" />
           <Stack.Screen name="circle" />
           <Stack.Screen name="circle-intro" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="chosen-family" />
           <Stack.Screen name="programs" />
           <Stack.Screen name="program" />
           <Stack.Screen name="ai-companion" />

@@ -24,7 +24,8 @@ import {
   checkRateLimit,
   AI_DISCLAIMER,
 } from '@/services/ai';
-import type { AIMessage, AIContext } from '@/services/ai';
+import type { AIContext } from '@/services/ai';
+import type { AIMessage } from '@/types';
 
 const SUGGESTED_STARTERS = [
   'I\'ve been feeling really alone lately.',
