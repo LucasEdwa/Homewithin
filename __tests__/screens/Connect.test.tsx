@@ -7,6 +7,10 @@ jest.mock('@/services/matching', () => ({
   connectMatch: jest.fn(),
   passMatch: jest.fn(),
   getMyMatches: jest.fn(),
+  getPendingOutgoing: jest.fn(),
+  getIncomingLikes: jest.fn(),
+  acceptIncomingLike: jest.fn(),
+  declineIncomingLike: jest.fn(),
 }));
 
 jest.mock('expo-router', () => ({
@@ -43,6 +47,8 @@ const mockFind = matchingService.findMatches as jest.Mock;
 const mockConnect = matchingService.connectMatch as jest.Mock;
 const mockPass = matchingService.passMatch as jest.Mock;
 const mockGetMatches = matchingService.getMyMatches as jest.Mock;
+const mockGetPending = matchingService.getPendingOutgoing as jest.Mock;
+const mockGetIncoming = matchingService.getIncomingLikes as jest.Mock;
 
 const SAMPLE_PEER = {
   userId: 'peer-uuid-1',
@@ -56,9 +62,11 @@ const SAMPLE_PEER = {
 beforeEach(() => {
   jest.clearAllMocks();
   mockFind.mockResolvedValue([]);
-  mockConnect.mockResolvedValue('match-id-1');
+  mockConnect.mockResolvedValue({ matchId: null, mutual: false });
   mockPass.mockResolvedValue(undefined);
   mockGetMatches.mockResolvedValue([]);
+  mockGetPending.mockResolvedValue([]);
+  mockGetIncoming.mockResolvedValue([]);
 });
 
 describe('ConnectScreen — intentions', () => {

@@ -54,11 +54,13 @@ export async function findMatches(
   const uid = await currentUserId();
   if (!uid) return [];
 
-  const [{ data: interacted }, { data: blocked }] = await Promise.all([
+  // Only exclude users the current user has ALREADY ACTED ON (as requester).
+  // Users who liked the current user should still appear so they can like back.
+  const [{ data: myActions }, { data: blocked }] = await Promise.all([
     supabase
       .from("matches")
-      .select("requester_id, target_id")
-      .or(`requester_id.eq.${uid},target_id.eq.${uid}`),
+      .select("target_id")
+      .eq("requester_id", uid),
     supabase
       .from("blocks")
       .select("blocker_id, blocked_id")
@@ -66,10 +68,7 @@ export async function findMatches(
   ]);
 
   const exclude = new Set<string>([uid]);
-  (interacted ?? []).forEach((m: any) => {
-    exclude.add(m.requester_id);
-    exclude.add(m.target_id);
-  });
+  (myActions ?? []).forEach((m: any) => exclude.add(m.target_id));
   (blocked ?? []).forEach((b: any) => {
     exclude.add(b.blocker_id);
     exclude.add(b.blocked_id);
@@ -112,27 +111,48 @@ export async function findMatches(
 export async function connectMatch(
   targetId: string,
   intention: IntentionId,
-): Promise<string | null> {
-  if (!supabase) return null;
+): Promise<{ matchId: string | null; mutual: boolean }> {
+  if (!supabase) return { matchId: null, mutual: false };
   const uid = await currentUserId();
-  if (!uid) return null;
+  if (!uid) return { matchId: null, mutual: false };
 
-  const { data, error } = await supabase
+  // Check if the target has already liked the current user (pending row from them → us)
+  const { data: pending } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("requester_id", targetId)
+    .eq("target_id", uid)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (pending) {
+    // Mutual match — upgrade the existing pending row to accepted
+    const { error } = await supabase
+      .from("matches")
+      .update({ status: "accepted" })
+      .eq("id", pending.id);
+    if (error) {
+      console.error("Connect (mutual) failed:", error.message);
+      return { matchId: null, mutual: false };
+    }
+    return { matchId: pending.id, mutual: true };
+  }
+
+  // One-sided like — insert as pending; chat unlocks only when they like back
+  const { error } = await supabase
     .from("matches")
     .insert({
       requester_id: uid,
       target_id: targetId,
       intention,
-      status: "accepted",
-    })
-    .select("id")
-    .single();
+      status: "pending",
+    });
 
   if (error) {
     console.error("Connect failed:", error.message);
-    return null;
+    return { matchId: null, mutual: false };
   }
-  return data?.id ?? null;
+  return { matchId: null, mutual: false };
 }
 
 export async function passMatch(
@@ -154,35 +174,23 @@ export async function passMatch(
   if (error) console.error("Pass failed:", error.message);
 }
 
-export async function getMyMatches(): Promise<Match[]> {
-  if (!supabase) return [];
-  const uid = await currentUserId();
-  if (!uid) return [];
-
-  const { data, error } = await supabase
-    .from("matches")
-    .select("id, requester_id, target_id, intention, status, created_at")
-    .eq("requester_id", uid)
-    .eq("status", "accepted")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Get matches failed:", error.message);
-    return [];
-  }
-  if (!data || data.length === 0) return [];
-
-  // Fetch peer profiles separately to avoid join complexity
-  const targetIds = data.map((m: any) => m.target_id);
+async function matchesWithProfiles(
+  rows: any[],
+  uid: string,
+): Promise<Match[]> {
+  if (!supabase || rows.length === 0) return [];
+  const peerIds = rows.map((r) =>
+    r.requester_id === uid ? r.target_id : r.requester_id,
+  );
   const { data: profiles } = await supabase
     .from("user_profiles")
     .select("user_id, nickname, age_range, language, country, needs")
-    .in("user_id", targetIds);
-
+    .in("user_id", peerIds);
   const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
 
-  return data.map((row: any) => {
-    const p = profileMap.get(row.target_id) as any;
+  return rows.map((row: any) => {
+    const peerId = row.requester_id === uid ? row.target_id : row.requester_id;
+    const p = profileMap.get(peerId) as any;
     return {
       id: row.id,
       requesterId: row.requester_id,
@@ -202,6 +210,90 @@ export async function getMyMatches(): Promise<Match[]> {
         : undefined,
     };
   });
+}
+
+// Mutual accepted matches — either side can have been the original requester
+export async function getMyMatches(): Promise<Match[]> {
+  if (!supabase) return [];
+  const uid = await currentUserId();
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("matches")
+    .select("id, requester_id, target_id, intention, status, created_at")
+    .or(`requester_id.eq.${uid},target_id.eq.${uid}`)
+    .eq("status", "accepted")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Get matches failed:", error.message);
+    return [];
+  }
+  return matchesWithProfiles(data ?? [], uid);
+}
+
+// Likes the current user sent that are still waiting for a response
+export async function getPendingOutgoing(): Promise<Match[]> {
+  if (!supabase) return [];
+  const uid = await currentUserId();
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("matches")
+    .select("id, requester_id, target_id, intention, status, created_at")
+    .eq("requester_id", uid)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Get pending outgoing failed:", error.message);
+    return [];
+  }
+  return matchesWithProfiles(data ?? [], uid);
+}
+
+// Likes from others that are waiting for the current user to respond
+export async function getIncomingLikes(): Promise<Match[]> {
+  if (!supabase) return [];
+  const uid = await currentUserId();
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("matches")
+    .select("id, requester_id, target_id, intention, status, created_at")
+    .eq("target_id", uid)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Get incoming likes failed:", error.message);
+    return [];
+  }
+  return matchesWithProfiles(data ?? [], uid);
+}
+
+// Accept an incoming like → mutual match, chat unlocked
+export async function acceptIncomingLike(matchId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from("matches")
+    .update({ status: "accepted" })
+    .eq("id", matchId);
+  if (error) {
+    console.error("Accept like failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
+// Decline an incoming like → no match, no chat
+export async function declineIncomingLike(matchId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("matches")
+    .update({ status: "passed" })
+    .eq("id", matchId);
+  if (error) console.error("Decline like failed:", error.message);
 }
 
 export async function blockUser(

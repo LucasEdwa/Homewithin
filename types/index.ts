@@ -164,7 +164,7 @@ export const INTENTIONS: IntentionOption[] = [
   },
 ];
 
-export type MatchStatus = "accepted" | "passed" | "blocked";
+export type MatchStatus = "pending" | "accepted" | "passed" | "blocked";
 
 export interface PeerProfile {
   userId: string;

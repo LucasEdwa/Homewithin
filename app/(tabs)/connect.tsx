@@ -3,20 +3,31 @@ import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import { connectMatch, findMatches, getMyMatches, passMatch, syncProfile } from '@/services/matching';
+import {
+  acceptIncomingLike,
+  connectMatch,
+  declineIncomingLike,
+  findMatches,
+  getIncomingLikes,
+  getMyMatches,
+  getPendingOutgoing,
+  passMatch,
+  syncProfile,
+} from '@/services/matching';
 import type { IntentionId, Match, PeerProfile } from '@/types';
 import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-    ActivityIndicator,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 type View_ = 'intentions' | 'browsing' | 'empty';
@@ -27,6 +38,8 @@ export default function ConnectScreen() {
   const [intention, setIntention] = useState<IntentionId | null>(null);
   const [candidates, setCandidates] = useState<PeerProfile[]>([]);
   const [myMatches, setMyMatches] = useState<Match[]>([]);
+  const [pendingOutgoing, setPendingOutgoing] = useState<Match[]>([]);
+  const [incomingLikes, setIncomingLikes] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
   const [browsing, setBrowsing] = useState(false);
 
@@ -34,11 +47,28 @@ export default function ConnectScreen() {
     useCallback(() => {
       (async () => {
         if (profile) await syncProfile(profile);
-        const matches = await getMyMatches();
+        const [matches, pending, incoming] = await Promise.all([
+          getMyMatches(),
+          getPendingOutgoing(),
+          getIncomingLikes(),
+        ]);
         setMyMatches(matches);
+        setPendingOutgoing(pending);
+        setIncomingLikes(incoming);
       })();
     }, [profile])
   );
+
+  async function refreshMatchLists() {
+    const [matches, pending, incoming] = await Promise.all([
+      getMyMatches(),
+      getPendingOutgoing(),
+      getIncomingLikes(),
+    ]);
+    setMyMatches(matches);
+    setPendingOutgoing(pending);
+    setIncomingLikes(incoming);
+  }
 
   async function handleSelectIntention(id: IntentionId) {
     setIntention(id);
@@ -53,16 +83,53 @@ export default function ConnectScreen() {
   async function handleConnect() {
     if (!intention || candidates.length === 0) return;
     const [peer, ...rest] = candidates;
-    const matchId = await connectMatch(peer.userId, intention);
-    if (matchId) {
-      const matches = await getMyMatches();
-      setMyMatches(matches);
+    const { matchId, mutual } = await connectMatch(peer.userId, intention);
+
+    if (mutual && matchId) {
+      await refreshMatchLists();
+      Alert.alert(
+        "It's a match! 🎉",
+        `You and ${peer.nickname} both want to connect. Say hi!`,
+        [
+          {
+            text: 'Open chat',
+            onPress: () => router.push({ pathname: '/chat', params: { matchId, nickname: peer.nickname } }),
+          },
+          { text: 'Later' },
+        ]
+      );
+    } else {
+      await refreshMatchLists();
     }
+
     if (rest.length > 0) {
       setCandidates(rest);
     } else {
       setView('empty');
     }
+  }
+
+  async function handleAcceptLike(match: Match) {
+    const ok = await acceptIncomingLike(match.id);
+    if (ok) {
+      await refreshMatchLists();
+      Alert.alert(
+        "It's a match! 🎉",
+        `You and ${match.peer?.nickname ?? 'someone'} are now connected.`,
+        [
+          {
+            text: 'Open chat',
+            onPress: () => router.push({ pathname: '/chat', params: { matchId: match.id, nickname: match.peer?.nickname ?? 'Someone' } }),
+          },
+          { text: 'Later' },
+        ]
+      );
+    }
+  }
+
+  async function handleDeclineLike(match: Match) {
+    await declineIncomingLike(match.id);
+    await refreshMatchLists();
   }
 
   async function handlePass() {
@@ -155,7 +222,49 @@ export default function ConnectScreen() {
           </View>
         )}
 
-        {/* Existing connections */}
+        {/* Incoming likes — people waiting for your response */}
+        {incomingLikes.length > 0 && (
+          <View style={styles.connectionsSection}>
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionTitle}>People who liked you</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{incomingLikes.length}</Text>
+              </View>
+            </View>
+            {incomingLikes.map((match) => (
+              <View key={match.id} style={styles.connectionRow} testID={`incoming-${match.id}`}>
+                <View style={[styles.avatar, { backgroundColor: Colors.mutedLavender }]}>
+                  <Text style={styles.avatarText}>{(match.peer?.nickname?.[0] ?? '?').toUpperCase()}</Text>
+                </View>
+                <View style={styles.connectionInfo}>
+                  <Text style={styles.connectionName}>{match.peer?.nickname ?? 'Someone'}</Text>
+                  {match.peer?.country ? (
+                    <Text style={styles.connectionMeta}>{match.peer.country}</Text>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  style={styles.declineBtn}
+                  onPress={() => handleDeclineLike(match)}
+                  accessibilityLabel="Decline"
+                  testID={`decline-${match.id}`}
+                >
+                  <Ionicons name="close" size={18} color={Colors.textMuted} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.acceptBtn}
+                  onPress={() => handleAcceptLike(match)}
+                  accessibilityLabel="Accept"
+                  testID={`accept-${match.id}`}
+                >
+                  <Ionicons name="heart" size={16} color={Colors.white} />
+                  <Text style={styles.acceptBtnText}>Connect</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Mutual connections — chat enabled */}
         {myMatches.length > 0 && (
           <View style={styles.connectionsSection}>
             <Text style={styles.sectionTitle}>Your connections</Text>
@@ -178,6 +287,25 @@ export default function ConnectScreen() {
                 </View>
                 <Ionicons name="chatbubble-outline" size={18} color={Colors.safeBlue} />
               </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Pending outgoing likes — waiting for the other person */}
+        {pendingOutgoing.length > 0 && (
+          <View style={styles.connectionsSection}>
+            <Text style={styles.sectionTitle}>Waiting for response</Text>
+            {pendingOutgoing.map((match) => (
+              <View key={match.id} style={[styles.connectionRow, styles.pendingRow]} testID={`pending-${match.id}`}>
+                <View style={[styles.avatar, { backgroundColor: Colors.border }]}>
+                  <Text style={[styles.avatarText, { color: Colors.textMuted }]}>{(match.peer?.nickname?.[0] ?? '?').toUpperCase()}</Text>
+                </View>
+                <View style={styles.connectionInfo}>
+                  <Text style={styles.connectionName}>{match.peer?.nickname ?? 'Someone'}</Text>
+                  <Text style={styles.connectionMeta}>Waiting for them to connect back…</Text>
+                </View>
+                <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
+              </View>
             ))}
           </View>
         )}
@@ -421,4 +549,34 @@ const styles = StyleSheet.create({
   circlesEntryText: { flex: 1 },
   circlesEntryTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   circlesEntrySub: { fontSize: 12, color: Colors.textMuted, marginTop: 2, lineHeight: 16 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  badge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.mutedLavender,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  badgeText: { fontSize: 11, fontWeight: '700', color: Colors.white },
+  declineBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.softGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  acceptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.safeBlue,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 7,
+    borderRadius: Radius.full,
+  },
+  acceptBtnText: { fontSize: 12, fontWeight: '700', color: Colors.white },
+  pendingRow: { opacity: 0.7 },
 });
