@@ -14,7 +14,7 @@ jest.mock('@/context/SessionContext', () => ({
   useSession: () => ({
     profile: {
       nickname: 'TestUser',
-      country: 'Brazil',
+      country: 'Stockholm',
     },
   }),
 }));
@@ -93,23 +93,23 @@ describe('LocalResourcesScreen — rendering', () => {
 });
 
 describe('LocalResourcesScreen — country picker', () => {
-  it('shows Brazil as default country (from profile)', () => {
+  it('shows Stockholm as default county (from profile)', () => {
     render(<LocalResourcesScreen />);
-    expect(screen.getByText('Brazil')).toBeTruthy();
+    expect(screen.getByText('Stockholm')).toBeTruthy();
   });
 
-  it('toggles country dropdown on press', () => {
+  it('toggles county dropdown on press', () => {
     render(<LocalResourcesScreen />);
     const picker = screen.getByTestId('country-picker');
     fireEvent.press(picker);
-    expect(screen.getByTestId('country-United States')).toBeTruthy();
+    expect(screen.getByTestId('country-Uppsala')).toBeTruthy();
   });
 
-  it('selects a different country', () => {
+  it('selects a different county', () => {
     render(<LocalResourcesScreen />);
     fireEvent.press(screen.getByTestId('country-picker'));
-    fireEvent.press(screen.getByTestId('country-Canada'));
-    expect(mockGetResources).toHaveBeenCalledWith('Canada', undefined);
+    fireEvent.press(screen.getByTestId('country-Skåne'));
+    expect(mockGetResources).toHaveBeenCalledWith('Skåne', undefined);
   });
 });
 
@@ -127,14 +127,14 @@ describe('LocalResourcesScreen — type filters', () => {
   it('calls getResources with type when filter pressed', () => {
     render(<LocalResourcesScreen />);
     fireEvent.press(screen.getByTestId('filter-shelter'));
-    expect(mockGetResources).toHaveBeenCalledWith('Brazil', 'shelter');
+    expect(mockGetResources).toHaveBeenCalledWith('Stockholm', 'shelter');
   });
 
   it('clears type filter when All pressed', () => {
     render(<LocalResourcesScreen />);
     fireEvent.press(screen.getByTestId('filter-shelter'));
     fireEvent.press(screen.getByTestId('filter-all'));
-    expect(mockGetResources).toHaveBeenLastCalledWith('Brazil', undefined);
+    expect(mockGetResources).toHaveBeenLastCalledWith('Stockholm', undefined);
   });
 });
 

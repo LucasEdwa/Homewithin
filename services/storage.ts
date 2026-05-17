@@ -28,12 +28,18 @@ export async function isOnboardingComplete(): Promise<boolean> {
 }
 
 export async function saveSession(data: object) {
-  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(data));
+  // Strip potentially large arrays before storing — SecureStore has a 2 KB limit.
+  // needs/intentions are re-fetched from Supabase on the next authenticated launch.
+  const { needs: _n, intentions: _i, ...slim } = data as Record<string, unknown>;
+  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(slim));
 }
 
 export async function getSession(): Promise<object | null> {
   const value = await SecureStore.getItemAsync(SESSION_KEY);
-  return value ? JSON.parse(value) : null;
+  if (!value) return null;
+  const parsed = JSON.parse(value);
+  // Restore stripped arrays so callers always get a valid UserProfile shape.
+  return { needs: [], intentions: [], ...parsed };
 }
 
 export async function saveSafetyPlan(steps: string[]) {

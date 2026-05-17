@@ -4,6 +4,20 @@ import { router } from 'expo-router';
 import SafetyScreen from '@/app/safety';
 import { renderWithSession } from '../helpers/renderWithSession';
 
+jest.mock('@/services/localResources', () => ({
+  requestLocationPermission: jest.fn(),
+  getResources: jest.fn(),
+}));
+
+import * as localResourcesService from '@/services/localResources';
+const mockRequestLocation = localResourcesService.requestLocationPermission as jest.Mock;
+const mockGetResources = localResourcesService.getResources as jest.Mock;
+
+const SAMPLE_RESOURCES = [
+  { id: 'r1', name: 'RFSL Stockholm', type: 'lgbtq_center', description: 'LGBTQ+ center', country: 'Stockholm', website: 'https://rfsl.se' },
+  { id: 'r2', name: 'Shelterhuset', type: 'shelter', description: 'Emergency shelter', country: 'Stockholm', phone: '08 000 000' },
+];
+
 const mockProfile = {
   nickname: 'River',
   pronouns: 'they/them',
@@ -15,96 +29,196 @@ const mockProfile = {
   isAnonymous: true,
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockRequestLocation.mockResolvedValue({ granted: false });
+  mockGetResources.mockReturnValue([]);
+});
 
-describe('SafetyScreen — initial state', () => {
-  it('renders the title', () => {
+// Helper: press "Begin" then "Next" through all 6 steps to reach results
+async function completeAllSteps() {
+  fireEvent.press(screen.getByText('Begin'));
+  // Steps 1–5: press "Next"
+  for (let i = 0; i < 5; i++) {
+    await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
+    fireEvent.press(screen.getByText('Next'));
+  }
+  // Step 6: press "See my results"
+  await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
+  fireEvent.press(screen.getByText('See my results'));
+}
+
+describe('SafetyScreen — intro', () => {
+  it('renders the intro title', () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    expect(screen.getByText('How are you feeling right now?')).toBeTruthy();
+    expect(screen.getByText('Safety check-in')).toBeTruthy();
   });
 
-  it('renders the Check my safety button', () => {
+  it('renders the Begin button', () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    expect(screen.getByText('Check my safety')).toBeTruthy();
+    expect(screen.getByText('Begin')).toBeTruthy();
   });
 
-  it('renders the mood slider label', () => {
+  it('renders a preview of all 6 steps', () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    expect(screen.getByText('How safe do you feel right now?')).toBeTruthy();
+    expect(screen.getByText('Right now')).toBeTruthy();
+    expect(screen.getByText('Home & body')).toBeTruthy();
+    expect(screen.getByText('Identity & pressure')).toBeTruthy();
+    expect(screen.getByText('School & community')).toBeTruthy();
+    expect(screen.getByText('Your mind')).toBeTruthy();
+    expect(screen.getByText('Your resources')).toBeTruthy();
   });
 
-  it('renders all four question cards', () => {
+  it('navigates to tabs when Skip for now is pressed', () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    expect(screen.getByText('I currently live with family')).toBeTruthy();
-    expect(screen.getByText('Someone might check my phone')).toBeTruthy();
-    expect(screen.getByText('I feel in danger right now')).toBeTruthy();
-    expect(screen.getByText('I have a trusted person I can contact')).toBeTruthy();
+    fireEvent.press(screen.getByText('Skip for now'));
+    expect(router.replace).toHaveBeenCalledWith('/(tabs)');
+  });
+});
+
+describe('SafetyScreen — step navigation', () => {
+  it('shows step 1 after pressing Begin', async () => {
+    renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => {
+      expect(screen.getByText('Right now')).toBeTruthy();
+      expect(screen.getByText('How safe do you feel right now?')).toBeTruthy();
+    });
   });
 
-  it('question cards are unchecked by default', () => {
+  it('shows step 2 after pressing Next on step 1', async () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    const card = screen.getByRole('checkbox', { name: /I feel in danger right now/i });
-    expect(card.props.accessibilityState).toEqual({ checked: false });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => screen.getByText('Next'));
+    fireEvent.press(screen.getByText('Next'));
+    await waitFor(() => {
+      expect(screen.getByText('Home & body')).toBeTruthy();
+    });
   });
 
-  it('toggling a question card checks it', () => {
+  it('shows the danger question on step 1', async () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox', { name: /I feel in danger right now/i })).toBeTruthy();
+    });
+  });
+
+  it('question cards are unchecked by default', async () => {
+    renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => {
+      const card = screen.getByRole('checkbox', { name: /I feel in danger right now/i });
+      expect(card.props.accessibilityState).toEqual({ checked: false });
+    });
+  });
+
+  it('toggling a question card checks it', async () => {
+    renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
     const card = screen.getByRole('checkbox', { name: /I feel in danger right now/i });
     fireEvent.press(card);
     expect(card.props.accessibilityState).toEqual({ checked: true });
   });
+
+  it('shows progress label during steps', async () => {
+    renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => {
+      expect(screen.getByText('1/6')).toBeTruthy();
+    });
+  });
 });
 
-describe('SafetyScreen — after assessment', () => {
-  it('shows green state when mood is high and no risk', async () => {
-    const setSafetyLevel = jest.fn();
-    renderWithSession(<SafetyScreen />, { profile: mockProfile, setSafetyLevel });
-    fireEvent.press(screen.getByText('Check my safety'));
+describe('SafetyScreen — crisis interrupt', () => {
+  it('shows crisis resources immediately when "in danger" is checked', async () => {
+    renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
+    fireEvent.press(screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
     await waitFor(() => {
-      expect(screen.getByText('You seem safe.')).toBeTruthy();
+      expect(screen.getByText("You don't have to carry this alone.")).toBeTruthy();
     });
   });
 
-  it('calls setSafetyLevel with green', async () => {
+  it('hides crisis interrupt when danger is unchecked again', async () => {
+    renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
+    const card = screen.getByRole('checkbox', { name: /I feel in danger right now/i });
+    fireEvent.press(card); // check
+    fireEvent.press(card); // uncheck
+    await waitFor(() => {
+      expect(screen.queryByText("You don't have to carry this alone.")).toBeNull();
+    });
+  });
+});
+
+describe('SafetyScreen — results', () => {
+  it('shows green state when completing with no risk factors and high mood', async () => {
     const setSafetyLevel = jest.fn();
     renderWithSession(<SafetyScreen />, { profile: mockProfile, setSafetyLevel });
-    fireEvent.press(screen.getByText('Check my safety'));
+    await completeAllSteps();
+    await waitFor(() => {
+      expect(screen.getByText('You seem to be in a safe place.')).toBeTruthy();
+    });
+  });
+
+  it('calls setSafetyLevel with green on clean completion', async () => {
+    const setSafetyLevel = jest.fn();
+    renderWithSession(<SafetyScreen />, { profile: mockProfile, setSafetyLevel });
+    await completeAllSteps();
     await waitFor(() => {
       expect(setSafetyLevel).toHaveBeenCalledWith('green');
     });
   });
 
-  it('shows red state when in danger is selected', async () => {
+  it('returns red when currently_in_danger is selected', async () => {
     const setSafetyLevel = jest.fn();
     renderWithSession(<SafetyScreen />, { profile: mockProfile, setSafetyLevel });
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
     fireEvent.press(screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
-    fireEvent.press(screen.getByText('Check my safety'));
-    await waitFor(() => {
-      expect(screen.getByText('You may need immediate support.')).toBeTruthy();
-    });
-  });
-
-  it('calls setSafetyLevel with red when in danger', async () => {
-    const setSafetyLevel = jest.fn();
-    renderWithSession(<SafetyScreen />, { profile: mockProfile, setSafetyLevel });
-    fireEvent.press(screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
-    fireEvent.press(screen.getByText('Check my safety'));
+    // Continue through remaining steps
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
+      fireEvent.press(screen.getByText('Next'));
+    }
+    await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
+    fireEvent.press(screen.getByText('See my results'));
     await waitFor(() => {
       expect(setSafetyLevel).toHaveBeenCalledWith('red');
     });
   });
 
-  it('shows safety plan section after assessment', async () => {
+  it('shows red result state text when in danger', async () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    fireEvent.press(screen.getByText('Check my safety'));
+    fireEvent.press(screen.getByText('Begin'));
+    await waitFor(() => screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
+    fireEvent.press(screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() => screen.getByText('Next'));
+      fireEvent.press(screen.getByText('Next'));
+    }
+    await waitFor(() => screen.getByText('See my results'));
+    fireEvent.press(screen.getByText('See my results'));
     await waitFor(() => {
-      expect(screen.getByText('Create a safety plan')).toBeTruthy();
+      expect(screen.getByText('You need support right now.')).toBeTruthy();
     });
   });
 
-  it('shows Go to home button after assessment', async () => {
+  it('shows safety plan after completing assessment', async () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    fireEvent.press(screen.getByText('Check my safety'));
+    await completeAllSteps();
+    await waitFor(() => {
+      expect(screen.getByText('Your safety plan')).toBeTruthy();
+    });
+  });
+
+  it('shows Go to home button after completing assessment', async () => {
+    renderWithSession(<SafetyScreen />, { profile: mockProfile });
+    await completeAllSteps();
     await waitFor(() => {
       expect(screen.getByText('Go to home')).toBeTruthy();
     });
@@ -112,17 +226,9 @@ describe('SafetyScreen — after assessment', () => {
 
   it('Go to home navigates to tabs', async () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    fireEvent.press(screen.getByText('Check my safety'));
+    await completeAllSteps();
     await waitFor(() => screen.getByText('Go to home'));
     fireEvent.press(screen.getByText('Go to home'));
     expect(router.replace).toHaveBeenCalledWith('/(tabs)');
-  });
-
-  it('hides Check my safety button after assessment', async () => {
-    renderWithSession(<SafetyScreen />, { profile: mockProfile });
-    fireEvent.press(screen.getByText('Check my safety'));
-    await waitFor(() => {
-      expect(screen.queryByText('Check my safety')).toBeNull();
-    });
   });
 });

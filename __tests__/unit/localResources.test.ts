@@ -13,14 +13,14 @@ import type { LocalResource } from '@/types';
 
 describe('getResourcesByCountry', () => {
   it('returns only resources for the given country', () => {
-    const results = getResourcesByCountry('Brazil');
+    const results = getResourcesByCountry('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.country === 'Brazil')).toBe(true);
+    expect(results.every((r) => r.country === 'Stockholm')).toBe(true);
   });
 
   it('is case-insensitive', () => {
-    const lower = getResourcesByCountry('brazil');
-    const normal = getResourcesByCountry('Brazil');
+    const lower = getResourcesByCountry('stockholm');
+    const normal = getResourcesByCountry('Stockholm');
     expect(lower.length).toBe(normal.length);
   });
 
@@ -46,19 +46,19 @@ describe('getResourcesByType', () => {
 
 describe('filterResources', () => {
   it('returns country resources when no type given', () => {
-    const all = getResourcesByCountry('United States');
-    const filtered = filterResources('United States');
+    const all = getResourcesByCountry('Stockholm');
+    const filtered = filterResources('Stockholm');
     expect(filtered.length).toBe(all.length);
   });
 
   it('narrows by type', () => {
-    const results = filterResources('United States', 'legal_aid');
+    const results = filterResources('Sweden', 'legal_aid');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.type === 'legal_aid' && r.country === 'United States')).toBe(true);
+    expect(results.every((r) => r.type === 'legal_aid' && r.country === 'Sweden')).toBe(true);
   });
 
   it('returns empty array when type not present for country', () => {
-    const results = filterResources('Germany', 'support_group');
+    const results = filterResources('Gotland', 'support_group');
     expect(Array.isArray(results)).toBe(true);
   });
 });
@@ -70,8 +70,8 @@ describe('getResources (public API)', () => {
   });
 
   it('returns country resources when country provided', () => {
-    const results = getResources('Canada');
-    expect(results.every((r) => r.country === 'Canada')).toBe(true);
+    const results = getResources('Stockholm');
+    expect(results.every((r) => r.country === 'Stockholm')).toBe(true);
   });
 
   it('filters by type across all countries when no country given', () => {
@@ -108,9 +108,9 @@ describe('getWorkshops', () => {
 
 describe('getMeetupsByCountry', () => {
   it('returns meetups for the given country', () => {
-    const results = getMeetupsByCountry('Brazil');
+    const results = getMeetupsByCountry('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((m) => m.country === 'Brazil')).toBe(true);
+    expect(results.every((m) => m.country === 'Stockholm')).toBe(true);
   });
 
   it('returns empty for unknown country', () => {
@@ -129,8 +129,8 @@ describe('getMeetups', () => {
   });
 
   it('returns country-filtered list when country found', () => {
-    const results = getMeetups('United States');
-    expect(results.every((m) => m.country === 'United States')).toBe(true);
+    const results = getMeetups('Stockholm');
+    expect(results.every((m) => m.country === 'Stockholm')).toBe(true);
   });
 });
 

@@ -73,6 +73,7 @@ export const RESOURCE_CATEGORY_IDS = [
   "religious_trauma",
   "boundaries",
   "coming_out_safely",
+  "outside_home",
   "crisis_help",
 ] as const;
 
@@ -84,6 +85,7 @@ export const CATEGORY_LABELS: Record<ResourceCategory, string> = {
   religious_trauma: "Religious trauma",
   boundaries: "Boundaries",
   coming_out_safely: "Coming out safely",
+  outside_home: "School & community",
   crisis_help: "Crisis help",
 };
 
@@ -93,6 +95,7 @@ export const CATEGORY_COLORS: Record<ResourceCategory, string> = {
   religious_trauma: "#E8844E",
   boundaries: "#7BC9A7",
   coming_out_safely: "#5B8DEF",
+  outside_home: "#8B6FB5",
   crisis_help: "#D9534F",
 };
 

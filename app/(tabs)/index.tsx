@@ -108,7 +108,7 @@ export default function HomeScreen() {
 
         <Card style={styles.affirmation}>
           <Text style={styles.affirmationText}>
-            "You deserve safety, connection, and belonging — exactly as you are."
+            "You deserve safety, connection, and belonging — at home, at school, and everywhere you go."
           </Text>
         </Card>
       </Animated.ScrollView>

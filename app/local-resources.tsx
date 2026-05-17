@@ -1,55 +1,64 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  FlatList,
-  Linking,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
+import { SWEDISH_COUNTIES } from '@/constants/localResources';
+import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import {
   getResources,
   requestLocationPermission,
 } from '@/services/localResources';
-import { SUPPORTED_COUNTRIES } from '@/constants/localResources';
+import type { LocalResource, LocalResourceType } from '@/types';
 import {
   LOCAL_RESOURCE_TYPES,
-  LOCAL_RESOURCE_TYPE_LABELS,
-  LOCAL_RESOURCE_TYPE_ICONS,
   LOCAL_RESOURCE_TYPE_COLORS,
+  LOCAL_RESOURCE_TYPE_ICONS,
+  LOCAL_RESOURCE_TYPE_LABELS,
 } from '@/types';
-import type { LocalResource, LocalResourceType } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  Linking,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function LocalResourcesScreen() {
   const { profile } = useSession();
   const [selectedType, setSelectedType] = useState<LocalResourceType | undefined>(undefined);
-  const [selectedCountry, setSelectedCountry] = useState<string>(
-    profile?.country ?? 'United States'
+  const [selectedCounty, setSelectedCounty] = useState<string>(
+    profile?.country || 'Stockholm'
   );
   const [locationGranted, setLocationGranted] = useState(false);
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [showCountyPicker, setShowCountyPicker] = useState(false);
 
-  const resources = getResources(selectedCountry, selectedType);
+  useEffect(() => {
+    if (profile?.country) setSelectedCounty(profile.country);
+  }, [profile?.country]);
+
+  const resources = getResources(selectedCounty, selectedType);
 
   const handleRequestLocation = useCallback(async () => {
     const result = await requestLocationPermission();
     if (result.granted) {
       setLocationGranted(true);
-      Alert.alert('Location enabled', 'Showing resources closest to you.');
+      if (result.county) {
+        setSelectedCounty(result.county);
+        Alert.alert('Location detected', `Showing resources in ${result.county}.`);
+      } else {
+        Alert.alert('Location enabled', 'Could not detect your county. Browse the list to select it.');
+      }
     } else {
       Alert.alert(
         'Location not available',
-        'Location access was denied. You can still browse by country.',
+        'Location access was denied. You can still select your county manually.',
         [{ text: 'OK' }]
       );
     }
@@ -89,38 +98,38 @@ export default function LocalResourcesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Country picker */}
+      {/* County picker */}
       <TouchableOpacity
         testID="country-picker"
         style={styles.countryRow}
-        onPress={() => setShowCountryPicker((v) => !v)}
+        onPress={() => setShowCountyPicker((v) => !v)}
         activeOpacity={0.7}
       >
-        <Ionicons name="globe-outline" size={16} color={Colors.safeBlue} />
-        <Text style={styles.countryLabel}>{selectedCountry}</Text>
+        <Ionicons name="map-outline" size={16} color={Colors.safeBlue} />
+        <Text style={styles.countryLabel}>{selectedCounty}</Text>
         <Ionicons
-          name={showCountryPicker ? 'chevron-up' : 'chevron-down'}
+          name={showCountyPicker ? 'chevron-up' : 'chevron-down'}
           size={16}
           color={Colors.textMuted}
         />
       </TouchableOpacity>
 
-      {showCountryPicker && (
+      {showCountyPicker && (
         <View style={styles.countryList}>
-          {SUPPORTED_COUNTRIES.map((c) => (
+          {SWEDISH_COUNTIES.map((c) => (
             <TouchableOpacity
               key={c}
               testID={`country-${c}`}
-              style={[styles.countryOption, c === selectedCountry && styles.countryOptionActive]}
+              style={[styles.countryOption, c === selectedCounty && styles.countryOptionActive]}
               onPress={() => {
-                setSelectedCountry(c);
-                setShowCountryPicker(false);
+                setSelectedCounty(c);
+                setShowCountyPicker(false);
               }}
             >
               <Text
                 style={[
                   styles.countryOptionText,
-                  c === selectedCountry && styles.countryOptionTextActive,
+                  c === selectedCounty && styles.countryOptionTextActive,
                 ]}
               >
                 {c}
@@ -139,6 +148,7 @@ export default function LocalResourcesScreen() {
       >
         <TouchableOpacity
           testID="filter-all"
+          activeOpacity={0.7}
           style={[styles.chip, !selectedType && styles.chipActive]}
           onPress={() => setSelectedType(undefined)}
         >
@@ -151,6 +161,7 @@ export default function LocalResourcesScreen() {
             <TouchableOpacity
               key={type}
               testID={`filter-${type}`}
+              activeOpacity={0.7}
               style={[styles.chip, active && { backgroundColor: color, borderColor: color }]}
               onPress={() => setSelectedType(active ? undefined : type)}
             >
@@ -300,18 +311,23 @@ const styles = StyleSheet.create({
   countryOptionText: { fontSize: 15, color: Colors.textSecondary },
   countryOptionTextActive: { color: Colors.safeBlue, fontWeight: '600' },
 
-  filtersScroll: { flexGrow: 0 },
+  filtersScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+    marginVertical: Spacing.sm,
+  },
   filtersContent: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
     gap: Spacing.xs,
+    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    flexShrink: 0,
+    gap: 6,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
+    paddingVertical: 12,
     borderRadius: Radius.full,
     borderWidth: 1.5,
     borderColor: Colors.border,
@@ -321,8 +337,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.safeBlue,
     borderColor: Colors.safeBlue,
   },
-  chipText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
-  chipTextActive: { color: Colors.white },
+  chipText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '600' },
+  chipTextActive: { color: Colors.white, fontWeight: '600' },
 
   list: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
 

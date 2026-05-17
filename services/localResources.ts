@@ -3,27 +3,38 @@ import {
   LOCAL_RESOURCES,
   WORKSHOPS,
   LOCAL_MEETUPS,
+  SWEDISH_COUNTIES,
 } from '@/constants/localResources';
 
-// ── Location (optional) ───────────────────────────────────────────────────────
-// expo-location is not in the base install. To enable GPS-based country
-// detection, run: npx expo install expo-location
-// and uncomment the implementation below.
+// ── Location ──────────────────────────────────────────────────────────────────
 
 export interface LocationResult {
   granted: boolean;
-  lat?: number;
-  lng?: number;
+  county?: string; // matched Swedish county, if detectable
 }
 
 export async function requestLocationPermission(): Promise<LocationResult> {
   try {
-    // Dynamic import so the app still works without expo-location installed.
     const Location = await import('expo-location');
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') return { granted: false };
+
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    return { granted: true, lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+    // Reverse-geocode to get the region name (= Swedish county)
+    const [address] = await Location.reverseGeocodeAsync({
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+    });
+
+    const region = address?.region ?? '';
+    // Match against the known Swedish counties list (case-insensitive prefix match)
+    const matched = (SWEDISH_COUNTIES as readonly string[]).find(
+      (c) => region.toLowerCase().startsWith(c.toLowerCase()) ||
+             c.toLowerCase().startsWith(region.toLowerCase())
+    );
+
+    return { granted: true, county: matched };
   } catch {
     return { granted: false };
   }

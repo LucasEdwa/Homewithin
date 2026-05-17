@@ -10,7 +10,9 @@ import {
     setDisguiseStyle as storageSetDisguiseStyle,
     type DisguiseStyle,
 } from '@/services/storage';
+import { requestLocationPermission, getResources } from '@/services/localResources';
 import { supabase } from '@/services/supabase';
+import type { LocalResource } from '@/types';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
@@ -37,6 +39,8 @@ interface SessionState {
   locked: boolean;
   disguiseEnabled: boolean;
   disguiseStyle: DisguiseStyle;
+  nearbyCounty: string | null;
+  nearbyResources: LocalResource[];
 }
 
 interface SessionContextValue extends SessionState {
@@ -63,6 +67,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     locked: false,
     disguiseEnabled: false,
     disguiseStyle: 'weather',
+    nearbyCounty: null,
+    nearbyResources: [],
   });
   const appState = useRef(AppState.currentState);
 
@@ -156,6 +162,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         disguiseStyle,
         loading: false,
       }));
+
+      // Detect location in background — updates state when user responds to the OS prompt.
+      ;(async () => {
+        try {
+          const result = await requestLocationPermission();
+          if (result.granted && result.county) {
+            setState(s => ({
+              ...s,
+              nearbyCounty: result.county!,
+              nearbyResources: getResources(result.county!).slice(0, 5),
+            }));
+          }
+        } catch { /* silently ignore */ }
+      })();
     }
     init();
   }, []);
@@ -215,6 +235,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       locked: false,
       disguiseEnabled: false,
       disguiseStyle: 'weather',
+      nearbyCounty: null,
+      nearbyResources: [],
     });
   }
 
