@@ -7,11 +7,12 @@ interface CardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   elevated?: boolean;
+  testID?: string;
 }
 
-export function Card({ children, style, elevated = false }: CardProps) {
+export function Card({ children, style, elevated = false, testID }: CardProps) {
   return (
-    <View style={[styles.card, elevated && styles.elevated, style]}>
+    <View style={[styles.card, elevated && styles.elevated, style]} testID={testID}>
       {children}
     </View>
   );

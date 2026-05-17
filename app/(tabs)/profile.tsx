@@ -7,6 +7,7 @@ import { useSession } from '@/context/SessionContext';
 import { deleteAccount } from '@/services/account';
 import { syncProfile } from '@/services/matching';
 import { getBookmarkedResources } from '@/services/resources';
+import { getCheckIns, getJournalEntries } from '@/services/storage';
 import type { Resource } from '@/types';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -31,14 +33,90 @@ export default function ProfileScreen() {
   const [bookmarks, setBookmarks] = useState<Resource[]>([]);
   const [hidingPending, setHidingPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  console.log('[ProfileScreen] render — profile?', !!profile, 'hideFromSearch=', profile?.hideFromSearch, 'pending=', hidingPending);
+  const [exporting, setExporting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       getBookmarkedResources().then(setBookmarks);
     }, [])
   );
+
+  function handleChangeNickname() {
+    if (!profile) return;
+    Alert.prompt(
+      'Change nickname',
+      'Enter a new anonymous nickname (no real names).',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async (text: string | undefined) => {
+            const trimmed = text?.trim();
+            if (!trimmed || trimmed.length < 2) {
+              Alert.alert('Too short', 'Nickname must be at least 2 characters.');
+              return;
+            }
+            if (trimmed.length > 30) {
+              Alert.alert('Too long', 'Nickname must be 30 characters or fewer.');
+              return;
+            }
+            const updated = { ...profile, nickname: trimmed };
+            await setProfile(updated);
+            await syncProfile(updated).catch(() => {});
+          },
+        },
+      ],
+      'plain-text',
+      profile.nickname
+    );
+  }
+
+  async function handleExportData() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const [checkIns, journalEntries] = await Promise.all([
+        getCheckIns(),
+        getJournalEntries(),
+      ]);
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        profile: {
+          nickname: profile?.nickname,
+          country: profile?.country,
+          language: profile?.language,
+          ageRange: profile?.ageRange,
+        },
+        checkIns,
+        journalEntries: journalEntries.map((e) => ({
+          date: e.date,
+          body: e.body,
+          emotionTags: e.emotionTags,
+          moodTag: e.moodTag,
+          isHidden: e.isHidden,
+          createdAt: e.createdAt,
+        })),
+      };
+      await Share.share({
+        message: JSON.stringify(payload, null, 2),
+        title: 'HomeWithin — My Data Export',
+      });
+    } catch (e: any) {
+      if (e?.message !== 'The user did not share') {
+        Alert.alert('Export failed', 'Could not export your data. Please try again.');
+      }
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function handleNotificationPrefs() {
+    Alert.alert(
+      'Notification preferences',
+      'Push notifications are not enabled in this version. Stay tuned for future updates.',
+      [{ text: 'Got it' }]
+    );
+  }
 
   function handleDeleteAccount() {
     if (deleting) return;
@@ -132,7 +210,15 @@ export default function ProfileScreen() {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{profile?.nickname?.[0]?.toUpperCase() ?? '?'}</Text>
           </View>
-          <Text style={styles.nickname}>{profile?.nickname ?? 'Anonymous'}</Text>
+          <TouchableOpacity
+            onPress={handleChangeNickname}
+            accessibilityLabel="Change nickname"
+            accessibilityRole="button"
+            accessibilityHint="Double tap to change your anonymous nickname"
+          >
+            <Text style={styles.nickname}>{profile?.nickname ?? 'Anonymous'}</Text>
+            <Text style={styles.nicknameHint}>Tap to change nickname</Text>
+          </TouchableOpacity>
           {profile?.pronouns ? <Text style={styles.pronouns}>{profile.pronouns}</Text> : null}
           <Text style={styles.meta}>{profile?.country ?? ''} · {profile?.ageRange ?? ''}</Text>
         </Card>
@@ -192,8 +278,12 @@ export default function ProfileScreen() {
         {/* Data */}
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Your data</Text>
-          <SettingRow label="Export journal & check-ins" value="" onPress={() => {}} />
-          <SettingRow label="Notification preferences" value="" onPress={() => {}} />
+          <SettingRow
+            label="Export journal & check-ins"
+            value={exporting ? 'Exporting…' : ''}
+            onPress={handleExportData}
+          />
+          <SettingRow label="Notification preferences" value="" onPress={handleNotificationPrefs} />
         </Card>
 
         {/* Bookmarks */}
@@ -277,6 +367,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 30, fontWeight: '700', color: Colors.white },
   nickname: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
+  nicknameHint: { fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginTop: 2 },
   pronouns: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center' },
   meta: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
   sectionTitle: { fontSize: 17, fontWeight: '600', color: Colors.textPrimary, marginBottom: Spacing.xs },

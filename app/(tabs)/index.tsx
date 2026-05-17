@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -42,6 +43,7 @@ interface DashCardProps {
 export default function HomeScreen() {
   const { profile, safetyLevel } = useSession();
   const [todayCheckIn, setTodayCheckIn] = React.useState<CheckIn | null>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const name = profile?.nickname ?? 'Friend';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -49,12 +51,17 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       getTodayCheckIn().then(setTodayCheckIn);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
     }, [])
   );
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <Animated.ScrollView style={{ opacity: fadeAnim }} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{greeting}, {name}</Text>
@@ -96,6 +103,7 @@ export default function HomeScreen() {
           <DashCard icon="sparkles-outline"         title="AI Companion"       description="Talk through what's on your mind" color={Colors.mutedLavender} onPress={() => router.push('/ai-companion')} />
           <DashCard icon="map-outline"              title="Local Resources"    description="LGBTQ+ centers, shelters, legal aid" color={Colors.softGreen}     onPress={() => router.push('/local-resources')} />
           <DashCard icon="calendar-outline"         title="Events & Circles"   description="Workshops, meetups, online circles" color="#E8844E"              onPress={() => router.push('/events')} />
+          <DashCard icon="trending-up-outline"      title="My Progress"        description="Streaks, milestones, mood trends"   color={Colors.mutedLavender} onPress={() => router.push('/progress')} />
         </View>
 
         <Card style={styles.affirmation}>
@@ -103,7 +111,7 @@ export default function HomeScreen() {
             "You deserve safety, connection, and belonging — exactly as you are."
           </Text>
         </Card>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <EmergencyButton />
     </SafeAreaView>
