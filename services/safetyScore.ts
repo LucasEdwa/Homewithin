@@ -1,4 +1,4 @@
-export type SafetyStatus = 'green' | 'yellow' | 'red';
+export type SafetyStatus = "green" | "yellow" | "red";
 
 export interface SafetyAnswers {
   // Step 1 — This moment
@@ -31,10 +31,10 @@ export interface SafetyAnswers {
 
 export function computeSafetyScore(
   moodScore: number,
-  answers: SafetyAnswers
+  answers: SafetyAnswers,
 ): SafetyStatus {
   // Auto-red: immediate crisis signals — skip scoring entirely
-  if (answers.self_harm_thoughts || answers.currently_in_danger) return 'red';
+  if (answers.self_harm_thoughts || answers.currently_in_danger) return "red";
 
   let risk = 0;
 
@@ -44,17 +44,17 @@ export function computeSafetyScore(
   else if (moodScore <= 7) risk += 1;
 
   // High-weight risk factors
-  if (answers.physical_abuse)     risk += 4;
-  if (answers.housing_unstable)   risk += 3;
-  if (answers.emotional_control)  risk += 2;
-  if (answers.hopelessness)       risk += 2;
+  if (answers.physical_abuse) risk += 4;
+  if (answers.housing_unstable) risk += 3;
+  if (answers.emotional_control) risk += 2;
+  if (answers.hopelessness) risk += 2;
 
   // LGBTQ+-specific pressures
   if (answers.conversion_pressure) risk += 2;
-  if (answers.outed_recently)      risk += 2;
+  if (answers.outed_recently) risk += 2;
 
   // School & community
-  if (answers.bullied_at_school)   risk += 2;
+  if (answers.bullied_at_school) risk += 2;
   if (answers.community_hostility) risk += 2;
   if (answers.unsafe_outside_home) risk += 1;
 
@@ -69,12 +69,12 @@ export function computeSafetyScore(
 
   // Protective factors
   if (answers.trusted_contact) risk -= 2;
-  if (answers.safe_place)      risk -= 1;
+  if (answers.safe_place) risk -= 1;
   if (answers.basic_needs_met) risk -= 1;
 
-  if (risk >= 5) return 'red';
-  if (risk >= 2) return 'yellow';
-  return 'green';
+  if (risk >= 5) return "red";
+  if (risk >= 2) return "yellow";
+  return "green";
 }
 
 export function hasCrisisSignal(answers: SafetyAnswers): boolean {

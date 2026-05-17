@@ -1,8 +1,8 @@
-import React from 'react';
-import { render } from '@testing-library/react-native';
+import type { SafetyLevel, UserProfile } from '@/context/SessionContext';
 import { SessionContext } from '@/context/SessionContext';
-import type { UserProfile, SafetyLevel } from '@/context/SessionContext';
 import type { LocalResource } from '@/types';
+import { render } from '@testing-library/react-native';
+import React from 'react';
 
 interface MockSession {
   profile?: UserProfile | null;

@@ -1,3 +1,4 @@
+import { getResources, requestLocationPermission } from '@/services/localResources';
 import {
     getSession,
     isOnboardingComplete,
@@ -10,7 +11,6 @@ import {
     setDisguiseStyle as storageSetDisguiseStyle,
     type DisguiseStyle,
 } from '@/services/storage';
-import { requestLocationPermission, getResources } from '@/services/localResources';
 import { supabase } from '@/services/supabase';
 import type { LocalResource } from '@/types';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';

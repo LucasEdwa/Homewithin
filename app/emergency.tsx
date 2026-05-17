@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  BackHandler,
-  Alert,
-  Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { deleteSensitiveData, getSafetyPlan } from '@/services/storage';
-import { LOCAL_RESOURCE_TYPE_LABELS, LOCAL_RESOURCE_TYPE_ICONS, LOCAL_RESOURCE_TYPE_COLORS } from '@/types';
+import { LOCAL_RESOURCE_TYPE_COLORS, LOCAL_RESOURCE_TYPE_ICONS, LOCAL_RESOURCE_TYPE_LABELS } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  BackHandler,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 

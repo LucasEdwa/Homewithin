@@ -1,23 +1,22 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Animated,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
-import { Card } from '@/components/ui/Card';
 import { EmergencyButton } from '@/components/EmergencyButton';
+import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { getTodayCheckIn } from '@/services/storage';
-import { MOOD_ICONS, MOOD_COLORS, MOOD_LABELS } from '@/types';
 import type { CheckIn } from '@/types';
+import { MOOD_COLORS, MOOD_ICONS, MOOD_LABELS } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useRef } from 'react';
+import {
+    Animated,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 

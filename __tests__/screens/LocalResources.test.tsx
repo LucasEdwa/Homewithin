@@ -1,5 +1,5 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
 jest.mock('@/services/localResources', () => ({
   getResources: jest.fn(),

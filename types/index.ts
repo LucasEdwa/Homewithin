@@ -254,7 +254,7 @@ export interface LessonProgress {
 
 export interface AIMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   body: string;
   createdAt: string;
 }
@@ -271,11 +271,11 @@ export interface CircleMessage {
 // ─── Chosen Family ────────────────────────────────────────────────────────────
 
 export type SupportRole =
-  | 'trusted_friend'
-  | 'mentor'
-  | 'therapist'
-  | 'emergency_contact'
-  | 'community_group';
+  | "trusted_friend"
+  | "mentor"
+  | "therapist"
+  | "emergency_contact"
+  | "community_group";
 
 export interface SupportRoleMeta {
   id: SupportRole;
@@ -283,49 +283,49 @@ export interface SupportRoleMeta {
   icon: string;
   description: string;
   color: string;
-  contactType: 'phone' | 'sms' | 'none';
+  contactType: "phone" | "sms" | "none";
 }
 
 export const SUPPORT_ROLES: SupportRoleMeta[] = [
   {
-    id: 'trusted_friend',
-    label: 'Trusted Friend',
-    icon: 'heart-outline',
-    description: 'Someone who knows and accepts you',
-    color: '#5B8DEF',
-    contactType: 'sms',
+    id: "trusted_friend",
+    label: "Trusted Friend",
+    icon: "heart-outline",
+    description: "Someone who knows and accepts you",
+    color: "#5B8DEF",
+    contactType: "sms",
   },
   {
-    id: 'mentor',
-    label: 'Mentor',
-    icon: 'school-outline',
-    description: 'A guide on your healing journey',
-    color: '#B8A8E3',
-    contactType: 'sms',
+    id: "mentor",
+    label: "Mentor",
+    icon: "school-outline",
+    description: "A guide on your healing journey",
+    color: "#B8A8E3",
+    contactType: "sms",
   },
   {
-    id: 'therapist',
-    label: 'Therapist',
-    icon: 'medical-outline',
-    description: 'Professional mental health support',
-    color: '#7BC9A7',
-    contactType: 'phone',
+    id: "therapist",
+    label: "Therapist",
+    icon: "medical-outline",
+    description: "Professional mental health support",
+    color: "#7BC9A7",
+    contactType: "phone",
   },
   {
-    id: 'emergency_contact',
-    label: 'Emergency Contact',
-    icon: 'shield-checkmark-outline',
-    description: 'First person to call in a crisis',
-    color: '#D9534F',
-    contactType: 'phone',
+    id: "emergency_contact",
+    label: "Emergency Contact",
+    icon: "shield-checkmark-outline",
+    description: "First person to call in a crisis",
+    color: "#D9534F",
+    contactType: "phone",
   },
   {
-    id: 'community_group',
-    label: 'Community Group',
-    icon: 'people-outline',
-    description: 'A group where you belong',
-    color: '#E8844E',
-    contactType: 'none',
+    id: "community_group",
+    label: "Community Group",
+    icon: "people-outline",
+    description: "A group where you belong",
+    color: "#E8844E",
+    contactType: "none",
   },
 ];
 
@@ -336,44 +336,44 @@ export interface SupportPerson {
   contactInfo?: string;
   notes?: string;
   createdAt: string;
-  matchId?: string;    // linked peer match ID (for in-app chat)
+  matchId?: string; // linked peer match ID (for in-app chat)
   matchUserId?: string; // peer's userId for display
-  circleId?: string;   // linked support circle ID (for community_group role)
+  circleId?: string; // linked support circle ID (for community_group role)
 }
 
 // ─── Local Resources & Events ─────────────────────────────────────────────────
 
 export const LOCAL_RESOURCE_TYPES = [
-  'lgbtq_center',
-  'shelter',
-  'therapist',
-  'legal_aid',
-  'support_group',
+  "lgbtq_center",
+  "shelter",
+  "therapist",
+  "legal_aid",
+  "support_group",
 ] as const;
 export type LocalResourceType = (typeof LOCAL_RESOURCE_TYPES)[number];
 
 export const LOCAL_RESOURCE_TYPE_LABELS: Record<LocalResourceType, string> = {
-  lgbtq_center: 'LGBTQ+ Center',
-  shelter: 'Shelter',
-  therapist: 'Therapist',
-  legal_aid: 'Legal Aid',
-  support_group: 'Support Group',
+  lgbtq_center: "LGBTQ+ Center",
+  shelter: "Shelter",
+  therapist: "Therapist",
+  legal_aid: "Legal Aid",
+  support_group: "Support Group",
 };
 
 export const LOCAL_RESOURCE_TYPE_ICONS: Record<LocalResourceType, string> = {
-  lgbtq_center: 'heart-circle-outline',
-  shelter: 'home-outline',
-  therapist: 'medical-outline',
-  legal_aid: 'briefcase-outline',
-  support_group: 'people-outline',
+  lgbtq_center: "heart-circle-outline",
+  shelter: "home-outline",
+  therapist: "medical-outline",
+  legal_aid: "briefcase-outline",
+  support_group: "people-outline",
 };
 
 export const LOCAL_RESOURCE_TYPE_COLORS: Record<LocalResourceType, string> = {
-  lgbtq_center: '#5B8DEF',
-  shelter: '#7BC9A7',
-  therapist: '#B8A8E3',
-  legal_aid: '#E8844E',
-  support_group: '#D9534F',
+  lgbtq_center: "#5B8DEF",
+  shelter: "#7BC9A7",
+  therapist: "#B8A8E3",
+  legal_aid: "#E8844E",
+  support_group: "#D9534F",
 };
 
 export interface LocalResource {
@@ -391,7 +391,7 @@ export interface LocalResource {
   lng?: number;
 }
 
-export type WorkshopFormat = 'online' | 'in_person' | 'hybrid';
+export type WorkshopFormat = "online" | "in_person" | "hybrid";
 
 export interface Workshop {
   id: string;

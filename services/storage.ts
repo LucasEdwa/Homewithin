@@ -30,7 +30,11 @@ export async function isOnboardingComplete(): Promise<boolean> {
 export async function saveSession(data: object) {
   // Strip potentially large arrays before storing — SecureStore has a 2 KB limit.
   // needs/intentions are re-fetched from Supabase on the next authenticated launch.
-  const { needs: _n, intentions: _i, ...slim } = data as Record<string, unknown>;
+  const {
+    needs: _n,
+    intentions: _i,
+    ...slim
+  } = data as Record<string, unknown>;
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(slim));
 }
 

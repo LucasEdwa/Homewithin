@@ -1,10 +1,15 @@
-import type { LocalResource, LocalResourceType, Workshop, LocalMeetup } from '@/types';
 import {
-  LOCAL_RESOURCES,
-  WORKSHOPS,
-  LOCAL_MEETUPS,
-  SWEDISH_COUNTIES,
-} from '@/constants/localResources';
+    LOCAL_MEETUPS,
+    LOCAL_RESOURCES,
+    SWEDISH_COUNTIES,
+    WORKSHOPS,
+} from "@/constants/localResources";
+import type {
+    LocalMeetup,
+    LocalResource,
+    LocalResourceType,
+    Workshop,
+} from "@/types";
 
 // ── Location ──────────────────────────────────────────────────────────────────
 
@@ -15,11 +20,13 @@ export interface LocationResult {
 
 export async function requestLocationPermission(): Promise<LocationResult> {
   try {
-    const Location = await import('expo-location');
+    const Location = await import("expo-location");
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return { granted: false };
+    if (status !== "granted") return { granted: false };
 
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    const pos = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
 
     // Reverse-geocode to get the region name (= Swedish county)
     const [address] = await Location.reverseGeocodeAsync({
@@ -27,11 +34,12 @@ export async function requestLocationPermission(): Promise<LocationResult> {
       longitude: pos.coords.longitude,
     });
 
-    const region = address?.region ?? '';
+    const region = address?.region ?? "";
     // Match against the known Swedish counties list (case-insensitive prefix match)
     const matched = (SWEDISH_COUNTIES as readonly string[]).find(
-      (c) => region.toLowerCase().startsWith(c.toLowerCase()) ||
-             c.toLowerCase().startsWith(region.toLowerCase())
+      (c) =>
+        region.toLowerCase().startsWith(c.toLowerCase()) ||
+        c.toLowerCase().startsWith(region.toLowerCase()),
     );
 
     return { granted: true, county: matched };
@@ -44,7 +52,7 @@ export async function requestLocationPermission(): Promise<LocationResult> {
 
 export function getResourcesByCountry(country: string): LocalResource[] {
   return LOCAL_RESOURCES.filter(
-    (r) => r.country.toLowerCase() === country.toLowerCase()
+    (r) => r.country.toLowerCase() === country.toLowerCase(),
   );
 }
 
@@ -54,7 +62,7 @@ export function getResourcesByType(type: LocalResourceType): LocalResource[] {
 
 export function filterResources(
   country: string,
-  type?: LocalResourceType
+  type?: LocalResourceType,
 ): LocalResource[] {
   const byCountry = getResourcesByCountry(country);
   if (!type) return byCountry;
@@ -62,7 +70,10 @@ export function filterResources(
 }
 
 // Returns all resources when country is unrecognised (fallback to full list).
-export function getResources(country?: string, type?: LocalResourceType): LocalResource[] {
+export function getResources(
+  country?: string,
+  type?: LocalResourceType,
+): LocalResource[] {
   if (!country) return type ? getResourcesByType(type) : LOCAL_RESOURCES;
   const results = filterResources(country, type);
   if (results.length === 0 && country) {
@@ -83,7 +94,7 @@ export function getWorkshops(category?: string): Workshop[] {
 
 export function getMeetupsByCountry(country: string): LocalMeetup[] {
   return LOCAL_MEETUPS.filter(
-    (m) => m.country.toLowerCase() === country.toLowerCase()
+    (m) => m.country.toLowerCase() === country.toLowerCase(),
   );
 }
 
@@ -95,7 +106,12 @@ export function getMeetups(country?: string): LocalMeetup[] {
 
 // ── Distance (haversine, km) ──────────────────────────────────────────────────
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
@@ -110,7 +126,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 export function sortByDistance<T extends { lat?: number; lng?: number }>(
   items: T[],
   userLat: number,
-  userLng: number
+  userLng: number,
 ): T[] {
   return [...items].sort((a, b) => {
     const dA =

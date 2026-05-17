@@ -1,7 +1,7 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { router } from 'expo-router';
 import SafetyScreen from '@/app/safety';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
+import React from 'react';
 import { renderWithSession } from '../helpers/renderWithSession';
 
 jest.mock('@/services/localResources', () => ({
