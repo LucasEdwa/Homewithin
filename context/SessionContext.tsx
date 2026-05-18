@@ -39,7 +39,7 @@ interface SessionState {
   locked: boolean;
   disguiseEnabled: boolean;
   disguiseStyle: DisguiseStyle;
-  nearbyCounty: string | null;
+  nearbyState: string | null;
   nearbyResources: LocalResource[];
 }
 
@@ -53,6 +53,7 @@ interface SessionContextValue extends SessionState {
   lock: () => void;
   setDisguiseEnabled: (enabled: boolean) => Promise<void>;
   setDisguiseStyle: (style: DisguiseStyle) => Promise<void>;
+  refreshLocation: () => Promise<void>;
 }
 
 export const SessionContext = createContext<SessionContextValue | null>(null);
@@ -67,7 +68,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     locked: false,
     disguiseEnabled: false,
     disguiseStyle: 'weather',
-    nearbyCounty: null,
+    nearbyState: null,
     nearbyResources: [],
   });
   const appState = useRef(AppState.currentState);
@@ -167,11 +168,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       ;(async () => {
         try {
           const result = await requestLocationPermission();
-          if (result.granted && result.county) {
+          if (result.granted && result.state) {
             setState(s => ({
               ...s,
-              nearbyCounty: result.county!,
-              nearbyResources: getResources(result.county!).slice(0, 5),
+              nearbyState: result.state!,
+              nearbyResources: getResources(result.state!).slice(0, 5),
             }));
           }
         } catch { /* silently ignore */ }
@@ -235,7 +236,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       locked: false,
       disguiseEnabled: false,
       disguiseStyle: 'weather',
-      nearbyCounty: null,
+      nearbyState: null,
       nearbyResources: [],
     });
   }
@@ -247,6 +248,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     } catch (e: any) {
       console.error('setDisguiseEnabled failed:', e?.message);
     }
+  }
+
+  async function refreshLocation() {
+    try {
+      const result = await requestLocationPermission();
+      if (result.granted && result.state) {
+        setState((s) => ({
+          ...s,
+          nearbyState: result.state!,
+          nearbyResources: getResources(result.state!).slice(0, 5),
+        }));
+      }
+    } catch { /* silently ignore */ }
   }
 
   async function setDisguiseStyle(style: DisguiseStyle) {
@@ -271,6 +285,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         lock,
         setDisguiseEnabled,
         setDisguiseStyle,
+        refreshLocation,
       }}
     >
       {children}

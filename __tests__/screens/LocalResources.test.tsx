@@ -12,10 +12,8 @@ jest.mock('expo-router', () => ({
 
 jest.mock('@/context/SessionContext', () => ({
   useSession: () => ({
-    profile: {
-      nickname: 'TestUser',
-      country: 'Stockholm',
-    },
+    nearbyState: 'Stockholm',
+    profile: { nickname: 'TestUser', country: 'Brazil' },
   }),
 }));
 
@@ -36,7 +34,7 @@ const SAMPLE_RESOURCES = [
     name: 'RFSL Stockholm',
     type: 'lgbtq_center' as const,
     description: 'HBTQ+-förening i Stockholm.',
-    country: 'Stockholm',
+    state: 'Stockholm',
     website: 'https://www.rfslstockholm.com',
     phone: '08-501 62 900',
   },
@@ -45,7 +43,7 @@ const SAMPLE_RESOURCES = [
     name: 'Mind – Självmordslinjen',
     type: 'support_group' as const,
     description: 'Krisstöd dygnet runt.',
-    country: 'Sweden',
+    state: 'Sweden',
     website: 'https://mind.se',
   },
 ];
@@ -91,22 +89,22 @@ describe('LocalResourcesScreen — rendering', () => {
   });
 });
 
-describe('LocalResourcesScreen — county picker', () => {
-  it('shows Stockholm as default county (from profile)', () => {
+describe('LocalResourcesScreen — state picker', () => {
+  it('shows Stockholm as default state (from profile)', () => {
     render(<LocalResourcesScreen />);
     expect(screen.getByText('Stockholm')).toBeTruthy();
   });
 
-  it('toggles county dropdown on press', () => {
+  it('toggles state dropdown on press', () => {
     render(<LocalResourcesScreen />);
-    fireEvent.press(screen.getByTestId('country-picker'));
-    expect(screen.getByTestId('country-Blekinge')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('state-picker'));
+    expect(screen.getByTestId('state-Blekinge')).toBeTruthy();
   });
 
-  it('selects a different county', () => {
+  it('selects a different state', () => {
     render(<LocalResourcesScreen />);
-    fireEvent.press(screen.getByTestId('country-picker'));
-    fireEvent.press(screen.getByTestId('country-Uppsala'));
+    fireEvent.press(screen.getByTestId('state-picker'));
+    fireEvent.press(screen.getByTestId('state-Uppsala'));
     expect(mockGetResources).toHaveBeenCalledWith('Uppsala', undefined);
   });
 });

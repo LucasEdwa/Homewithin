@@ -54,7 +54,7 @@ export const EMOTION_COLORS: Record<EmotionTag, string> = {
 };
 
 export interface CheckIn {
-  id: string;
+  id?: string; // set by DB; may be absent in locally-stored entries
   date: string; // YYYY-MM-DD
   moodScore: MoodLevel;
   anxietyScore: number; // 1–10
@@ -381,7 +381,7 @@ export interface LocalResource {
   name: string;
   type: LocalResourceType;
   description: string;
-  country: string;
+  state: string;
   region?: string;
   city?: string;
   website?: string;
@@ -411,7 +411,7 @@ export interface LocalMeetup {
   title: string;
   description: string;
   city: string;
-  country: string;
+  state: string;
   date?: string;
   link?: string;
   lat?: number;

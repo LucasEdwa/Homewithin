@@ -6,30 +6,30 @@ import {
 import {
   filterResources,
   getMeetups,
-  getMeetupsByCountry,
+  getMeetupsByState,
   getResources,
-  getResourcesByCountry,
+  getResourcesByState,
   getResourcesByType,
   getWorkshops,
   sortByDistance,
 } from '@/services/localResources';
 import type { LocalResource } from '@/types';
 
-describe('getResourcesByCountry', () => {
-  it('returns only resources for the given county', () => {
-    const results = getResourcesByCountry('Stockholm');
+describe('getResourcesByState', () => {
+  it('returns only resources for the given state', () => {
+    const results = getResourcesByState('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.country === 'Stockholm')).toBe(true);
+    expect(results.every((r) => r.state === 'Stockholm')).toBe(true);
   });
 
   it('is case-insensitive', () => {
-    const lower = getResourcesByCountry('stockholm');
-    const normal = getResourcesByCountry('Stockholm');
+    const lower = getResourcesByState('stockholm');
+    const normal = getResourcesByState('Stockholm');
     expect(lower.length).toBe(normal.length);
   });
 
-  it('returns empty array for unsupported county', () => {
-    expect(getResourcesByCountry('Atlantis')).toEqual([]);
+  it('returns empty array for unsupported state', () => {
+    expect(getResourcesByState('Atlantis')).toEqual([]);
   });
 });
 
@@ -49,8 +49,8 @@ describe('getResourcesByType', () => {
 });
 
 describe('filterResources', () => {
-  it('returns county resources when no type given', () => {
-    const all = getResourcesByCountry('Stockholm');
+  it('returns state resources when no type given', () => {
+    const all = getResourcesByState('Stockholm');
     const filtered = filterResources('Stockholm');
     expect(filtered.length).toBe(all.length);
   });
@@ -58,29 +58,29 @@ describe('filterResources', () => {
   it('narrows by type', () => {
     const results = filterResources('Stockholm', 'therapist');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.type === 'therapist' && r.country === 'Stockholm')).toBe(true);
+    expect(results.every((r) => r.type === 'therapist' && r.state === 'Stockholm')).toBe(true);
   });
 
-  it('returns empty array when type not present for county', () => {
+  it('returns empty array when type not present for state', () => {
     const results = filterResources('Gotland', 'support_group');
     expect(Array.isArray(results)).toBe(true);
   });
 });
 
 describe('getResources (public API)', () => {
-  it('returns national resources when county not in dataset', () => {
+  it('returns national resources when state not in dataset', () => {
     const results = getResources('Narnia');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.country === 'Sweden')).toBe(true);
+    expect(results.every((r) => r.state === 'Sweden')).toBe(true);
   });
 
-  it('returns county + national resources when county provided', () => {
+  it('returns state + national resources when state provided', () => {
     const results = getResources('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.country === 'Stockholm' || r.country === 'Sweden')).toBe(true);
+    expect(results.every((r) => r.state === 'Stockholm' || r.state === 'Sweden')).toBe(true);
   });
 
-  it('filters by type when no country given', () => {
+  it('filters by type when no state given', () => {
     const results = getResources(undefined, 'shelter');
     expect(results.every((r) => r.type === 'shelter')).toBe(true);
     expect(results.length).toBeGreaterThan(0);
@@ -112,40 +112,40 @@ describe('getWorkshops', () => {
   });
 });
 
-describe('getMeetupsByCountry', () => {
-  it('returns meetups for the given county', () => {
-    const results = getMeetupsByCountry('Stockholm');
+describe('getMeetupsByState', () => {
+  it('returns meetups for the given state', () => {
+    const results = getMeetupsByState('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((m) => m.country === 'Stockholm')).toBe(true);
+    expect(results.every((m) => m.state === 'Stockholm')).toBe(true);
   });
 
-  it('returns empty for unknown county', () => {
-    expect(getMeetupsByCountry('Wakanda')).toEqual([]);
+  it('returns empty for unknown state', () => {
+    expect(getMeetupsByState('Wakanda')).toEqual([]);
   });
 });
 
 describe('getMeetups', () => {
-  it('returns all meetups when no country', () => {
+  it('returns all meetups when no state', () => {
     expect(getMeetups().length).toBe(LOCAL_MEETUPS.length);
   });
 
-  it('returns national meetups when county not in dataset', () => {
+  it('returns national meetups when state not in dataset', () => {
     const results = getMeetups('Utopia');
-    expect(results.every((m) => m.country === 'Sweden')).toBe(true);
+    expect(results.every((m) => m.state === 'Sweden')).toBe(true);
   });
 
-  it('returns county + national meetups when county found', () => {
+  it('returns state + national meetups when state found', () => {
     const results = getMeetups('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((m) => m.country === 'Stockholm' || m.country === 'Sweden')).toBe(true);
+    expect(results.every((m) => m.state === 'Stockholm' || m.state === 'Sweden')).toBe(true);
   });
 });
 
 describe('sortByDistance', () => {
   const items: LocalResource[] = [
-    { id: 'a', name: 'Far', type: 'lgbtq_center', description: '', country: 'X', lat: 51.5, lng: -0.1 },
-    { id: 'b', name: 'Near', type: 'lgbtq_center', description: '', country: 'X', lat: 48.85, lng: 2.35 },
-    { id: 'c', name: 'No coords', type: 'lgbtq_center', description: '', country: 'X' },
+    { id: 'a', name: 'Far', type: 'lgbtq_center', description: '', state: 'X', lat: 51.5, lng: -0.1 },
+    { id: 'b', name: 'Near', type: 'lgbtq_center', description: '', state: 'X', lat: 48.85, lng: 2.35 },
+    { id: 'c', name: 'No coords', type: 'lgbtq_center', description: '', state: 'X' },
   ];
 
   it('sorts items with coords before items without', () => {

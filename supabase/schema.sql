@@ -4,7 +4,7 @@
 -- ─── Sprint 2: Check-ins ─────────────────────────────────────────────────────
 
 create table if not exists check_ins (
-  id           text primary key,
+  id           uuid default gen_random_uuid() primary key,
   user_id      uuid references auth.users(id) on delete cascade not null,
   date         date not null,
   mood_score   int  not null check (mood_score between 1 and 5),

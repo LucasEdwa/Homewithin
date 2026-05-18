@@ -1,7 +1,7 @@
 import {
     LOCAL_MEETUPS,
     LOCAL_RESOURCES,
-    SWEDISH_COUNTIES,
+    SWEDISH_STATES,
     WORKSHOPS,
 } from "@/constants/localResources";
 import type {
@@ -15,7 +15,7 @@ import type {
 
 export interface LocationResult {
   granted: boolean;
-  county?: string; // matched Swedish county, if detectable
+  state?: string; // matched Swedish state, if detectable
 }
 
 export async function requestLocationPermission(): Promise<LocationResult> {
@@ -28,21 +28,21 @@ export async function requestLocationPermission(): Promise<LocationResult> {
       accuracy: Location.Accuracy.Balanced,
     });
 
-    // Reverse-geocode to get the region name (= Swedish county)
+    // Reverse-geocode to get the region name (= Swedish state)
     const [address] = await Location.reverseGeocodeAsync({
       latitude: pos.coords.latitude,
       longitude: pos.coords.longitude,
     });
 
     const region = address?.region ?? "";
-    // Match against the known Swedish counties list (case-insensitive prefix match)
-    const matched = (SWEDISH_COUNTIES as readonly string[]).find(
-      (c) =>
-        region.toLowerCase().startsWith(c.toLowerCase()) ||
-        c.toLowerCase().startsWith(region.toLowerCase()),
+    // Match against the known Swedish states list (case-insensitive prefix match)
+    const matched = (SWEDISH_STATES as readonly string[]).find(
+      (s) =>
+        region.toLowerCase().startsWith(s.toLowerCase()) ||
+        s.toLowerCase().startsWith(region.toLowerCase()),
     );
 
-    return { granted: true, county: matched };
+    return { granted: true, state: matched };
   } catch {
     return { granted: false };
   }
@@ -50,9 +50,9 @@ export async function requestLocationPermission(): Promise<LocationResult> {
 
 // ── Resource helpers ──────────────────────────────────────────────────────────
 
-export function getResourcesByCountry(country: string): LocalResource[] {
+export function getResourcesByState(state: string): LocalResource[] {
   return LOCAL_RESOURCES.filter(
-    (r) => r.country.toLowerCase() === country.toLowerCase(),
+    (r) => r.state.toLowerCase() === state.toLowerCase(),
   );
 }
 
@@ -61,34 +61,34 @@ export function getResourcesByType(type: LocalResourceType): LocalResource[] {
 }
 
 export function filterResources(
-  country: string,
+  state: string,
   type?: LocalResourceType,
 ): LocalResource[] {
-  const byCountry = getResourcesByCountry(country);
-  if (!type) return byCountry;
-  return byCountry.filter((r) => r.type === type);
+  const byState = getResourcesByState(state);
+  if (!type) return byState;
+  return byState.filter((r) => r.type === type);
 }
 
-// Returns county resources + national (country: 'Sweden') resources for any county selection.
+// Returns state resources + national (state: 'Sweden') resources for any state selection.
 export function getResources(
-  country?: string,
+  state?: string,
   type?: LocalResourceType,
 ): LocalResource[] {
-  if (!country) return type ? getResourcesByType(type) : LOCAL_RESOURCES;
+  if (!state) return type ? getResourcesByType(type) : LOCAL_RESOURCES;
 
-  const countyResults = filterResources(country, type);
+  const stateResults = filterResources(state, type);
 
-  // Include national resources alongside any county-specific ones
+  // Include national resources alongside any state-specific ones
   const nationalResults =
-    country.toLowerCase() !== "sweden"
+    state.toLowerCase() !== "sweden"
       ? LOCAL_RESOURCES.filter(
           (r) =>
-            r.country.toLowerCase() === "sweden" &&
+            r.state.toLowerCase() === "sweden" &&
             (!type || r.type === type),
         )
       : [];
 
-  const combined = [...countyResults, ...nationalResults];
+  const combined = [...stateResults, ...nationalResults];
   if (combined.length === 0) {
     return type ? getResourcesByType(type) : LOCAL_RESOURCES;
   }
@@ -104,22 +104,22 @@ export function getWorkshops(category?: string): Workshop[] {
 
 // ── Meetup helpers ────────────────────────────────────────────────────────────
 
-export function getMeetupsByCountry(country: string): LocalMeetup[] {
+export function getMeetupsByState(state: string): LocalMeetup[] {
   return LOCAL_MEETUPS.filter(
-    (m) => m.country.toLowerCase() === country.toLowerCase(),
+    (m) => m.state.toLowerCase() === state.toLowerCase(),
   );
 }
 
-export function getMeetups(country?: string): LocalMeetup[] {
-  if (!country) return LOCAL_MEETUPS;
+export function getMeetups(state?: string): LocalMeetup[] {
+  if (!state) return LOCAL_MEETUPS;
 
-  const countyResults = getMeetupsByCountry(country);
+  const stateResults = getMeetupsByState(state);
   const nationalResults =
-    country.toLowerCase() !== "sweden"
-      ? LOCAL_MEETUPS.filter((m) => m.country.toLowerCase() === "sweden")
+    state.toLowerCase() !== "sweden"
+      ? LOCAL_MEETUPS.filter((m) => m.state.toLowerCase() === "sweden")
       : [];
 
-  const combined = [...countyResults, ...nationalResults];
+  const combined = [...stateResults, ...nationalResults];
   return combined.length > 0 ? combined : LOCAL_MEETUPS;
 }
 

@@ -9,12 +9,13 @@ interface MockSession {
   safetyLevel?: SafetyLevel;
   onboardingComplete?: boolean;
   loading?: boolean;
-  nearbyCounty?: string | null;
+  nearbyState?: string | null;
   nearbyResources?: LocalResource[];
   setProfile?: jest.Mock;
   setSafetyLevel?: jest.Mock;
   completeOnboarding?: jest.Mock;
   reset?: jest.Mock;
+  refreshLocation?: jest.Mock;
 }
 
 export function renderWithSession(ui: React.ReactElement, session: MockSession = {}) {
@@ -23,12 +24,13 @@ export function renderWithSession(ui: React.ReactElement, session: MockSession =
     safetyLevel: null,
     onboardingComplete: false,
     loading: false,
-    nearbyCounty: null,
+    nearbyState: null,
     nearbyResources: [],
     setProfile: jest.fn().mockResolvedValue(undefined),
     setSafetyLevel: jest.fn(),
     completeOnboarding: jest.fn().mockResolvedValue(undefined),
     reset: jest.fn(),
+    refreshLocation: jest.fn().mockResolvedValue(undefined),
     ...session,
   };
 

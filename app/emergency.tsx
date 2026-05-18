@@ -32,7 +32,7 @@ interface ActionCardProps {
 }
 
 export default function EmergencyScreen() {
-  const { profile, nearbyCounty, nearbyResources } = useSession();
+  const { profile, nearbyState, nearbyResources } = useSession();
   const [safetyPlan, setSafetyPlan] = useState<string[]>([]);
   const [showPlan, setShowPlan] = useState(false);
 
@@ -118,7 +118,7 @@ export default function EmergencyScreen() {
           <Card style={styles.section}>
             <View style={styles.localHelpHeader}>
               <Ionicons name="location-outline" size={18} color={Colors.safeBlue} />
-              <Text style={styles.sectionTitle}>Local help centers — {nearbyCounty}</Text>
+              <Text style={styles.sectionTitle}>Local help centers — {nearbyState}</Text>
             </View>
             {nearbyResources.map((r) => (
               <View key={r.id} style={styles.resourceRow}>
@@ -159,7 +159,7 @@ export default function EmergencyScreen() {
               style={styles.seeAllBtn}
               onPress={() => router.push('/local-resources' as any)}
             >
-              <Text style={styles.seeAllText}>See all resources in {nearbyCounty}</Text>
+              <Text style={styles.seeAllText}>See all resources in {nearbyState}</Text>
               <Ionicons name="arrow-forward-outline" size={14} color={Colors.safeBlue} />
             </TouchableOpacity>
           </Card>

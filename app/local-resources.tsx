@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { SWEDISH_COUNTIES } from '@/constants/localResources';
+import { SWEDISH_STATES } from '@/constants/localResources';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import {
@@ -31,36 +31,32 @@ import {
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function LocalResourcesScreen() {
-  const { profile } = useSession();
+  const { nearbyState } = useSession();
   const [selectedType, setSelectedType] = useState<LocalResourceType | undefined>(undefined);
-  const [selectedCounty, setSelectedCounty] = useState<string>(
-    profile?.country || 'Stockholm'
-  );
+  const [selectedState, setSelectedState] = useState<string>(nearbyState ?? 'Stockholm');
   const [locationGranted, setLocationGranted] = useState(false);
-  const [showCountyPicker, setShowCountyPicker] = useState(false);
+  const [showStatePicker, setShowStatePicker] = useState(false);
 
   useEffect(() => {
-    if (profile?.country && (SWEDISH_COUNTIES as readonly string[]).includes(profile.country)) {
-      setSelectedCounty(profile.country);
-    }
-  }, [profile?.country]);
+    if (nearbyState) setSelectedState(nearbyState);
+  }, [nearbyState]);
 
-  const resources = getResources(selectedCounty, selectedType);
+  const resources = getResources(selectedState, selectedType);
 
   const handleRequestLocation = useCallback(async () => {
     const result = await requestLocationPermission();
     if (result.granted) {
       setLocationGranted(true);
-      if (result.county) {
-        setSelectedCounty(result.county);
-        Alert.alert('Location detected', `Showing resources in ${result.county}.`);
+      if (result.state) {
+        setSelectedState(result.state);
+        Alert.alert('Location detected', `Showing resources in ${result.state}.`);
       } else {
-        Alert.alert('Location enabled', 'Could not detect your county. Browse the list to select it.');
+        Alert.alert('Location enabled', 'Could not detect your state. Browse the list to select it.');
       }
     } else {
       Alert.alert(
         'Location not available',
-        'Location access was denied. You can still select your county manually.',
+        'Location access was denied. You can still select your state manually.',
         [{ text: 'OK' }]
       );
     }
@@ -102,36 +98,36 @@ export default function LocalResourcesScreen() {
 
       {/* County picker */}
       <TouchableOpacity
-        testID="country-picker"
-        style={styles.countryRow}
-        onPress={() => setShowCountyPicker((v) => !v)}
+        testID="state-picker"
+        style={styles.stateRow}
+        onPress={() => setShowStatePicker((v) => !v)}
         activeOpacity={0.7}
       >
         <Ionicons name="map-outline" size={16} color={Colors.safeBlue} />
-        <Text style={styles.countryLabel}>{selectedCounty}</Text>
+        <Text style={styles.stateLabel}>{selectedState}</Text>
         <Ionicons
-          name={showCountyPicker ? 'chevron-up' : 'chevron-down'}
+          name={showStatePicker ? 'chevron-up' : 'chevron-down'}
           size={16}
           color={Colors.textMuted}
         />
       </TouchableOpacity>
 
-      {showCountyPicker && (
-        <View style={styles.countryList}>
-          {SWEDISH_COUNTIES.map((c) => (
+      {showStatePicker && (
+        <View style={styles.stateList}>
+          {SWEDISH_STATES.map((c) => (
             <TouchableOpacity
               key={c}
-              testID={`country-${c}`}
-              style={[styles.countryOption, c === selectedCounty && styles.countryOptionActive]}
+              testID={`state-${c}`}
+              style={[styles.stateOption, c === selectedState && styles.stateOptionActive]}
               onPress={() => {
-                setSelectedCounty(c);
-                setShowCountyPicker(false);
+                setSelectedState(c);
+                setShowStatePicker(false);
               }}
             >
               <Text
                 style={[
-                  styles.countryOptionText,
-                  c === selectedCounty && styles.countryOptionTextActive,
+                  styles.stateOptionText,
+                  c === selectedState && styles.stateOptionTextActive,
                 ]}
               >
                 {c}
@@ -280,7 +276,7 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
   locationBtn: { padding: 4 },
 
-  countryRow: {
+  stateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
@@ -293,8 +289,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  countryLabel: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
-  countryList: {
+  stateLabel: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
+  stateList: {
     marginHorizontal: Spacing.lg,
     backgroundColor: Colors.white,
     borderRadius: Radius.md,
@@ -303,15 +299,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: Spacing.xs,
   },
-  countryOption: {
+  stateOption: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm + 2,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  countryOptionActive: { backgroundColor: Colors.safeBlue + '10' },
-  countryOptionText: { fontSize: 15, color: Colors.textSecondary },
-  countryOptionTextActive: { color: Colors.safeBlue, fontWeight: '600' },
+  stateOptionActive: { backgroundColor: Colors.safeBlue + '10' },
+  stateOptionText: { fontSize: 15, color: Colors.textSecondary },
+  stateOptionTextActive: { color: Colors.safeBlue, fontWeight: '600' },
 
   filtersScroll: {
     flexGrow: 0,

@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { Alert } from 'react-native';
 
 export default function SafetyScreen() {
-  const { setSafetyLevel, nearbyCounty, nearbyResources } = useSession();
+  const { setSafetyLevel, nearbyState, nearbyResources } = useSession();
   const [step, setStep] = useState(0);
   const [moodScore, setMoodScore] = useState(7);
   const [answers, setAnswers] = useState<SafetyAnswers>({});
@@ -97,7 +97,7 @@ export default function SafetyScreen() {
         }}
         onSavePlan={handleSavePlan}
         savingPlan={savingPlan}
-        nearbyCounty={nearbyCounty}
+        nearbyState={nearbyState}
         nearbyResources={nearbyResources}
         onGoHome={() => router.replace('/(tabs)')}
       />

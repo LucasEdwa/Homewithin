@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
 import type { SafetyStatus } from '@/services/safetyScore';
 import type { LocalResource } from '@/types';
 import { LOCAL_RESOURCE_TYPE_COLORS, LOCAL_RESOURCE_TYPE_ICONS, LOCAL_RESOURCE_TYPE_LABELS } from '@/types';
@@ -30,7 +31,7 @@ interface ResultsViewProps {
   onPlanLineChange: (index: number, value: string) => void;
   onSavePlan: () => Promise<void>;
   savingPlan: boolean;
-  nearbyCounty: string | null;
+  nearbyState: string | null;
   nearbyResources: LocalResource[];
   onGoHome: () => void;
 }
@@ -41,7 +42,7 @@ export default function ResultsView({
   onPlanLineChange,
   onSavePlan,
   savingPlan,
-  nearbyCounty,
+  nearbyState,
   nearbyResources,
   onGoHome,
 }: ResultsViewProps) {
@@ -51,7 +52,7 @@ export default function ResultsView({
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           {status === 'green' && <GreenState />}
           {status === 'yellow' && <YellowState />}
-          {status === 'red' && <RedState nearbyCounty={nearbyCounty} nearbyResources={nearbyResources} />}
+          {status === 'red' && <RedState nearbyState={nearbyState} nearbyResources={nearbyResources} />}
 
           <Card style={styles.planCard}>
             <Text style={styles.planTitle}>Your safety plan</Text>
@@ -124,12 +125,13 @@ function YellowState() {
 }
 
 function RedState({
-  nearbyCounty,
+  nearbyState,
   nearbyResources,
 }: {
-  nearbyCounty: string | null;
+  nearbyState: string | null;
   nearbyResources: LocalResource[];
 }) {
+  const { refreshLocation } = useSession();
   return (
     <Card style={[styles.statusCard, { borderColor: Colors.alertRed }]}>
       <Ionicons name="heart" size={44} color={Colors.alertRed} />
@@ -149,9 +151,9 @@ function RedState({
         <Text style={styles.localHelpTitle}>Local help centers near you</Text>
       </View>
 
-      {nearbyCounty && nearbyResources.length > 0 ? (
+      {nearbyState && nearbyResources.length > 0 ? (
         <>
-          <Text style={styles.localHelpCounty}>{nearbyCounty}</Text>
+          <Text style={styles.localHelpState}>{nearbyState}</Text>
           {nearbyResources.map((r) => (
             <View key={r.id} style={styles.resourceRow}>
               <View style={[styles.resourceBadge, { backgroundColor: LOCAL_RESOURCE_TYPE_COLORS[r.type] + '18' }]}>
@@ -192,14 +194,16 @@ function RedState({
             style={styles.seeAllBtn}
             onPress={() => router.push('/local-resources' as any)}
           >
-            <Text style={styles.seeAllText}>See all resources in {nearbyCounty}</Text>
+            <Text style={styles.seeAllText}>See all resources in {nearbyState}</Text>
             <Ionicons name="arrow-forward-outline" size={14} color={Colors.safeBlue} />
           </TouchableOpacity>
         </>
       ) : (
-        <Text style={styles.localHelpDesc}>
-          Allow location access so we can show help centers near you.
-        </Text>
+        <TouchableOpacity style={styles.locationPrompt} onPress={refreshLocation} activeOpacity={0.7}>
+          <Ionicons name="location-outline" size={16} color={Colors.safeBlue} />
+          <Text style={styles.locationPromptText}>Allow location to show centers near you</Text>
+          <Ionicons name="chevron-forward" size={14} color={Colors.safeBlue} />
+        </TouchableOpacity>
       )}
     </Card>
   );
@@ -228,7 +232,13 @@ const styles = StyleSheet.create({
   localHelpHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   localHelpTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
   localHelpDesc: { fontSize: 14, color: Colors.textSecondary, lineHeight: 21 },
-  localHelpCounty: { fontSize: 13, color: Colors.safeBlue, fontWeight: '600', marginBottom: 4 },
+  locationPrompt: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.safeBlue + '12', borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+  },
+  locationPromptText: { flex: 1, fontSize: 14, color: Colors.safeBlue, fontWeight: '500' },
+  localHelpState: { fontSize: 13, color: Colors.safeBlue, fontWeight: '600', marginBottom: 4 },
   resourceRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.border,

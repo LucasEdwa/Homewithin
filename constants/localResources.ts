@@ -8,7 +8,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "Sveriges ledande HBTQ+-organisation med stöd, rådgivning, juridisk hjälp och politisk påverkan på nationell nivå.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://www.rfsl.se",
   },
   {
@@ -17,7 +17,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Riksorganisation för unga HBTQ+-personer upp till 25 år. Lokala grupper, läger och politisk aktivism i hela landet.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://rfslungdom.se",
   },
   {
@@ -26,7 +26,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Krisstöd för den som har tankar på självskada eller självmord. Dygnet runt, anonymt och kostnadsfritt.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://mind.se",
     phone: "90101",
   },
@@ -36,7 +36,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Stödlinje för barn och unga upp till 18 år i utsatta situationer, inklusive HBTQ+-frågor. Anonymt och kostnadsfritt.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://www.bris.se",
     phone: "116 111",
   },
@@ -46,7 +46,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "Stöd och gemenskap för transpersoner, deras familjer och vänner. Chattlinjer och lokala grupper i hela Sverige.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://www.fpes.se",
   },
   {
@@ -55,7 +55,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "legal_aid",
     description:
       "Statlig myndighet mot diskriminering bl.a. på grund av sexuell läggning och könsidentitet. Kostnadsfri rådgivning.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://www.do.se",
   },
   {
@@ -64,7 +64,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "therapist",
     description:
       "Hälsoinformation och rådgivning för unga 13–25 år om identitet, psykisk hälsa och HBTQ+-frågor.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://www.umo.se",
   },
   {
@@ -73,7 +73,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Arbetar mot kränkningar och mobbning i skolan, inklusive homo- och transfobi. Stöd till elever och personal.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://friends.se",
   },
   {
@@ -82,7 +82,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Stöd till barn och unga i utsatta situationer, inklusive HBTQ+-ungdomar som saknar stöd hemma.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://www.raddabarnen.se",
   },
   {
@@ -91,7 +91,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "shelter",
     description:
       "RFSL hänvisar till akutboenden och kan hjälpa HBTQ+-personer som behöver akut stöd med boende och säkerhet.",
-    country: "Sweden",
+    state: "Sweden",
     website: "https://www.rfsl.se",
   },
 
@@ -102,7 +102,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "Stockholms HBTQ+-förening med rådgivning, stödgrupper, evenemang och mötesplats för hela regionen.",
-    country: "Stockholm",
+    state: "Stockholm",
     city: "Stockholm",
     website: "https://www.rfslstockholm.com",
   },
@@ -112,7 +112,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "therapist",
     description:
       "Professionell samtalsrådgivning för HBTQ+-personer. Individuella samtal, par- och familjerådgivning.",
-    country: "Stockholm",
+    state: "Stockholm",
     city: "Stockholm",
     website: "https://www.rfsl.se/verksamhet/radgivningen/",
   },
@@ -122,7 +122,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Stöd till tjejer och transpersoner utsatta för hedersrelaterat våld och förtryck i Stockholmsregionen.",
-    country: "Stockholm",
+    state: "Stockholm",
     city: "Stockholm",
     website: "https://tris.se",
   },
@@ -134,7 +134,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-center i Göteborg med rådgivning, stödgrupper, bibliotek och mötesplats för hela Västsverige.",
-    country: "Västra Götaland",
+    state: "Västra Götaland",
     city: "Göteborg",
     website: "https://www.rfsl.se",
   },
@@ -144,7 +144,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Öppen mötesplats och stöd för unga HBTQ+-personer i Göteborg och Västra Götaland.",
-    country: "Västra Götaland",
+    state: "Västra Götaland",
     city: "Göteborg",
     website: "https://www.rfsl.se",
   },
@@ -156,7 +156,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "Regional HBTQ+-organisation i Skåne med rådgivning, stödgrupper och evenemang i södra Sverige.",
-    country: "Skåne",
+    state: "Skåne",
     city: "Malmö",
     website: "https://www.rfsl.se",
   },
@@ -166,7 +166,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "support_group",
     description:
       "Lokal HBTQ+-verksamhet i norra Skåne med stödgrupper och öppna träffar.",
-    country: "Skåne",
+    state: "Skåne",
     city: "Helsingborg",
     website: "https://www.rfsl.se",
   },
@@ -178,7 +178,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Uppsala med stödgrupper, öppen verksamhet och mötesplatser för regionen.",
-    country: "Uppsala",
+    state: "Uppsala",
     city: "Uppsala",
     website: "https://rfsluppsala.se",
   },
@@ -190,7 +190,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Östergötland med stöd, gemenskap och aktiviteter för HBTQ+-personer i regionen.",
-    country: "Östergötland",
+    state: "Östergötland",
     city: "Linköping",
     website: "https://www.rfsl.se",
   },
@@ -202,7 +202,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Västernorrland med evenemang, stöd och gemenskap i regionen.",
-    country: "Västernorrland",
+    state: "Västernorrland",
     city: "Sundsvall",
     website: "https://www.rfsl.se",
   },
@@ -214,7 +214,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Västerbotten med rådgivning, stödgrupper och evenemang i Umeåregionen.",
-    country: "Västerbotten",
+    state: "Västerbotten",
     city: "Umeå",
     website: "https://www.rfsl.se",
   },
@@ -226,7 +226,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Norrbotten med stöd och community för HBTQ+-personer i norra Sverige.",
-    country: "Norrbotten",
+    state: "Norrbotten",
     city: "Luleå",
     website: "https://www.rfsl.se",
   },
@@ -238,7 +238,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Halland med lokala aktiviteter och stöd för HBTQ+-community i regionen.",
-    country: "Halland",
+    state: "Halland",
     city: "Halmstad",
     website: "https://www.rfsl.se",
   },
@@ -250,7 +250,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening för Dalarna med stöd, gemenskap och aktiviteter för HBTQ+-personer i länet.",
-    country: "Dalarna",
+    state: "Dalarna",
     city: "Falun",
     website: "https://www.rfsl.se",
   },
@@ -262,7 +262,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Gävleborg med evenemang och stöd för HBTQ+-community i regionen.",
-    country: "Gävleborg",
+    state: "Gävleborg",
     city: "Gävle",
     website: "https://www.rfsl.se",
   },
@@ -274,7 +274,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Jönköpings län med lokala stödgrupper och aktiviteter för HBTQ+-community.",
-    country: "Jönköping",
+    state: "Jönköping",
     city: "Jönköping",
     website: "https://www.rfsl.se",
   },
@@ -286,7 +286,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Jämtland med stöd och gemenskap för HBTQ+-personer i regionen.",
-    country: "Jämtland",
+    state: "Jämtland",
     city: "Östersund",
     website: "https://www.rfsl.se",
   },
@@ -298,7 +298,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Örebro med stöd och community för HBTQ+-personer i regionen.",
-    country: "Örebro",
+    state: "Örebro",
     city: "Örebro",
     website: "https://www.rfsl.se",
   },
@@ -310,7 +310,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Värmland med stöd och aktiviteter för HBTQ+-community i regionen.",
-    country: "Värmland",
+    state: "Värmland",
     city: "Karlstad",
     website: "https://www.rfsl.se",
   },
@@ -322,7 +322,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Södermanland med stöd och gemenskap för HBTQ+-personer i länet.",
-    country: "Södermanland",
+    state: "Södermanland",
     city: "Eskilstuna",
     website: "https://www.rfsl.se",
   },
@@ -334,7 +334,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Kronoberg med stöd och aktiviteter för HBTQ+-community i Växjöregionen.",
-    country: "Kronoberg",
+    state: "Kronoberg",
     city: "Växjö",
     website: "https://www.rfsl.se",
   },
@@ -346,7 +346,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Blekinge med stöd och gemenskap för HBTQ+-personer i länet.",
-    country: "Blekinge",
+    state: "Blekinge",
     city: "Karlskrona",
     website: "https://www.rfsl.se",
   },
@@ -358,7 +358,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Kalmar med stöd och aktiviteter för HBTQ+-community i regionen.",
-    country: "Kalmar",
+    state: "Kalmar",
     city: "Kalmar",
     website: "https://www.rfsl.se",
   },
@@ -370,7 +370,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening i Västmanland med stöd och gemenskap för HBTQ+-personer i regionen.",
-    country: "Västmanland",
+    state: "Västmanland",
     city: "Västerås",
     website: "https://www.rfsl.se",
   },
@@ -382,7 +382,7 @@ export const LOCAL_RESOURCES: LocalResource[] = [
     type: "lgbtq_center",
     description:
       "HBTQ+-förening på Gotland med stöd och community för HBTQ+-personer på ön.",
-    country: "Gotland",
+    state: "Gotland",
     city: "Visby",
     website: "https://www.rfsl.se",
   },
@@ -482,7 +482,7 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     description:
       "Nordens största Pride-festival med parade, park och hundratals evenemang för hela HBTQ+-community.",
     city: "Stockholm",
-    country: "Stockholm",
+    state: "Stockholm",
     recurring: "Årligen — slutet av juli/början av augusti",
     link: "https://www.stockholmpride.org",
   },
@@ -492,7 +492,7 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     description:
       "Regelbundna öppna träffar för HBTQ+-personer i Stockholm. Välkommen oavsett bakgrund eller erfarenhet.",
     city: "Stockholm",
-    country: "Stockholm",
+    state: "Stockholm",
     recurring: "Månadsvis",
     link: "https://www.rfslstockholm.com",
   },
@@ -502,7 +502,7 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     description:
       "Göteborgspride med festivalvecka, parade och aktiviteter för hela HBTQ+-community i Västsverige.",
     city: "Göteborg",
-    country: "Västra Götaland",
+    state: "Västra Götaland",
     recurring: "Årligen — september",
     link: "https://goteborgpride.se",
   },
@@ -512,7 +512,7 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     description:
       "Malmös HBTQ+-festival med parade, konserter och aktiviteter i Skåne.",
     city: "Malmö",
-    country: "Skåne",
+    state: "Skåne",
     recurring: "Årligen — maj",
     link: "https://malmopride.com",
   },
@@ -522,7 +522,7 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     description:
       "Öppna träffar för unga HBTQ+-personer lokalt i hela landet. Se RFSL Ungdoms webbplats för lokal och tid.",
     city: "Nationellt",
-    country: "Sweden",
+    state: "Sweden",
     recurring: "Veckovis på många orter",
     link: "https://rfslungdom.se",
   },
@@ -532,7 +532,7 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     description:
       "Uppsala Prides festivaldagar med parade och evenemang för HBTQ+-community i Uppsala.",
     city: "Uppsala",
-    country: "Uppsala",
+    state: "Uppsala",
     recurring: "Årligen — höst",
     link: "https://uppsalapride.se",
   },
@@ -542,13 +542,13 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     description:
       "Pride-firande i Umeå med evenemang, parade och gemenskap för HBTQ+-community i Norrland.",
     city: "Umeå",
-    country: "Västerbotten",
+    state: "Västerbotten",
     recurring: "Årligen",
     link: "https://www.rfsl.se",
   },
 ];
 
-export const SWEDISH_COUNTIES = [
+export const SWEDISH_STATES = [
   "Blekinge",
   "Dalarna",
   "Gävleborg",
