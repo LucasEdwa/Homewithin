@@ -35,15 +35,18 @@ beforeEach(() => {
   mockGetResources.mockReturnValue([]);
 });
 
-// Helper: press "Begin" then "Next" through all 6 steps to reach results
+// Helper: press "Begin" then navigate through all 6 steps to reach results.
+// Each step requires 2 presses (first triggers skip notice, second advances).
 async function completeAllSteps() {
   fireEvent.press(screen.getByText('Begin'));
-  // Steps 1–5: press "Next"
-  for (let i = 0; i < 5; i++) {
+  for (let step = 1; step <= 5; step++) {
+    await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
+    fireEvent.press(screen.getByText('Next'));
     await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
     fireEvent.press(screen.getByText('Next'));
   }
-  // Step 6: press "See my results"
+  await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
+  fireEvent.press(screen.getByText('See my results'));
   await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
   fireEvent.press(screen.getByText('See my results'));
 }
@@ -90,7 +93,9 @@ describe('SafetyScreen — step navigation', () => {
     renderWithSession(<SafetyScreen />, { profile: mockProfile });
     fireEvent.press(screen.getByText('Begin'));
     await waitFor(() => screen.getByText('Next'));
-    fireEvent.press(screen.getByText('Next'));
+    fireEvent.press(screen.getByText('Next')); // triggers skip notice
+    await waitFor(() => screen.getByText('Next'));
+    fireEvent.press(screen.getByText('Next')); // advances to step 2
     await waitFor(() => {
       expect(screen.getByText('Home & body')).toBeTruthy();
     });
@@ -180,11 +185,19 @@ describe('SafetyScreen — results', () => {
     fireEvent.press(screen.getByText('Begin'));
     await waitFor(() => screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
     fireEvent.press(screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
-    // Continue through remaining steps
-    for (let i = 0; i < 5; i++) {
+    // Step 1 → step 2: 1 press (already interacted via checkbox)
+    await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
+    fireEvent.press(screen.getByText('Next'));
+    // Steps 2–5: 2 presses each
+    for (let i = 0; i < 4; i++) {
+      await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
+      fireEvent.press(screen.getByText('Next'));
       await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
       fireEvent.press(screen.getByText('Next'));
     }
+    // Step 6: 2 presses of "See my results"
+    await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
+    fireEvent.press(screen.getByText('See my results'));
     await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
     fireEvent.press(screen.getByText('See my results'));
     await waitFor(() => {
@@ -197,11 +210,20 @@ describe('SafetyScreen — results', () => {
     fireEvent.press(screen.getByText('Begin'));
     await waitFor(() => screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
     fireEvent.press(screen.getByRole('checkbox', { name: /I feel in danger right now/i }));
-    for (let i = 0; i < 5; i++) {
-      await waitFor(() => screen.getByText('Next'));
+    // Step 1 → step 2: 1 press (already interacted via checkbox)
+    await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
+    fireEvent.press(screen.getByText('Next'));
+    // Steps 2–5: 2 presses each
+    for (let i = 0; i < 4; i++) {
+      await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
+      fireEvent.press(screen.getByText('Next'));
+      await waitFor(() => expect(screen.getByText('Next')).toBeTruthy());
       fireEvent.press(screen.getByText('Next'));
     }
-    await waitFor(() => screen.getByText('See my results'));
+    // Step 6: 2 presses of "See my results"
+    await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
+    fireEvent.press(screen.getByText('See my results'));
+    await waitFor(() => expect(screen.getByText('See my results')).toBeTruthy());
     fireEvent.press(screen.getByText('See my results'));
     await waitFor(() => {
       expect(screen.getByText('You need support right now.')).toBeTruthy();

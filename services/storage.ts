@@ -1,4 +1,5 @@
 import type { CheckIn, JournalEntry } from "@/types";
+import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 
 const ONBOARDING_KEY = "hw_onboarding_complete";
@@ -56,12 +57,15 @@ export async function getSafetyPlan(): Promise<string[]> {
 }
 
 export async function setPin(pin: string) {
-  await SecureStore.setItemAsync(PIN_KEY, pin);
+  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+  await SecureStore.setItemAsync(PIN_KEY, hash);
 }
 
 export async function verifyPin(pin: string): Promise<boolean> {
   const stored = await SecureStore.getItemAsync(PIN_KEY);
-  return stored === pin;
+  if (!stored) return false;
+  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+  return stored === hash;
 }
 
 export async function hasPin(): Promise<boolean> {

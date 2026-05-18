@@ -51,3 +51,11 @@ export const supabase: SupabaseClient | null =
     : null;
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+export async function currentUserId(): Promise<string | null> {
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+  return user?.id ?? null;
+}

@@ -30,7 +30,7 @@ describe('EmergencyScreen', () => {
 
   it('renders all four action cards', () => {
     renderWithSession(<EmergencyScreen />, { profile: mockProfile });
-    expect(screen.getByLabelText(/Call support/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Local help/i)).toBeTruthy();
     expect(screen.getByLabelText(/Safety plan/i)).toBeTruthy();
     expect(screen.getByLabelText(/Quick hide/i)).toBeTruthy();
     expect(screen.getByLabelText(/Delete data/i)).toBeTruthy();
@@ -46,15 +46,14 @@ describe('EmergencyScreen', () => {
     expect(screen.getByText('One-tap exit')).toBeTruthy();
   });
 
-  it('renders crisis hotlines section title', () => {
+  it('renders the hide app guide section', () => {
     renderWithSession(<EmergencyScreen />, { profile: mockProfile });
-    expect(screen.getByText('Crisis hotlines')).toBeTruthy();
+    expect(screen.getByText('Hide app guide')).toBeTruthy();
   });
 
-  it('shows US hotlines when profile country is United States', () => {
+  it('renders hide guide instructions', () => {
     renderWithSession(<EmergencyScreen />, { profile: mockProfile });
-    expect(screen.getByText('United States')).toBeTruthy();
-    expect(screen.getByText('Trevor Project (LGBTQ+)')).toBeTruthy();
+    expect(screen.getByText(/Profile › Privacy/)).toBeTruthy();
   });
 
   it('close button calls router.back', () => {
@@ -69,11 +68,9 @@ describe('EmergencyScreen', () => {
     expect(router.replace).toHaveBeenCalledWith('/decoy');
   });
 
-  it('Call support action expands hotlines list', () => {
+  it('Local help navigates to local resources screen', () => {
     renderWithSession(<EmergencyScreen />, { profile: mockProfile });
-    fireEvent.press(screen.getByLabelText(/Call support/i));
-    // After pressing, "Show all countries" should appear (because showHotlines was false)
-    // Actually showHotlines is set to true, so all hotlines show — "Show all countries" disappears
-    expect(screen.queryByText('Show all countries →')).toBeNull();
+    fireEvent.press(screen.getByLabelText(/Local help/i));
+    expect(router.push).toHaveBeenCalledWith('/local-resources');
   });
 });

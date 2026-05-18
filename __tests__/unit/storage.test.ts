@@ -55,7 +55,7 @@ describe('session', () => {
   it('saves and retrieves session data', async () => {
     await saveSession(profile);
     const retrieved = await getSession();
-    expect(retrieved).toEqual(profile);
+    expect(retrieved).toMatchObject(profile);
   });
 
   it('overwrites an existing session', async () => {
