@@ -32,22 +32,21 @@ const mockRequestLocation = service.requestLocationPermission as jest.Mock;
 
 const SAMPLE_RESOURCES = [
   {
-    id: 'br-lgbtq-1',
-    name: 'ABGLT',
+    id: 'se-sthlm-1',
+    name: 'RFSL Stockholm',
     type: 'lgbtq_center' as const,
-    description: 'Maior organização LGBT+ do Brasil.',
-    country: 'Brazil',
-    website: 'https://www.abglt.org',
-    phone: '+55 61 3321-6969',
+    description: 'HBTQ+-förening i Stockholm.',
+    country: 'Stockholm',
+    website: 'https://www.rfslstockholm.com',
+    phone: '08-501 62 900',
   },
   {
-    id: 'br-shelter-1',
-    name: 'Casa 1',
-    type: 'shelter' as const,
-    description: 'Casa de acolhimento em São Paulo.',
-    country: 'Brazil',
-    city: 'São Paulo',
-    website: 'https://www.casaum.org',
+    id: 'se-nat-3',
+    name: 'Mind – Självmordslinjen',
+    type: 'support_group' as const,
+    description: 'Krisstöd dygnet runt.',
+    country: 'Sweden',
+    website: 'https://mind.se',
   },
 ];
 
@@ -65,24 +64,24 @@ describe('LocalResourcesScreen — rendering', () => {
 
   it('renders resource cards', () => {
     render(<LocalResourcesScreen />);
-    expect(screen.getByTestId('resource-br-lgbtq-1')).toBeTruthy();
-    expect(screen.getByTestId('resource-br-shelter-1')).toBeTruthy();
+    expect(screen.getByTestId('resource-se-sthlm-1')).toBeTruthy();
+    expect(screen.getByTestId('resource-se-nat-3')).toBeTruthy();
   });
 
   it('shows resource name and description', () => {
     render(<LocalResourcesScreen />);
-    expect(screen.getByText('ABGLT')).toBeTruthy();
-    expect(screen.getByText('Casa 1')).toBeTruthy();
+    expect(screen.getByText('RFSL Stockholm')).toBeTruthy();
+    expect(screen.getByText('Mind – Självmordslinjen')).toBeTruthy();
   });
 
   it('shows website button when resource has website', () => {
     render(<LocalResourcesScreen />);
-    expect(screen.getByTestId('website-br-lgbtq-1')).toBeTruthy();
+    expect(screen.getByTestId('website-se-sthlm-1')).toBeTruthy();
   });
 
   it('shows phone button when resource has phone', () => {
     render(<LocalResourcesScreen />);
-    expect(screen.getByTestId('phone-br-lgbtq-1')).toBeTruthy();
+    expect(screen.getByTestId('phone-se-sthlm-1')).toBeTruthy();
   });
 
   it('shows empty state when no resources', () => {
@@ -92,7 +91,7 @@ describe('LocalResourcesScreen — rendering', () => {
   });
 });
 
-describe('LocalResourcesScreen — country picker', () => {
+describe('LocalResourcesScreen — county picker', () => {
   it('shows Stockholm as default county (from profile)', () => {
     render(<LocalResourcesScreen />);
     expect(screen.getByText('Stockholm')).toBeTruthy();
@@ -100,16 +99,15 @@ describe('LocalResourcesScreen — country picker', () => {
 
   it('toggles county dropdown on press', () => {
     render(<LocalResourcesScreen />);
-    const picker = screen.getByTestId('country-picker');
-    fireEvent.press(picker);
-    expect(screen.getByTestId('country-Uppsala')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('country-picker'));
+    expect(screen.getByTestId('country-Blekinge')).toBeTruthy();
   });
 
   it('selects a different county', () => {
     render(<LocalResourcesScreen />);
     fireEvent.press(screen.getByTestId('country-picker'));
-    fireEvent.press(screen.getByTestId('country-Skåne'));
-    expect(mockGetResources).toHaveBeenCalledWith('Skåne', undefined);
+    fireEvent.press(screen.getByTestId('country-Uppsala'));
+    expect(mockGetResources).toHaveBeenCalledWith('Uppsala', undefined);
   });
 });
 

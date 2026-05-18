@@ -40,7 +40,9 @@ export default function LocalResourcesScreen() {
   const [showCountyPicker, setShowCountyPicker] = useState(false);
 
   useEffect(() => {
-    if (profile?.country) setSelectedCounty(profile.country);
+    if (profile?.country && (SWEDISH_COUNTIES as readonly string[]).includes(profile.country)) {
+      setSelectedCounty(profile.country);
+    }
   }, [profile?.country]);
 
   const resources = getResources(selectedCounty, selectedType);

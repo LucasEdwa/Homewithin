@@ -69,18 +69,30 @@ export function filterResources(
   return byCountry.filter((r) => r.type === type);
 }
 
-// Returns all resources when country is unrecognised (fallback to full list).
+// Returns county resources + national (country: 'Sweden') resources for any county selection.
 export function getResources(
   country?: string,
   type?: LocalResourceType,
 ): LocalResource[] {
   if (!country) return type ? getResourcesByType(type) : LOCAL_RESOURCES;
-  const results = filterResources(country, type);
-  if (results.length === 0 && country) {
-    // Country not in dataset — fall back to type-filtered global list
+
+  const countyResults = filterResources(country, type);
+
+  // Include national resources alongside any county-specific ones
+  const nationalResults =
+    country.toLowerCase() !== "sweden"
+      ? LOCAL_RESOURCES.filter(
+          (r) =>
+            r.country.toLowerCase() === "sweden" &&
+            (!type || r.type === type),
+        )
+      : [];
+
+  const combined = [...countyResults, ...nationalResults];
+  if (combined.length === 0) {
     return type ? getResourcesByType(type) : LOCAL_RESOURCES;
   }
-  return results;
+  return combined;
 }
 
 // ── Workshop helpers ──────────────────────────────────────────────────────────
@@ -100,8 +112,15 @@ export function getMeetupsByCountry(country: string): LocalMeetup[] {
 
 export function getMeetups(country?: string): LocalMeetup[] {
   if (!country) return LOCAL_MEETUPS;
-  const results = getMeetupsByCountry(country);
-  return results.length > 0 ? results : LOCAL_MEETUPS;
+
+  const countyResults = getMeetupsByCountry(country);
+  const nationalResults =
+    country.toLowerCase() !== "sweden"
+      ? LOCAL_MEETUPS.filter((m) => m.country.toLowerCase() === "sweden")
+      : [];
+
+  const combined = [...countyResults, ...nationalResults];
+  return combined.length > 0 ? combined : LOCAL_MEETUPS;
 }
 
 // ── Distance (haversine, km) ──────────────────────────────────────────────────
