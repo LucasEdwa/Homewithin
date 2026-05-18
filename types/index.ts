@@ -54,7 +54,7 @@ export const EMOTION_COLORS: Record<EmotionTag, string> = {
 };
 
 export interface CheckIn {
-  id: string;
+  id?: string; // set by DB; may be absent in locally-stored entries
   date: string; // YYYY-MM-DD
   moodScore: MoodLevel;
   anxietyScore: number; // 1–10
@@ -73,6 +73,7 @@ export const RESOURCE_CATEGORY_IDS = [
   "religious_trauma",
   "boundaries",
   "coming_out_safely",
+  "outside_home",
   "crisis_help",
 ] as const;
 
@@ -84,6 +85,7 @@ export const CATEGORY_LABELS: Record<ResourceCategory, string> = {
   religious_trauma: "Religious trauma",
   boundaries: "Boundaries",
   coming_out_safely: "Coming out safely",
+  outside_home: "School & community",
   crisis_help: "Crisis help",
 };
 
@@ -93,6 +95,7 @@ export const CATEGORY_COLORS: Record<ResourceCategory, string> = {
   religious_trauma: "#E8844E",
   boundaries: "#7BC9A7",
   coming_out_safely: "#5B8DEF",
+  outside_home: "#8B6FB5",
   crisis_help: "#D9534F",
 };
 
@@ -251,7 +254,7 @@ export interface LessonProgress {
 
 export interface AIMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   body: string;
   createdAt: string;
 }
@@ -268,11 +271,11 @@ export interface CircleMessage {
 // ─── Chosen Family ────────────────────────────────────────────────────────────
 
 export type SupportRole =
-  | 'trusted_friend'
-  | 'mentor'
-  | 'therapist'
-  | 'emergency_contact'
-  | 'community_group';
+  | "trusted_friend"
+  | "mentor"
+  | "therapist"
+  | "emergency_contact"
+  | "community_group";
 
 export interface SupportRoleMeta {
   id: SupportRole;
@@ -280,49 +283,49 @@ export interface SupportRoleMeta {
   icon: string;
   description: string;
   color: string;
-  contactType: 'phone' | 'sms' | 'none';
+  contactType: "phone" | "sms" | "none";
 }
 
 export const SUPPORT_ROLES: SupportRoleMeta[] = [
   {
-    id: 'trusted_friend',
-    label: 'Trusted Friend',
-    icon: 'heart-outline',
-    description: 'Someone who knows and accepts you',
-    color: '#5B8DEF',
-    contactType: 'sms',
+    id: "trusted_friend",
+    label: "Trusted Friend",
+    icon: "heart-outline",
+    description: "Someone who knows and accepts you",
+    color: "#5B8DEF",
+    contactType: "sms",
   },
   {
-    id: 'mentor',
-    label: 'Mentor',
-    icon: 'school-outline',
-    description: 'A guide on your healing journey',
-    color: '#B8A8E3',
-    contactType: 'sms',
+    id: "mentor",
+    label: "Mentor",
+    icon: "school-outline",
+    description: "A guide on your healing journey",
+    color: "#B8A8E3",
+    contactType: "sms",
   },
   {
-    id: 'therapist',
-    label: 'Therapist',
-    icon: 'medical-outline',
-    description: 'Professional mental health support',
-    color: '#7BC9A7',
-    contactType: 'phone',
+    id: "therapist",
+    label: "Therapist",
+    icon: "medical-outline",
+    description: "Professional mental health support",
+    color: "#7BC9A7",
+    contactType: "phone",
   },
   {
-    id: 'emergency_contact',
-    label: 'Emergency Contact',
-    icon: 'shield-checkmark-outline',
-    description: 'First person to call in a crisis',
-    color: '#D9534F',
-    contactType: 'phone',
+    id: "emergency_contact",
+    label: "Emergency Contact",
+    icon: "shield-checkmark-outline",
+    description: "First person to call in a crisis",
+    color: "#D9534F",
+    contactType: "phone",
   },
   {
-    id: 'community_group',
-    label: 'Community Group',
-    icon: 'people-outline',
-    description: 'A group where you belong',
-    color: '#E8844E',
-    contactType: 'none',
+    id: "community_group",
+    label: "Community Group",
+    icon: "people-outline",
+    description: "A group where you belong",
+    color: "#E8844E",
+    contactType: "none",
   },
 ];
 
@@ -333,44 +336,44 @@ export interface SupportPerson {
   contactInfo?: string;
   notes?: string;
   createdAt: string;
-  matchId?: string;    // linked peer match ID (for in-app chat)
+  matchId?: string; // linked peer match ID (for in-app chat)
   matchUserId?: string; // peer's userId for display
-  circleId?: string;   // linked support circle ID (for community_group role)
+  circleId?: string; // linked support circle ID (for community_group role)
 }
 
 // ─── Local Resources & Events ─────────────────────────────────────────────────
 
 export const LOCAL_RESOURCE_TYPES = [
-  'lgbtq_center',
-  'shelter',
-  'therapist',
-  'legal_aid',
-  'support_group',
+  "lgbtq_center",
+  "shelter",
+  "therapist",
+  "legal_aid",
+  "support_group",
 ] as const;
 export type LocalResourceType = (typeof LOCAL_RESOURCE_TYPES)[number];
 
 export const LOCAL_RESOURCE_TYPE_LABELS: Record<LocalResourceType, string> = {
-  lgbtq_center: 'LGBTQ+ Center',
-  shelter: 'Shelter',
-  therapist: 'Therapist',
-  legal_aid: 'Legal Aid',
-  support_group: 'Support Group',
+  lgbtq_center: "LGBTQ+ Center",
+  shelter: "Shelter",
+  therapist: "Therapist",
+  legal_aid: "Legal Aid",
+  support_group: "Support Group",
 };
 
 export const LOCAL_RESOURCE_TYPE_ICONS: Record<LocalResourceType, string> = {
-  lgbtq_center: 'heart-circle-outline',
-  shelter: 'home-outline',
-  therapist: 'medical-outline',
-  legal_aid: 'briefcase-outline',
-  support_group: 'people-outline',
+  lgbtq_center: "heart-circle-outline",
+  shelter: "home-outline",
+  therapist: "medical-outline",
+  legal_aid: "briefcase-outline",
+  support_group: "people-outline",
 };
 
 export const LOCAL_RESOURCE_TYPE_COLORS: Record<LocalResourceType, string> = {
-  lgbtq_center: '#5B8DEF',
-  shelter: '#7BC9A7',
-  therapist: '#B8A8E3',
-  legal_aid: '#E8844E',
-  support_group: '#D9534F',
+  lgbtq_center: "#5B8DEF",
+  shelter: "#7BC9A7",
+  therapist: "#B8A8E3",
+  legal_aid: "#E8844E",
+  support_group: "#D9534F",
 };
 
 export interface LocalResource {
@@ -378,7 +381,7 @@ export interface LocalResource {
   name: string;
   type: LocalResourceType;
   description: string;
-  country: string;
+  state: string;
   region?: string;
   city?: string;
   website?: string;
@@ -388,7 +391,7 @@ export interface LocalResource {
   lng?: number;
 }
 
-export type WorkshopFormat = 'online' | 'in_person' | 'hybrid';
+export type WorkshopFormat = "online" | "in_person" | "hybrid";
 
 export interface Workshop {
   id: string;
@@ -408,7 +411,7 @@ export interface LocalMeetup {
   title: string;
   description: string;
   city: string;
-  country: string;
+  state: string;
   date?: string;
   link?: string;
   lat?: number;

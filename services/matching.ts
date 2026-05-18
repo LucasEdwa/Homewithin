@@ -1,14 +1,6 @@
 import type { UserProfile } from "@/context/SessionContext";
 import type { IntentionId, Match, PeerProfile } from "@/types";
-import { supabase } from "./supabase";
-
-async function currentUserId(): Promise<string | null> {
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-  return user?.id ?? null;
-}
+import { currentUserId, supabase } from "./supabase";
 
 export async function getMatchPeerId(matchId: string): Promise<string | null> {
   if (!supabase) return null;

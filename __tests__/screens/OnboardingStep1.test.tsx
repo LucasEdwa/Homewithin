@@ -17,9 +17,9 @@ describe('OnboardingStep1', () => {
     expect(screen.getByPlaceholderText('e.g. River, Sage, Alex')).toBeTruthy();
   });
 
-  it('renders the Country input', () => {
+  it('renders the background input', () => {
     renderWithSession(<OnboardingStep1 />);
-    expect(screen.getByPlaceholderText('e.g. Brazil, United States')).toBeTruthy();
+    expect(screen.getByPlaceholderText('e.g. Sweden, Brazil, Syria, Somalia…')).toBeTruthy();
   });
 
   it('renders pronoun options', () => {
@@ -49,13 +49,13 @@ describe('OnboardingStep1', () => {
     });
   });
 
-  it('shows validation error when country is missing', async () => {
+  it('shows validation error when background is missing', async () => {
     renderWithSession(<OnboardingStep1 />);
     fireEvent.changeText(screen.getByPlaceholderText('e.g. River, Sage, Alex'), 'River');
     fireEvent.press(screen.getByText('18–24'));
     fireEvent.press(screen.getByText('Continue'));
     await waitFor(() => {
-      expect(screen.getByText('Please enter your country.')).toBeTruthy();
+      expect(screen.getByText('Please enter your background.')).toBeTruthy();
     });
   });
 
@@ -65,7 +65,7 @@ describe('OnboardingStep1', () => {
 
     fireEvent.changeText(screen.getByPlaceholderText('e.g. River, Sage, Alex'), 'River');
     fireEvent.press(screen.getByText('18–24'));
-    fireEvent.changeText(screen.getByPlaceholderText('e.g. Brazil, United States'), 'Brazil');
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Sweden, Brazil, Syria, Somalia…'), 'Brazil');
     fireEvent.press(screen.getByText('Continue'));
 
     await waitFor(() => {

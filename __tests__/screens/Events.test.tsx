@@ -55,7 +55,7 @@ const SAMPLE_MEETUPS = [
     title: 'NYC Queer Social',
     description: 'Casual monthly mixer.',
     city: 'New York',
-    country: 'United States',
+    state: 'United States',
     recurring: 'Monthly — first Friday',
     link: 'https://www.meetup.com/nyc-lgbtq',
   },

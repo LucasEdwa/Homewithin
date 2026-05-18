@@ -6,6 +6,8 @@ import { useSession } from '@/context/SessionContext';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    KeyboardAvoidingView,
+    Platform,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -33,7 +35,7 @@ export default function OnboardingStep1() {
     const e: Record<string, string> = {};
     if (!nickname.trim()) e.nickname = 'Please choose a nickname.';
     if (!ageRange) e.ageRange = 'Please select your age range.';
-    if (!country.trim()) e.country = 'Please enter your country.';
+    if (!country.trim()) e.country = 'Please enter your background.';
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -56,6 +58,11 @@ export default function OnboardingStep1() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Progress */}
         <View style={styles.progress}>
@@ -107,12 +114,13 @@ export default function OnboardingStep1() {
           </View>
 
           <Input
-            label="Country"
-            placeholder="e.g. Brazil, United States"
+            label="Your background"
+            placeholder="e.g. Sweden, Brazil, Syria, Somalia…"
             value={country}
             onChangeText={setCountry}
             error={errors.country}
             autoCapitalize="words"
+            returnKeyType="done"
           />
 
           <View style={styles.toggle}>
@@ -136,6 +144,7 @@ export default function OnboardingStep1() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

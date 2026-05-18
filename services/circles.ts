@@ -1,13 +1,5 @@
 import type { Circle, CircleMessage } from "@/types";
-import { supabase } from "./supabase";
-
-async function currentUserId(): Promise<string | null> {
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-  return user?.id ?? null;
-}
+import { currentUserId, supabase } from "./supabase";
 
 function rowToMessage(
   row: any,

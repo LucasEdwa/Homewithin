@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  BackHandler,
-  Alert,
-  Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import { CRISIS_HOTLINES } from '@/constants/hotlines';
 import { deleteSensitiveData, getSafetyPlan } from '@/services/storage';
+import { LOCAL_RESOURCE_TYPE_COLORS, LOCAL_RESOURCE_TYPE_ICONS, LOCAL_RESOURCE_TYPE_LABELS } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  BackHandler,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -32,10 +32,9 @@ interface ActionCardProps {
 }
 
 export default function EmergencyScreen() {
-  const { profile } = useSession();
+  const { profile, nearbyState, nearbyResources } = useSession();
   const [safetyPlan, setSafetyPlan] = useState<string[]>([]);
   const [showPlan, setShowPlan] = useState(false);
-  const [showHotlines, setShowHotlines] = useState(false);
 
   async function loadSafetyPlan() {
     const plan = await getSafetyPlan();
@@ -66,20 +65,6 @@ export default function EmergencyScreen() {
     );
   }
 
-  function callNumber(number: string) {
-    const cleaned = number.replace(/[^0-9+]/g, '');
-    if (cleaned) Linking.openURL(`tel:${cleaned}`);
-  }
-
-  const countryHotlines = CRISIS_HOTLINES.find(
-    (c) => c.country.toLowerCase() === (profile?.country ?? '').toLowerCase()
-  );
-  const displayedHotlines = showHotlines
-    ? CRISIS_HOTLINES
-    : countryHotlines
-    ? [countryHotlines]
-    : CRISIS_HOTLINES.slice(0, 3);
-
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
@@ -103,7 +88,7 @@ export default function EmergencyScreen() {
         </Text>
 
         <View style={styles.grid}>
-          <ActionCard icon="call-outline"      label="Call support" description="Connect with a crisis line"   color={Colors.safeBlue}      onPress={() => setShowHotlines(true)} />
+          <ActionCard icon="location-outline"   label="Local help"    description="Help centers near you"      color={Colors.safeBlue}      onPress={() => router.push('/local-resources' as any)} />
           <ActionCard icon="clipboard-outline"  label="Safety plan"  description="Your personal steps"         color={Colors.softGreen}     onPress={loadSafetyPlan} />
           <ActionCard icon="eye-off-outline"    label="Quick hide"   description="Switch to a neutral screen"  color={Colors.mutedLavender} onPress={() => router.replace('/decoy')} />
           <ActionCard icon="trash-outline"      label="Delete data"  description="Wipe sensitive info"         color={Colors.alertRed}      onPress={handleDeleteData} />
@@ -129,36 +114,56 @@ export default function EmergencyScreen() {
           </Card>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Crisis hotlines</Text>
-          {displayedHotlines.map((country) => (
-            <View key={country.code} style={styles.countryBlock}>
-              <Text style={styles.countryName}>{country.country}</Text>
-              {country.hotlines.map((h) => (
-                <TouchableOpacity
-                  key={h.name}
-                  style={styles.hotlineRow}
-                  onPress={() => callNumber(h.number)}
-                  accessibilityLabel={`Call ${h.name} at ${h.number}`}
-                >
-                  <View style={styles.hotlineInfo}>
-                    <Text style={styles.hotlineName}>{h.name}</Text>
-                    {h.notes && <Text style={styles.hotlineNotes}>{h.notes}</Text>}
-                  </View>
-                  <View style={styles.hotlineCallRow}>
-                    <Text style={styles.hotlineNumber}>{h.number}</Text>
-                    <Ionicons name="call-outline" size={14} color={Colors.safeBlue} />
-                  </View>
-                </TouchableOpacity>
-              ))}
+        {nearbyResources.length > 0 && (
+          <Card style={styles.section}>
+            <View style={styles.localHelpHeader}>
+              <Ionicons name="location-outline" size={18} color={Colors.safeBlue} />
+              <Text style={styles.sectionTitle}>Local help centers — {nearbyState}</Text>
             </View>
-          ))}
-          {!showHotlines && (
-            <TouchableOpacity onPress={() => setShowHotlines(true)}>
-              <Text style={styles.showAll}>Show all countries →</Text>
+            {nearbyResources.map((r) => (
+              <View key={r.id} style={styles.resourceRow}>
+                <View style={[styles.resourceBadge, { backgroundColor: LOCAL_RESOURCE_TYPE_COLORS[r.type] + '18' }]}>
+                  <Ionicons
+                    name={LOCAL_RESOURCE_TYPE_ICONS[r.type] as any}
+                    size={14}
+                    color={LOCAL_RESOURCE_TYPE_COLORS[r.type]}
+                  />
+                </View>
+                <View style={styles.resourceInfo}>
+                  <Text style={styles.resourceName}>{r.name}</Text>
+                  <Text style={styles.resourceType}>{LOCAL_RESOURCE_TYPE_LABELS[r.type]}</Text>
+                </View>
+                <View style={styles.resourceActions}>
+                  {r.phone && (
+                    <TouchableOpacity
+                      onPress={() => Linking.openURL(`tel:${r.phone!.replace(/\s/g, '')}`)}
+                      accessibilityLabel={`Call ${r.name}`}
+                      style={styles.resourceActionBtn}
+                    >
+                      <Ionicons name="call-outline" size={18} color={Colors.safeBlue} />
+                    </TouchableOpacity>
+                  )}
+                  {r.website && (
+                    <TouchableOpacity
+                      onPress={() => Linking.openURL(r.website!)}
+                      accessibilityLabel={`Visit ${r.name} website`}
+                      style={styles.resourceActionBtn}
+                    >
+                      <Ionicons name="globe-outline" size={18} color={Colors.safeBlue} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={styles.seeAllBtn}
+              onPress={() => router.push('/local-resources' as any)}
+            >
+              <Text style={styles.seeAllText}>See all resources in {nearbyState}</Text>
+              <Ionicons name="arrow-forward-outline" size={14} color={Colors.safeBlue} />
             </TouchableOpacity>
-          )}
-        </View>
+          </Card>
+        )}
 
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Hide app guide</Text>
@@ -260,4 +265,15 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, fontSize: 15, color: Colors.textPrimary, lineHeight: 22 },
   hideText: { fontSize: 14, color: Colors.textSecondary, lineHeight: 22 },
   exitBtn: { marginTop: Spacing.md },
+  // Local help centers
+  localHelpHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  resourceRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 6 },
+  resourceBadge: { width: 32, height: 32, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  resourceInfo: { flex: 1 },
+  resourceName: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  resourceType: { fontSize: 12, color: Colors.textMuted },
+  resourceActions: { flexDirection: 'row', gap: 6 },
+  resourceActionBtn: { padding: 4 },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.xs },
+  seeAllText: { fontSize: 14, color: Colors.safeBlue, fontWeight: '500' },
 });

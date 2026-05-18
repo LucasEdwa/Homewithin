@@ -1,39 +1,43 @@
 import {
-  getResourcesByCountry,
-  getResourcesByType,
+  LOCAL_MEETUPS,
+  LOCAL_RESOURCES,
+  WORKSHOPS,
+} from '@/constants/localResources';
+import {
   filterResources,
-  getResources,
-  getWorkshops,
-  getMeetupsByCountry,
   getMeetups,
+  getMeetupsByState,
+  getResources,
+  getResourcesByState,
+  getResourcesByType,
+  getWorkshops,
   sortByDistance,
 } from '@/services/localResources';
-import { LOCAL_RESOURCES, WORKSHOPS, LOCAL_MEETUPS } from '@/constants/localResources';
 import type { LocalResource } from '@/types';
 
-describe('getResourcesByCountry', () => {
-  it('returns only resources for the given country', () => {
-    const results = getResourcesByCountry('Brazil');
+describe('getResourcesByState', () => {
+  it('returns only resources for the given state', () => {
+    const results = getResourcesByState('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.country === 'Brazil')).toBe(true);
+    expect(results.every((r) => r.state === 'Stockholm')).toBe(true);
   });
 
   it('is case-insensitive', () => {
-    const lower = getResourcesByCountry('brazil');
-    const normal = getResourcesByCountry('Brazil');
+    const lower = getResourcesByState('stockholm');
+    const normal = getResourcesByState('Stockholm');
     expect(lower.length).toBe(normal.length);
   });
 
-  it('returns empty array for unsupported country', () => {
-    expect(getResourcesByCountry('Atlantis')).toEqual([]);
+  it('returns empty array for unsupported state', () => {
+    expect(getResourcesByState('Atlantis')).toEqual([]);
   });
 });
 
 describe('getResourcesByType', () => {
   it('returns resources of the requested type', () => {
-    const results = getResourcesByType('shelter');
+    const results = getResourcesByType('lgbtq_center');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.type === 'shelter')).toBe(true);
+    expect(results.every((r) => r.type === 'lgbtq_center')).toBe(true);
   });
 
   it('covers all supported types', () => {
@@ -45,36 +49,38 @@ describe('getResourcesByType', () => {
 });
 
 describe('filterResources', () => {
-  it('returns country resources when no type given', () => {
-    const all = getResourcesByCountry('United States');
-    const filtered = filterResources('United States');
+  it('returns state resources when no type given', () => {
+    const all = getResourcesByState('Stockholm');
+    const filtered = filterResources('Stockholm');
     expect(filtered.length).toBe(all.length);
   });
 
   it('narrows by type', () => {
-    const results = filterResources('United States', 'legal_aid');
+    const results = filterResources('Stockholm', 'therapist');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((r) => r.type === 'legal_aid' && r.country === 'United States')).toBe(true);
+    expect(results.every((r) => r.type === 'therapist' && r.state === 'Stockholm')).toBe(true);
   });
 
-  it('returns empty array when type not present for country', () => {
-    const results = filterResources('Germany', 'support_group');
+  it('returns empty array when type not present for state', () => {
+    const results = filterResources('Gotland', 'support_group');
     expect(Array.isArray(results)).toBe(true);
   });
 });
 
 describe('getResources (public API)', () => {
-  it('falls back to full list when country not in dataset', () => {
+  it('returns national resources when state not in dataset', () => {
     const results = getResources('Narnia');
-    expect(results.length).toBe(LOCAL_RESOURCES.length);
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.state === 'Sweden')).toBe(true);
   });
 
-  it('returns country resources when country provided', () => {
-    const results = getResources('Canada');
-    expect(results.every((r) => r.country === 'Canada')).toBe(true);
+  it('returns state + national resources when state provided', () => {
+    const results = getResources('Stockholm');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.state === 'Stockholm' || r.state === 'Sweden')).toBe(true);
   });
 
-  it('filters by type across all countries when no country given', () => {
+  it('filters by type when no state given', () => {
     const results = getResources(undefined, 'shelter');
     expect(results.every((r) => r.type === 'shelter')).toBe(true);
     expect(results.length).toBeGreaterThan(0);
@@ -106,45 +112,46 @@ describe('getWorkshops', () => {
   });
 });
 
-describe('getMeetupsByCountry', () => {
-  it('returns meetups for the given country', () => {
-    const results = getMeetupsByCountry('Brazil');
+describe('getMeetupsByState', () => {
+  it('returns meetups for the given state', () => {
+    const results = getMeetupsByState('Stockholm');
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every((m) => m.country === 'Brazil')).toBe(true);
+    expect(results.every((m) => m.state === 'Stockholm')).toBe(true);
   });
 
-  it('returns empty for unknown country', () => {
-    expect(getMeetupsByCountry('Wakanda')).toEqual([]);
+  it('returns empty for unknown state', () => {
+    expect(getMeetupsByState('Wakanda')).toEqual([]);
   });
 });
 
 describe('getMeetups', () => {
-  it('returns all meetups when no country', () => {
+  it('returns all meetups when no state', () => {
     expect(getMeetups().length).toBe(LOCAL_MEETUPS.length);
   });
 
-  it('falls back to full list when country not in dataset', () => {
+  it('returns national meetups when state not in dataset', () => {
     const results = getMeetups('Utopia');
-    expect(results.length).toBe(LOCAL_MEETUPS.length);
+    expect(results.every((m) => m.state === 'Sweden')).toBe(true);
   });
 
-  it('returns country-filtered list when country found', () => {
-    const results = getMeetups('United States');
-    expect(results.every((m) => m.country === 'United States')).toBe(true);
+  it('returns state + national meetups when state found', () => {
+    const results = getMeetups('Stockholm');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((m) => m.state === 'Stockholm' || m.state === 'Sweden')).toBe(true);
   });
 });
 
 describe('sortByDistance', () => {
   const items: LocalResource[] = [
-    { id: 'a', name: 'Far', type: 'lgbtq_center', description: '', country: 'X', lat: 51.5, lng: -0.1 }, // London
-    { id: 'b', name: 'Near', type: 'lgbtq_center', description: '', country: 'X', lat: 48.85, lng: 2.35 }, // Paris
-    { id: 'c', name: 'No coords', type: 'lgbtq_center', description: '', country: 'X' },
+    { id: 'a', name: 'Far', type: 'lgbtq_center', description: '', state: 'X', lat: 51.5, lng: -0.1 },
+    { id: 'b', name: 'Near', type: 'lgbtq_center', description: '', state: 'X', lat: 48.85, lng: 2.35 },
+    { id: 'c', name: 'No coords', type: 'lgbtq_center', description: '', state: 'X' },
   ];
 
   it('sorts items with coords before items without', () => {
-    const sorted = sortByDistance(items, 48.85, 2.35); // user in Paris
-    expect(sorted[0].id).toBe('b'); // Paris nearest
-    expect(sorted[sorted.length - 1].id).toBe('c'); // no coords last
+    const sorted = sortByDistance(items, 48.85, 2.35);
+    expect(sorted[0].id).toBe('b');
+    expect(sorted[sorted.length - 1].id).toBe('c');
   });
 
   it('does not mutate the original array', () => {

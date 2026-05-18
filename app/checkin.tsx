@@ -34,10 +34,6 @@ function todayISO() {
   return new Date().toISOString().split('T')[0];
 }
 
-function uuid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
 export default function CheckInScreen() {
   const { setSafetyLevel } = useSession();
 
@@ -83,7 +79,6 @@ export default function CheckInScreen() {
     setLoading(true);
 
     const entry: CheckIn = {
-      id: uuid(),
       date: todayISO(),
       moodScore: mood,
       anxietyScore: anxiety,
@@ -101,7 +96,6 @@ export default function CheckInScreen() {
       const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
       if (user) {
         const { error } = await supabase.from('check_ins').upsert({
-          id: entry.id,
           user_id: user.id,
           date: entry.date,
           mood_score: entry.moodScore,
@@ -111,7 +105,7 @@ export default function CheckInScreen() {
           hardest_thing: entry.hardestThing,
           tags: entry.tags,
           created_at: entry.createdAt,
-        });
+        }, { onConflict: 'user_id,date' });
         if (error) console.error('Check-in sync failed:', error.message);
       }
     }

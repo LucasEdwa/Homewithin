@@ -1,18 +1,18 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  Platform,
-  BackHandler,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
-import { Button } from '@/components/ui/Button';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React from 'react';
+import {
+  BackHandler,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -38,10 +38,9 @@ export default function WelcomeScreen() {
         style={styles.quickExit}
         onPress={handleQuickExit}
         accessibilityLabel="Quick exit — close app"
-        accessibilityRole="button"
       >
-        <Ionicons name="close" size={13} color={Colors.white} />
-        <Text style={styles.quickExitText}>Exit</Text>
+        <Ionicons name="exit-outline" size={14} color={Colors.white} />
+        <Text style={styles.quickExitText}>Quick Exit</Text>
       </TouchableOpacity>
 
       <View style={styles.content}>
@@ -94,20 +93,7 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
-  quickExit: {
-    position: 'absolute',
-    top: 56,
-    right: Spacing.md,
-    zIndex: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.alertRed,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: 20,
-  },
-  quickExitText: { color: Colors.white, fontSize: 13, fontWeight: '600' },
+
   content: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
@@ -139,4 +125,18 @@ const styles = StyleSheet.create({
   ctas: { gap: Spacing.md, alignItems: 'center' },
   ctaBtn: { width: '100%' },
   guestLink: { fontSize: 14, color: Colors.textMuted, textDecorationLine: 'underline', marginTop: Spacing.xs },
+  quickExit: {
+    position: 'absolute',
+    top: 56,
+    right: Spacing.md,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.alertRed,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  quickExitText: { color: Colors.white, fontSize: 13, fontWeight: '600' },
 });

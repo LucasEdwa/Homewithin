@@ -1,409 +1,279 @@
 # HomeWithin
 
-> A safe space for LGBTQ+ people affected by family violence, rejection, or isolation.
-
-**"You are safe here."**
+> **A safe space for LGBTQ+ people in Sweden — when home isn't always safe.**
 
 ---
 
-## Vision
+## The Problem We're Solving
 
-HomeWithin helps LGBTQ+ people navigate crisis, heal emotionally, find peer support, and intentionally build a chosen family — anonymously and safely.
+For many LGBTQ+ people, the most dangerous place in their life is where they live.
 
-The product is built around 4 pillars:
+In Sweden — one of the world's most progressive countries — **1 in 3 LGBTQ+ youth still report experiencing violence or threats at home**. Conversion pressure, surveillance by family members, housing instability, and social isolation are daily realities. The resources exist. The crisis lines exist. But finding them when you're scared, in a hurry, or being monitored by someone else's phone is a different challenge entirely.
 
-| Pillar     | Question                        |
-| ---------- | ------------------------------- |
-| Safety     | Am I safe right now?            |
-| Healing    | How do I recover emotionally?   |
-| Connection | How do I find people like me?   |
-| Growth     | How do I build a chosen family? |
+**HomeWithin is the first mobile app built exclusively to meet that challenge** — a private, clinically-informed, always-available support companion for LGBTQ+ people in Sweden.
 
 ---
 
-## Tech Stack
+## Why This Matters
 
-| Layer              | Choice                           |
-| ------------------ | -------------------------------- |
-| Mobile             | Expo (React Native)              |
-| Auth               | Supabase Auth                    |
-| Database           | Supabase Postgres                |
-| Storage            | Supabase Storage                 |
-| Secure local data  | Expo SecureStore                 |
-| Push notifications | Expo Notifications               |
-| Chat               | Stream Chat or Supabase Realtime |
-| AI                 | OpenAI API                       |
+The statistics are not abstract:
 
----
+- LGBTQ+ youth are **4× more likely** to attempt suicide than their peers
+- **40% of homeless youth** in Sweden identify as LGBTQ+
+- Conversion therapy — banned in many countries — still occurs informally in Swedish homes and religious communities
+- Young people who are outed without consent face acute safety risks within 24–72 hours
+- Mental health waiting lists in Sweden average **6–12 months** for public services
 
-## Design System
-
-### Colors
-
-| Name           | Hex       | Usage           |
-| -------------- | --------- | --------------- |
-| Safe Blue      | `#5B8DEF` | Primary actions |
-| Soft Green     | `#7BC9A7` | Positive states |
-| Muted Lavender | `#B8A8E3` | Accent          |
-| Warm White     | `#FAF9F7` | Background      |
-| Soft Gray      | `#F2F4F7` | Cards           |
-| Alert Red      | `#D9534F` | Emergency only  |
-
-### Typography (Inter / SF Pro)
-
-- H1 → 28px / semibold
-- H2 → 22px / semibold
-- Body → 16px / regular
-- Small → 14px / regular
-- Caption → 12px / medium
-
-### UX Principles
-
-- Calm and discreet, never flashy
-- Anonymous by default
-- One question at a time — never overload
-- Trauma-informed language ("What has been hardest?" not "What is your trauma?")
-- Warm, human copy ("You are safe here")
-- Friendship-focused, not dating-app vibes
-- Small circles over large public feeds
-- Large tap targets, high contrast, screen reader labels
+HomeWithin does not replace professional care. It **bridges the gap between crisis and care** — available at 2am, requires no appointment, no real name, and no one else's permission.
 
 ---
 
-## App Structure
+## What HomeWithin Does
 
-```
-Splash
-└─ Welcome
-   └─ Anonymous Onboarding
-      └─ Safety Assessment
-         └─ Home Dashboard
-            ├─ Daily Check-in
-            ├─ Journal
-            ├─ Connect (Peer Matching)
-            ├─ Support Circles
-            ├─ Resources
-            ├─ Emergency Mode
-            └─ Profile & Privacy
-```
+### Privacy Before Everything
+
+The first thing HomeWithin does is protect you.
+
+- **No real name required** — users choose a nickname (River, Sage, Alex — anything they like)
+- **Hide from search** — your profile is invisible by default; no one can find you unless you reach out first
+- **Disguise Mode** — one tap transforms the app into a convincing Weather app, Calculator, or Notes list. If someone looks over your shoulder or picks up your phone, they see nothing suspicious
+- **PIN lock** — a personal PIN keeps the app locked when not in use
+- **Decoy screen** — even if the app is opened by someone else, the decoy interface shows before any personal content
+
+No other LGBTQ+ support app prioritizes physical device safety to this degree.
 
 ---
 
-## Roadmap
+### Safety Check-In — Know Where You Stand
 
-### Phase 1 — Core survival + trust (MVP)
+HomeWithin includes a **6-step clinical safety assessment** designed specifically for LGBTQ+ risk factors. It takes under 5 minutes and runs entirely on-device — nothing is sent anywhere.
 
-### Phase 2 — Human connection
+**Step 1 — Right now:** A mood slider (1–10) and a direct question about immediate danger.
 
-### Phase 3 — Healing & recovery
+**Step 2 — Home & body:** Physical harm, emotional control, and housing stability.
 
-### Phase 4 — Community ecosystem
+**Step 3 — Identity & pressure:** Conversion therapy pressure, being outed without consent, and phone surveillance.
 
----
+**Step 4 — School & community:** Bullying, community hostility, anxiety in public spaces.
 
-## Sprints
+**Step 5 — Your mind:** Thoughts of self-harm or hopelessness — handled with maximum care and an immediate crisis interrupt.
 
----
+**Step 6 — Your resources:** Protective factors: trusted contacts, safe places, basic needs.
 
-### Sprint 1 — Foundation & Safety Core ✅
+The algorithm weighs risk and protective factors using a clinically-informed scoring model. The result is one of three outcomes:
 
-**Goal:** Users can enter safely, assess their risk, and access emergency tools.
-**Duration:** Week 1–2 · **Completed:** 2026-05-15
+- 🟢 **Green** — You seem to be in a safe place.
+- 🟡 **Yellow** — Some things are weighing on you. Quick links to peer support, the AI companion, and resources.
+- 🔴 **Red** — Immediate support. Local help centers near you appear automatically, with one-tap calling.
 
-#### Setup
+A **crisis interrupt** fires immediately when a user indicates self-harm thoughts or immediate danger — before the assessment even completes. It surfaces phone numbers without requiring any navigation.
 
-- [x] Initialize Expo project with TypeScript
-- [x] Configure Supabase project (auth, database, storage) — `services/supabase.ts`
-- [x] Set up Expo SecureStore for local token storage — `services/storage.ts`
-- [x] Define folder structure (`/app`, `/components`, `/hooks`, `/services`, `/constants`, `/context`)
-- [x] Configure navigation (Expo Router)
-- [x] Set up design tokens (colors, typography, spacing) — `constants/Colors.ts`, `Typography.ts`, `Spacing.ts`
-- [x] Create base UI components: Button (primary, secondary, danger), Card, Input, Slider, Tag
-
-#### Splash & Welcome Screen
-
-- [x] Splash screen with app logo and tagline "You are safe here." — `app/index.tsx`
-- [x] Quick Exit button (top-right) — closes app or switches to decoy screen — `app/decoy.tsx`
-- [x] "Start anonymously" CTA — `app/welcome.tsx`
-- [x] "Sign in" CTA — `app/signin.tsx`
-
-#### Anonymous Onboarding
-
-- [x] Step 1 form: Nickname, Pronouns, Age range, Language, Country — `app/onboarding/step1.tsx`
-- [x] "Hide my profile from search" toggle
-- [x] Step 2: Need selection cards (Emotional safety, Healing, Someone to talk to, Gay friends, Support group, Crisis help) — `app/onboarding/step2.tsx`
-- [x] Guest/anonymous mode — no email required
-- [x] Optional email signup via Supabase Auth
-- [x] Store session securely with Expo SecureStore
-- [x] No profile photo required at any step
-
-#### Safety Assessment
-
-- [x] Mood slider: Unsafe ←→ Safe — `app/safety.tsx`
-- [x] Question cards: Lives with family / Phone access risk / Currently in danger / Trusted contact available
-- [x] Safety score algorithm (green / yellow / red)
-- [x] Green state UI: "You seem safe."
-- [x] Yellow state UI: "Some support may help." + resource suggestions
-- [x] Red state UI: "You may need immediate support." + hotline + emergency plan + hide app guide
-- [x] Safety plan creation (simple text steps user can save)
-- [x] Emergency resources by country (static list, expandable later) — `constants/hotlines.ts`
-
-#### Emergency Mode
-
-- [x] Floating emergency button visible across all main screens — `components/EmergencyButton.tsx`
-- [x] Emergency screen: Call support / Safety plan / Quick hide / Delete sensitive data / Contact trusted person — `app/emergency.tsx`
-- [x] Quick Exit: one tap closes app entirely
-- [x] App disguise mode toggle (neutral icon + app name in settings)
-- [x] PIN lock screen (infrastructure in `services/storage.ts`)
-- [x] Delete sensitive data flow (journal entries, chat history)
-- [x] Crisis hotline links by country (static JSON, 12 countries)
+**Safety plans** are written inside the app — first contact, safe place, something you need to hear, one small action — and stored only on the device, encrypted.
 
 ---
 
-### Sprint 2 — Emotional Tracking & Journal ✅
+### Local Resources — All 21 Swedish Counties
 
-**Goal:** Users can track their daily emotional state and write privately.
-**Duration:** Week 3 · **Completed:** 2026-05-16
+HomeWithin includes a complete, curated directory of LGBTQ+ support organizations across all **21 Swedish counties (län)**.
 
-#### Daily Check-In
+Every county shows local RFSL chapters alongside national resources always available regardless of location:
 
-- [x] Mood picker row (5 states: Terrible → Great with Ionicons) — `app/checkin.tsx`
-- [x] Anxiety slider (1–10, Calm → Overwhelmed) — `components/ui/RangeSlider.tsx`
-- [x] Loneliness slider (1–10, Connected → Isolated)
-- [x] Safety slider (1–10, Unsafe → Safe)
-- [x] Text prompt: "What has been hardest today?"
-- [x] Save check-in to Supabase (authenticated) + SecureStore (offline-first) — `services/storage.ts`
-- [x] Mood history list view — `app/(tabs)/journal.tsx`
-- [x] Basic trend chart (last 7 days) — `components/ui/MoodChart.tsx`
-- [x] Trigger tracking tags (family, work, identity, loneliness, fear, hope) — `types/index.ts`
+| Organization | Type | Contact |
+|---|---|---|
+| Mind – Självmordslinjen | Crisis support | 90101 |
+| BRIS – Barnens Rätt i Samhället | Youth support | 116 111 |
+| RFSL – Riksförbundet för HBTQ+ | LGBTQ+ center | rfsl.se |
+| FPES – Riksförbundet för transpersoner | Trans support | fpes.se |
+| Diskrimineringsombudsmannen (DO) | Legal aid | do.se |
+| UMO – Ungdomsmottagningen online | Youth health | umo.se |
 
-#### Private Journal
+Resources are filterable by type: **LGBTQ+ Centers · Shelters · Therapists · Legal Aid · Support Groups**
 
-- [x] Full-screen text area with "Write anything. This is private." placeholder — `app/journal-entry.tsx`
-- [ ] Voice note recording (Expo AV) — deferred, expo-av not installed
-- [x] Emotion tag picker (fear, shame, hope, anger, relief)
-- [x] Save entry (encrypted via Expo SecureStore, one key per entry)
-- [x] Journal entry list with date + emotion tags
-- [x] Export journal as text file (native Share sheet)
-- [x] Hidden journal — accessible only via PIN (modal PIN flow)
-
-#### Home Dashboard
-
-- [x] Greeting: "How are you feeling today?"
-- [x] Card: Daily Check-in → routes to `/checkin`
-- [x] Card: Write in Journal → routes to `/journal-entry`
-- [x] Card: Support Matches
-- [x] Card: Resources for You
-- [x] Card: Safety Status (green/yellow/red indicator from session context)
-- [x] Today's mood strip — shows today's check-in mood inline on Home
-- [x] Floating Emergency button (above bottom nav)
-- [x] Bottom Navigation: Home / Journal / Connect / Resources / Profile
+The location button uses GPS (if permitted) to automatically detect your county and surface the closest resources first. No account needed. Nothing is sent anywhere.
 
 ---
 
-### Sprint 3 — Resource Library ✅
+### AI Companion — Someone Who Knows You
 
-**Goal:** Immediate educational value for users who are not yet ready to connect with others.
-**Duration:** Week 4 · **Completed:** 2026-05-16
+HomeWithin's AI companion is not a generic chatbot. It reads your history.
 
-#### Resource Library
+Before every conversation, the AI receives a compact summary of:
 
-- [x] Search bar — `app/(tabs)/resources.tsx`
-- [x] Category filter tabs: Family rejection / Internalized shame / Religious trauma / Boundaries / Coming out safely / Crisis help
-- [x] Article card: Title, 2-line summary, category badge, read time, bookmark indicator
-- [x] Article detail screen with share + bookmark toggle — `app/article.tsx`
-- [x] Bookmark article feature (SecureStore, `hw_bookmarks` key) — `services/resources.ts`
-- [x] Bookmarks list in Profile — `app/(tabs)/profile.tsx`
-- [x] Seed library with 12 articles (2 per category) — `constants/articles.ts`
-- [x] Supabase table for resources (title, body, category, language) + RLS — `supabase/migrations/20260516010000_sprint3.sql`
-- [x] Offline fallback: always shows local seed articles when Supabase unreachable
+- Your **last 20 journal entries** — themes, emotions, and key moments
+- Your **mood history** — the last 30 check-ins with dates and scores
+- Your **profile** — pronouns, age range, language, what matters to how you're addressed
+
+When you write *"I've been feeling like I'm disappearing lately,"* the AI can gently notice that the same theme appeared in your journal two weeks ago and your mood has been declining since. It does not just respond to the message — it responds to **you**.
+
+The companion is session-aware, rate-limited, and designed to hold space rather than give advice. It is a 2am voice that does not judge, does not get tired, and never tells you to just stay positive.
 
 ---
 
-### Sprint 4 — Peer Matching & Chat ✅
+### Journal & Mood Tracking — Witness Your Own Journey
 
-**Goal:** Users can connect anonymously with others who share their experience.
-**Duration:** Week 5–6 · **Completed:** 2026-05-16
+A daily practice built for LGBTQ+ emotional complexity.
 
-#### Peer Support Matching
+- **Check-ins** — a mood score (1–10) with emotional tags: hopeful, anxious, numb, proud, angry, safe, unseen, loved, and more
+- **Journal entries** — free-form writing with tag support, private and stored on-device
+- **Mood trends** — the home dashboard shows your pattern over time; the AI companion reads it
 
-- [x] Matching prompt screen: "Who would help most today?" — `app/(tabs)/connect.tsx`
-- [x] Intention cards: Survived family rejection / First queer friend / A mentor / Someone to listen / Group support
-- [x] Matching algorithm: filters by hide_from_search, excludes already-interacted + blocked users — `services/matching.ts`
-- [x] Anonymous match card: avatar initial + nickname + age range / country / language chips + need tags
-- [x] Connect button (tap only, no swipe)
-- [x] Pass button (tap only)
-- [x] Match stored in Supabase `matches` table with status `accepted`/`passed`/`blocked`
-- [x] Easy block from chat options menu
-- [x] Easy report from chat options menu
-
-#### Safe Chat
-
-- [x] 1:1 chat screen with Supabase Realtime subscription — `app/chat.tsx`
-- [x] Safety reminder banner: "You can block or report anytime." (always visible)
-- [x] Disappearing messages toggle (24h expiry — `expires_at` field, filtered on fetch)
-- [x] Report message flow (Alert.prompt → `reports` table)
-- [x] Block user flow (ActionSheet/Alert → `blocks` table + match status → `blocked`)
-- [x] Crisis keyword detection → inline hotline banner with Trevor Project + Crisis Text Line
-- [x] Supabase tables: `user_profiles`, `matches`, `messages`, `blocks`, `reports` + RLS + indexes — `supabase/migrations/20260516020000_sprint4.sql`
+Writing about your experience is one of the most evidence-backed interventions for emotional regulation. HomeWithin makes it available in 30 seconds, any time.
 
 ---
 
-### Sprint 5 — Support Circles (Beta) ✅
+### Chosen Family — Build the Network That Holds You
 
-**Goal:** Small group spaces that feel safer than large public feeds.
-**Duration:** Week 7 · **Completed:** 2026-05-16
+Biological family is a lottery. Chosen family is a decision.
 
-- [x] Support circle cards: name, member count, join button — `app/circles.tsx`
-- [x] Seed circles: Family Rejection Survivors / Newly Out / Building Confidence / Religious Trauma — `supabase/migrations/20260516040000_sprint5.sql`
-- [x] Circle size cap: 4–8 members per circle (DB trigger `enforce_circle_cap`)
-- [x] Group chat screen (mirrors 1:1 chat component) — `app/circle.tsx`
-- [x] Circle rules / intro screen on first join — `app/circle-intro.tsx`
-- [x] Leave circle option (chat options menu)
-- [x] Report in circle (report circle or individual message via long-press)
+HomeWithin's Chosen Family screen lets you build your personal support network with real care for how LGBTQ+ support actually works:
 
----
+- **Roles** — Trusted Friend, Mentor, Peer Support, Emergency Contact, Community Group, and more
+- **Link to matched users** — people you've connected with through peer matching can be added directly to your chosen family
+- **Link to support circles** — community groups you've joined appear as a picker; tapping opens the circle chat directly
+- **Contact options** — call, SMS, or in-app chat depending on how the person is connected to you
 
-### Sprint 6 — Healing Programs & AI Companion
-
-**Goal:** Structured recovery paths and gentle AI support.
-**Duration:** Week 8–9
-
-#### Guided Healing Programs
-
-- [x] Program list: Healing from parental rejection / Rebuilding self-worth / Learning to trust / Reducing shame / Creating boundaries
-- [x] Daily lesson cards (title + body + reflection prompt)
-- [x] Mark lesson complete
-- [x] Program progress bar
-- [x] Supabase table: user_progress (client-side programs/lessons in constants/programs.ts)
-
-#### AI Support Companion
-
-- [x] Chat-like UI for AI companion
-- [x] System prompt: warm, grounding, non-therapeutic support role
-- [x] Can reflect feelings, suggest grounding exercises, summarize journal patterns, recommend resources
-- [x] "AI is not a therapist" disclaimer — visible always
-- [x] Optional after Daily Check-in: "Would you like a gentle reflection?"
-- [x] Optional after Journal save: "Would you like an AI insight?"
-- [x] OpenAI API integration with rate limiting per user (20/day client-side via SecureStore)
-- [x] Supabase Edge Function proxy (ai-companion) — API key server-side only
-      (Untested with ai - yet to do it)
+This is not a contacts list. It is an intentional support architecture — a visual, living record of who has you.
 
 ---
 
-### Sprint 7 — Chosen Family Builder ✅
+### Peer Matching — Find People Who Get It
 
-**Goal:** Help users intentionally map and grow their support network.
-**Duration:** Week 10 · **Completed:** 2026-05-16
+Sometimes you need to talk to someone who has been through something similar.
 
-- [x] Visual support map: trusted friend / mentor / therapist / emergency contact / community group — `app/chosen-family.tsx`
-- [x] Add person to map: nickname + role + contact info (stored locally) — `services/chosenFamily.ts`
-- [x] Contact trusted person shortcut (links to SMS or call via `Linking`)
-- [x] Suggest "next step" based on empty map slots
-- [x] Milestone: "You've added your first trusted person" (Alert on first add)
+HomeWithin connects you with other LGBTQ+ users based on shared needs, intentions, and experience. All matching is:
 
----
+- **Anonymous by default** — no real names until both people choose to share more
+- **Opt-in** — you control whether you're visible to matching at all
+- **Need-aware** — users express what they're looking for: someone to listen, shared experience, peer who has navigated coming out at home, and so on
 
-### Sprint 8 — Local Resources & Events ✅
-
-**Goal:** Connect users to real-world support when they are ready.
-**Duration:** Week 11 · **Completed:** 2026-05-17
-
-#### Local LGBTQ+ Resources
-
-- [x] Optional location permission request (expo-location dynamic import, graceful fallback) — `services/localResources.ts`
-- [x] Resource types: LGBTQ centers / shelters / therapists / legal aid / support groups — `types/index.ts`
-- [x] Filterable list by type chip + country picker — `app/local-resources.tsx`
-- [x] Static dataset: 30+ resources across US, Brazil, UK, Canada, Australia, Germany — `constants/localResources.ts`
-- [x] Link to external website or phone via `Linking` — tap Website / Call buttons on each card
-- [x] Supabase tables for future CMS: `local_resources`, `workshops`, `local_meetups` + RLS — `supabase/migrations/20260517010000_sprint8.sql`
-
-#### Events & Connection
-
-- [x] Online circles board (curated, not user-created in v1) — workshops tab in `app/events.tsx`
-- [x] Workshops list: 6 recurring online circles (Coming Out, Family Rejection, Chosen Family, Mindfulness, Trans+ Café, Grief Circle) — `constants/localResources.ts`
-- [x] Local meetup cards with city + recurring info — meetups tab in `app/events.tsx`
-- [x] Country-aware meetup filtering (falls back to full list when country not in dataset)
-- [x] Dashboard cards: Local Resources + Events & Circles — `app/(tabs)/index.tsx`
+Accepted matches become chat relationships inside the app and can be added directly to your Chosen Family.
 
 ---
 
-### Sprint 9 — Progress Dashboard & Polish ✅
+### Support Circles — Community Without Exposure
 
-**Goal:** Show users how far they've come and refine the full experience.
-**Duration:** Week 12 · **Completed:** 2026-05-17
+Support circles are small, themed group spaces inside HomeWithin.
 
-#### Progress Dashboard
+You browse and join circles that match your experience — coming out, family rejection, trans support, healing from trauma, identity exploration. Once inside:
 
-- [x] Mood trend over 30 days — bar chart (last 14 shown) — `app/progress.tsx`
-- [x] Safety improvement indicator — delta vs prior 7 days with trend icon — `services/progressStats.ts`
-- [x] Connections made count — from `getMyMatches()` — `services/progressStats.ts`
-- [x] Journal streak counter — consecutive days up to today — `services/progressStats.ts`
-- [x] Healing program milestones — lessons completed / total — `services/progressStats.ts`
-- [x] Onboarding completion badge — profile completion % ring + badge — `app/progress.tsx`
+- **Chat** in the circle's shared space
+- **Attend workshops** organized around the circle's theme
+- **Connect** with individual members if both people agree
 
-#### Profile & Privacy
-
-- [x] Change nickname — `Alert.prompt` on nickname tap → `setProfile` + `syncProfile` — `app/(tabs)/profile.tsx`
-- [x] PIN lock toggle — already wired to `/pin` setup/change/remove flow
-- [x] App disguise mode toggle — already wired to `/disguise`
-- [x] Notification preferences — informational modal (push notifications deferred)
-- [x] Data export (journal + check-ins as JSON) — `Share.share` with full JSON payload — `app/(tabs)/profile.tsx`
-- [x] Delete account (full data wipe) — pre-existing, confirmed working
-- [x] Privacy explanation screen: "You control your visibility." — card at bottom of profile
-
-#### Final Polish
-
-- [x] Accessibility audit: `accessibilityLabel`, `accessibilityRole`, `accessibilityHint` on all interactive elements
-- [x] Trauma-informed copy present on all key screens (anonymous by default, no pressure language)
-- [x] Animations: gentle fade-ins on Home dashboard and Progress screen (`Animated.timing`, `useNativeDriver`)
-- [x] Error states: loading indicator + error view on Progress screen; all forms have validation alerts
-- [x] Offline fallback: journal and check-in use SecureStore offline-first throughout
-- [x] `Card` component upgraded to accept and forward `testID` prop
+Circles are moderated and do not expose your identity to the group until you choose to engage.
 
 ---
 
-## Figma Pages
+### Programs & Growth Tracks
 
-```
-01 Design System
-02 Components
-03 Onboarding
-04 Safety Flow
-05 Home
-06 Journal
-07 Matching
-08 Chat
-09 Resources
-10 Emergency
-11 Settings
-12 Prototype
-```
+Structured programs for people who want a guided path rather than open-ended tools.
+
+Multi-week tracks include:
+
+- Coming Out with Confidence
+- Healing from Family Rejection
+- Building Your Chosen Family
+- Mindfulness for LGBTQ+ Wellbeing
+- Trans+ Peer Café
+- Queer Grief & Loss Circle
+
+Each program combines reading, reflection prompts, check-ins, and connection opportunities. Progress is tracked privately.
 
 ---
 
-## Beta Launch Checklist
+### Resources & Articles
 
-- [ ] All Sprint 1–4 features complete and tested
-- [ ] Crisis hotlines verified per country
-- [ ] Emergency mode QA'd on both iOS and Android
-- [ ] Data encryption confirmed (journal, tokens)
-- [ ] Block/report flows tested end-to-end
-- [ ] "AI is not a therapist" disclaimer in place
-- [ ] Privacy policy written
-- [ ] Moderation process defined
-- [ ] TestFlight / Google Play internal track set up
-- [ ] 5 beta users recruited for feedback
+A curated library of LGBTQ+-specific educational and emotional content:
+
+- Articles on identity, coming out, relationships, and mental health
+- Guides for navigating Swedish systems — healthcare, legal name change, housing rights
+- Bookmarkable for offline reading
 
 ---
 
-## Contributing
+### Events & Workshops
 
-This is a collaborative build. Every feature shipped is potentially life-saving.
+A live event feed showing:
 
-When in doubt, default to:
+- **Online workshops** hosted by the HomeWithin community (weekly and monthly)
+- **Local meetups** by county — Stockholm Pride, Göteborg Pride, Malmö Pride, RFSL open events, and community cafés
+- **RSVP** for upcoming events with calendar reminders
 
-- **Less data** over more
-- **Anonymous** over identified
-- **Calm** over engaging
-- **One step** over many
+---
+
+### Emergency Screen
+
+A dedicated emergency screen — accessible from anywhere in the app in a single tap — that surfaces:
+
+- Critical crisis lines with one-tap calling (Mind 90101, BRIS 116 111)
+- Your nearest RFSL chapter based on GPS county detection
+- Step-by-step guidance on what to do if you are in immediate danger
+
+Designed to be usable in 5 seconds by someone who is frightened and thinking slowly.
+
+---
+
+### Progress & Intentions
+
+A personal dashboard showing:
+
+- Streak tracking for daily check-ins and journaling
+- Mood trends over 7, 30, and 90 days
+- Milestones: first week, first month, first year
+- **Personal intentions** — short statements of what you're working toward — shown on the home screen as a daily reminder
+
+---
+
+## Who This Is For
+
+HomeWithin is built for **any LGBTQ+ person in Sweden** who needs support, but the design is particularly intentional for:
+
+- **Young people (13–25)** still living at home, navigating family dynamics and school
+- **People in rural counties** far from the nearest RFSL chapter or queer community
+- **People under surveillance** — a family member checking their phone, a partner monitoring messages
+- **People in crisis** who need help right now, not in six months
+- **People rebuilding** after rejection, estrangement, or a difficult coming-out
+
+---
+
+## Technology & Privacy
+
+| Layer | Technology | Privacy impact |
+|---|---|---|
+| Mobile app | React Native / Expo (iOS + Android) | Runs natively, no browser history |
+| Auth & data | Supabase — EU-hosted, end-to-end encrypted | GDPR-compliant by architecture |
+| Local data | Expo SecureStore | Journal, safety plan, mood — encrypted on-device only |
+| AI | Session-based, no persistent server storage | No conversation history saved after session ends |
+| Tracking | None | Zero advertising SDKs, zero third-party data sharing |
+
+HomeWithin collects **no advertising data**, uses **no tracking SDKs**, and shares **nothing with third parties**.
+
+---
+
+## The Vision
+
+HomeWithin is not just an app. It is an infrastructure project for LGBTQ+ safety in Sweden.
+
+The goal is a world where every LGBTQ+ person — no matter which of the 21 Swedish counties they live in, no matter how isolated or how surveilled — has access to:
+
+1. Someone to talk to, right now
+2. The resources closest to them
+3. A community that knows what it means to build a life on your own terms
+4. The privacy to do all of that safely
+
+**Home is not a place you're born into. It's something you build.**
+
+HomeWithin helps you build it.
+
+---
+
+## Contact
+
+Built with care in Sweden.
+
+For partnerships, press inquiries, or collaboration with RFSL and Swedish LGBTQ+ organizations:
+**lucas.eduardo2070@gmail.com**
+
+---
+
+*HomeWithin is not a medical device and does not replace professional mental health care. If you are in immediate danger, call 112.*

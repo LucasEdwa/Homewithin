@@ -1,4 +1,5 @@
 import type { CheckIn, JournalEntry } from "@/types";
+import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 
 const ONBOARDING_KEY = "hw_onboarding_complete";
@@ -28,12 +29,22 @@ export async function isOnboardingComplete(): Promise<boolean> {
 }
 
 export async function saveSession(data: object) {
-  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(data));
+  // Strip potentially large arrays before storing — SecureStore has a 2 KB limit.
+  // needs/intentions are re-fetched from Supabase on the next authenticated launch.
+  const {
+    needs: _n,
+    intentions: _i,
+    ...slim
+  } = data as Record<string, unknown>;
+  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(slim));
 }
 
 export async function getSession(): Promise<object | null> {
   const value = await SecureStore.getItemAsync(SESSION_KEY);
-  return value ? JSON.parse(value) : null;
+  if (!value) return null;
+  const parsed = JSON.parse(value);
+  // Restore stripped arrays so callers always get a valid UserProfile shape.
+  return { needs: [], intentions: [], ...parsed };
 }
 
 export async function saveSafetyPlan(steps: string[]) {
@@ -46,12 +57,15 @@ export async function getSafetyPlan(): Promise<string[]> {
 }
 
 export async function setPin(pin: string) {
-  await SecureStore.setItemAsync(PIN_KEY, pin);
+  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+  await SecureStore.setItemAsync(PIN_KEY, hash);
 }
 
 export async function verifyPin(pin: string): Promise<boolean> {
   const stored = await SecureStore.getItemAsync(PIN_KEY);
-  return stored === pin;
+  if (!stored) return false;
+  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+  return stored === hash;
 }
 
 export async function hasPin(): Promise<boolean> {

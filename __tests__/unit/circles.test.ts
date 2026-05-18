@@ -47,6 +47,10 @@ jest.mock("@/services/supabase", () => ({
     return mockCfg.enabled ? supabaseStub : null;
   },
   isSupabaseConfigured: true,
+  async currentUserId() {
+    if (!mockCfg.enabled || !mockCfg.authUser) return null;
+    return mockCfg.authUser.id;
+  },
 }));
 
 import {

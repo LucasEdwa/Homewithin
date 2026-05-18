@@ -37,12 +37,11 @@ const FORMAT_LABELS: Record<WorkshopFormat, string> = {
 };
 
 export default function EventsScreen() {
-  const { profile } = useSession();
+  const { nearbyState } = useSession();
   const [activeTab, setActiveTab] = useState<Tab>('workshops');
-  const country = profile?.country ?? 'United States';
 
   const workshops = getWorkshops();
-  const meetups = getMeetups(country);
+  const meetups = getMeetups(nearbyState ?? undefined);
 
   const openLink = useCallback((url: string) => {
     Linking.openURL(url).catch(() =>
@@ -95,7 +94,7 @@ export default function EventsScreen() {
       {activeTab === 'workshops' ? (
         <WorkshopsList workshops={workshops} onOpenLink={openLink} />
       ) : (
-        <MeetupsList meetups={meetups} country={country} onOpenLink={openLink} />
+        <MeetupsList meetups={meetups} country={nearbyState ?? ''} onOpenLink={openLink} />
       )}
     </SafeAreaView>
   );
@@ -233,7 +232,7 @@ function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
       <View style={styles.metaRow}>
         <Ionicons name="location-outline" size={13} color={Colors.softGreen} />
         <Text style={[styles.metaText, { color: Colors.softGreen, fontWeight: '600' }]}>
-          {meetup.city}, {meetup.country}
+          {meetup.city}, {meetup.state}
         </Text>
       </View>
 

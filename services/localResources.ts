@@ -1,29 +1,48 @@
-import type { LocalResource, LocalResourceType, Workshop, LocalMeetup } from '@/types';
 import {
-  LOCAL_RESOURCES,
-  WORKSHOPS,
-  LOCAL_MEETUPS,
-} from '@/constants/localResources';
+    LOCAL_MEETUPS,
+    LOCAL_RESOURCES,
+    SWEDISH_STATES,
+    WORKSHOPS,
+} from "@/constants/localResources";
+import type {
+    LocalMeetup,
+    LocalResource,
+    LocalResourceType,
+    Workshop,
+} from "@/types";
 
-// ── Location (optional) ───────────────────────────────────────────────────────
-// expo-location is not in the base install. To enable GPS-based country
-// detection, run: npx expo install expo-location
-// and uncomment the implementation below.
+// ── Location ──────────────────────────────────────────────────────────────────
 
 export interface LocationResult {
   granted: boolean;
-  lat?: number;
-  lng?: number;
+  state?: string; // matched Swedish state, if detectable
 }
 
 export async function requestLocationPermission(): Promise<LocationResult> {
   try {
-    // Dynamic import so the app still works without expo-location installed.
-    const Location = await import('expo-location');
+    const Location = await import("expo-location");
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return { granted: false };
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    return { granted: true, lat: pos.coords.latitude, lng: pos.coords.longitude };
+    if (status !== "granted") return { granted: false };
+
+    const pos = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+
+    // Reverse-geocode to get the region name (= Swedish state)
+    const [address] = await Location.reverseGeocodeAsync({
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+    });
+
+    const region = address?.region ?? "";
+    // Match against the known Swedish states list (case-insensitive prefix match)
+    const matched = (SWEDISH_STATES as readonly string[]).find(
+      (s) =>
+        region.toLowerCase().startsWith(s.toLowerCase()) ||
+        s.toLowerCase().startsWith(region.toLowerCase()),
+    );
+
+    return { granted: true, state: matched };
   } catch {
     return { granted: false };
   }
@@ -31,9 +50,9 @@ export async function requestLocationPermission(): Promise<LocationResult> {
 
 // ── Resource helpers ──────────────────────────────────────────────────────────
 
-export function getResourcesByCountry(country: string): LocalResource[] {
+export function getResourcesByState(state: string): LocalResource[] {
   return LOCAL_RESOURCES.filter(
-    (r) => r.country.toLowerCase() === country.toLowerCase()
+    (r) => r.state.toLowerCase() === state.toLowerCase(),
   );
 }
 
@@ -42,23 +61,38 @@ export function getResourcesByType(type: LocalResourceType): LocalResource[] {
 }
 
 export function filterResources(
-  country: string,
-  type?: LocalResourceType
+  state: string,
+  type?: LocalResourceType,
 ): LocalResource[] {
-  const byCountry = getResourcesByCountry(country);
-  if (!type) return byCountry;
-  return byCountry.filter((r) => r.type === type);
+  const byState = getResourcesByState(state);
+  if (!type) return byState;
+  return byState.filter((r) => r.type === type);
 }
 
-// Returns all resources when country is unrecognised (fallback to full list).
-export function getResources(country?: string, type?: LocalResourceType): LocalResource[] {
-  if (!country) return type ? getResourcesByType(type) : LOCAL_RESOURCES;
-  const results = filterResources(country, type);
-  if (results.length === 0 && country) {
-    // Country not in dataset — fall back to type-filtered global list
+// Returns state resources + national (state: 'Sweden') resources for any state selection.
+export function getResources(
+  state?: string,
+  type?: LocalResourceType,
+): LocalResource[] {
+  if (!state) return type ? getResourcesByType(type) : LOCAL_RESOURCES;
+
+  const stateResults = filterResources(state, type);
+
+  // Include national resources alongside any state-specific ones
+  const nationalResults =
+    state.toLowerCase() !== "sweden"
+      ? LOCAL_RESOURCES.filter(
+          (r) =>
+            r.state.toLowerCase() === "sweden" &&
+            (!type || r.type === type),
+        )
+      : [];
+
+  const combined = [...stateResults, ...nationalResults];
+  if (combined.length === 0) {
     return type ? getResourcesByType(type) : LOCAL_RESOURCES;
   }
-  return results;
+  return combined;
 }
 
 // ── Workshop helpers ──────────────────────────────────────────────────────────
@@ -70,21 +104,33 @@ export function getWorkshops(category?: string): Workshop[] {
 
 // ── Meetup helpers ────────────────────────────────────────────────────────────
 
-export function getMeetupsByCountry(country: string): LocalMeetup[] {
+export function getMeetupsByState(state: string): LocalMeetup[] {
   return LOCAL_MEETUPS.filter(
-    (m) => m.country.toLowerCase() === country.toLowerCase()
+    (m) => m.state.toLowerCase() === state.toLowerCase(),
   );
 }
 
-export function getMeetups(country?: string): LocalMeetup[] {
-  if (!country) return LOCAL_MEETUPS;
-  const results = getMeetupsByCountry(country);
-  return results.length > 0 ? results : LOCAL_MEETUPS;
+export function getMeetups(state?: string): LocalMeetup[] {
+  if (!state) return LOCAL_MEETUPS;
+
+  const stateResults = getMeetupsByState(state);
+  const nationalResults =
+    state.toLowerCase() !== "sweden"
+      ? LOCAL_MEETUPS.filter((m) => m.state.toLowerCase() === "sweden")
+      : [];
+
+  const combined = [...stateResults, ...nationalResults];
+  return combined.length > 0 ? combined : LOCAL_MEETUPS;
 }
 
 // ── Distance (haversine, km) ──────────────────────────────────────────────────
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
@@ -99,7 +145,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 export function sortByDistance<T extends { lat?: number; lng?: number }>(
   items: T[],
   userLat: number,
-  userLng: number
+  userLng: number,
 ): T[] {
   return [...items].sort((a, b) => {
     const dA =

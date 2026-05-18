@@ -1,3 +1,4 @@
+import { getResources, requestLocationPermission } from '@/services/localResources';
 import {
     getSession,
     isOnboardingComplete,
@@ -11,6 +12,7 @@ import {
     type DisguiseStyle,
 } from '@/services/storage';
 import { supabase } from '@/services/supabase';
+import type { LocalResource } from '@/types';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
@@ -37,6 +39,8 @@ interface SessionState {
   locked: boolean;
   disguiseEnabled: boolean;
   disguiseStyle: DisguiseStyle;
+  nearbyState: string | null;
+  nearbyResources: LocalResource[];
 }
 
 interface SessionContextValue extends SessionState {
@@ -49,6 +53,7 @@ interface SessionContextValue extends SessionState {
   lock: () => void;
   setDisguiseEnabled: (enabled: boolean) => Promise<void>;
   setDisguiseStyle: (style: DisguiseStyle) => Promise<void>;
+  refreshLocation: () => Promise<void>;
 }
 
 export const SessionContext = createContext<SessionContextValue | null>(null);
@@ -63,6 +68,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     locked: false,
     disguiseEnabled: false,
     disguiseStyle: 'weather',
+    nearbyState: null,
+    nearbyResources: [],
   });
   const appState = useRef(AppState.currentState);
 
@@ -156,6 +163,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         disguiseStyle,
         loading: false,
       }));
+
+      // Detect location in background — updates state when user responds to the OS prompt.
+      ;(async () => {
+        try {
+          const result = await requestLocationPermission();
+          if (result.granted && result.state) {
+            setState(s => ({
+              ...s,
+              nearbyState: result.state!,
+              nearbyResources: getResources(result.state!).slice(0, 5),
+            }));
+          }
+        } catch { /* silently ignore */ }
+      })();
     }
     init();
   }, []);
@@ -215,6 +236,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       locked: false,
       disguiseEnabled: false,
       disguiseStyle: 'weather',
+      nearbyState: null,
+      nearbyResources: [],
     });
   }
 
@@ -225,6 +248,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     } catch (e: any) {
       console.error('setDisguiseEnabled failed:', e?.message);
     }
+  }
+
+  async function refreshLocation() {
+    try {
+      const result = await requestLocationPermission();
+      if (result.granted && result.state) {
+        setState((s) => ({
+          ...s,
+          nearbyState: result.state!,
+          nearbyResources: getResources(result.state!).slice(0, 5),
+        }));
+      }
+    } catch { /* silently ignore */ }
   }
 
   async function setDisguiseStyle(style: DisguiseStyle) {
@@ -249,6 +285,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         lock,
         setDisguiseEnabled,
         setDisguiseStyle,
+        refreshLocation,
       }}
     >
       {children}
