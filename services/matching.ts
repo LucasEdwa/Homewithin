@@ -190,7 +190,7 @@ async function matchesWithProfiles(
   );
   const { data: profiles } = await supabase
     .from("user_profiles")
-    .select("user_id, nickname, age_range, language, country, needs")
+    .select("user_id, nickname, age_range, language, country, needs, avatar_url")
     .in("user_id", peerIds);
   const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
 
@@ -212,6 +212,7 @@ async function matchesWithProfiles(
             language: p.language ?? undefined,
             country: p.country ?? undefined,
             needs: p.needs ?? [],
+            avatarUrl: p.avatar_url ?? undefined,
           }
         : undefined,
     };
