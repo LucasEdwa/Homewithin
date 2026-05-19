@@ -1,15 +1,18 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { useUnread } from '@/context/UnreadContext';
 import { containsCrisisKeywords, getMessages, sendMessage, subscribeToMessages } from '@/services/chat';
 import { blockUser, getMatchPeerId, reportMessage } from '@/services/matching';
 import { supabase } from '@/services/supabase';
 import type { Message } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActionSheetIOS,
     Alert,
+    AppState,
     FlatList,
     KeyboardAvoidingView,
     Platform,
@@ -24,7 +27,8 @@ import {
 const CRISIS_HOTLINE = 'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Line: text HOME to 741741';
 
 export default function ChatScreen() {
-  const { matchId, nickname } = useLocalSearchParams<{ matchId: string; nickname: string }>();
+  const { matchId, nickname, avatarUrl } = useLocalSearchParams<{ matchId: string; nickname: string; avatarUrl?: string }>();
+  const { markRead, setActiveMatch } = useUnread();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [disappearing, setDisappearing] = useState(false);
@@ -37,12 +41,25 @@ export default function ChatScreen() {
     supabase?.auth.getUser().then(({ data: { user } }) => setMyUserId(user?.id ?? null));
   }, []);
 
+  // Tell UnreadContext this chat is active so incoming messages don't increment the badge.
   useEffect(() => {
     if (!matchId) return;
-    getMessages(matchId).then((msgs) => {
-      setMessages(msgs);
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
-    });
+    setActiveMatch(matchId);
+    return () => setActiveMatch(null);
+  }, [matchId]);
+
+  useEffect(() => {
+    if (!matchId) return;
+
+    function loadMessages() {
+      getMessages(matchId).then((msgs) => {
+        setMessages(msgs);
+        setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
+      });
+      markRead(matchId);
+    }
+
+    loadMessages();
 
     const unsub = subscribeToMessages(matchId, (msg) => {
       setMessages((prev) => {
@@ -50,8 +67,18 @@ export default function ChatScreen() {
         return [...prev, msg];
       });
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+      markRead(matchId);
     });
-    return unsub;
+
+    // Refetch on foreground — covers WebSocket gaps when the app was backgrounded.
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') loadMessages();
+    });
+
+    return () => {
+      unsub();
+      appStateSub.remove();
+    };
   }, [matchId]);
 
   async function handleSend() {
@@ -157,7 +184,11 @@ export default function ChatScreen() {
         </TouchableOpacity>
         <View style={styles.navCenter}>
           <View style={styles.navAvatar}>
-            <Text style={styles.navAvatarText}>{(nickname?.[0] ?? '?').toUpperCase()}</Text>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.navAvatarImage} contentFit="cover" />
+            ) : (
+              <Text style={styles.navAvatarText}>{(nickname?.[0] ?? '?').toUpperCase()}</Text>
+            )}
           </View>
           <Text style={styles.navName}>{nickname ?? 'Chat'}</Text>
         </View>
@@ -300,6 +331,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navAvatarText: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  navAvatarImage: { width: 34, height: 34, borderRadius: 17 },
   navName: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   safetyBanner: {
     flexDirection: 'row',

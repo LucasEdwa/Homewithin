@@ -43,6 +43,12 @@ export async function sendMessage(
     .single();
 
   if (error) { console.error('Send message failed:', error.message); return null; }
+
+  // Fire push notification to the other participant — ignore failures so chat still works.
+  supabase.functions
+    .invoke('send-push', { body: { matchId, body } })
+    .catch(() => {});
+
   return rowToMessage(data);
 }
 
@@ -78,7 +84,10 @@ export function subscribeToMessages(
         onMessage(rowToMessage(row));
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR') console.warn('[chat] realtime subscription error — check messages table is in supabase_realtime publication');
+      if (status === 'TIMED_OUT') console.warn('[chat] realtime subscription timed out');
+    });
 
   return () => { supabase!.removeChannel(channel); };
 }
