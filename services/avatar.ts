@@ -1,25 +1,38 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import { currentUserId, supabase } from './supabase';
 
 const BUCKET = 'avatars';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 
-export async function uploadAvatar(localUri: string): Promise<string> {
+export async function uploadAvatar(localUri: string, mimeType?: string): Promise<string> {
   const userId = await currentUserId();
   if (!userId || !supabase) throw new Error('Not authenticated');
 
-  const ext = localUri.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('No session');
+
+  const mime = mimeType ?? 'image/jpeg';
+  const ext = mime.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
   const path = `${userId}/avatar.${ext}`;
+  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
 
-  const response = await fetch(localUri);
-  const blob = await response.blob();
+  // FileSystem.uploadAsync uses the native HTTP stack, which correctly handles
+  // both file:// and content:// URIs on Android without the blob/arrayBuffer issues.
+  const result = await FileSystem.uploadAsync(uploadUrl, localUri, {
+    httpMethod: 'POST',
+    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT as any,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': mime,
+      'x-upsert': 'true',
+    },
+  });
 
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, blob, { upsert: true, contentType: `image/${ext}` });
-
-  if (error) throw new Error(error.message);
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(`Upload failed (${result.status}): ${result.body}`);
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  // Bust any CDN cache by appending a timestamp
   return `${data.publicUrl}?t=${Date.now()}`;
 }
 
