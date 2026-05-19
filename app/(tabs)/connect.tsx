@@ -1,5 +1,6 @@
 import { EmergencyButton } from '@/components/EmergencyButton';
 import { Card } from '@/components/ui/Card';
+import { Image } from 'expo-image';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
@@ -354,9 +355,18 @@ function MatchCard({
 }) {
   return (
     <Card elevated style={styles.matchCard}>
-      <View style={styles.matchAvatar}>
-        <Text style={styles.matchAvatarText}>{(peer.nickname[0] ?? '?').toUpperCase()}</Text>
-      </View>
+      {peer.avatarUrl ? (
+        <Image
+          source={{ uri: peer.avatarUrl }}
+          style={styles.matchAvatarImage}
+          contentFit="cover"
+          transition={200}
+        />
+      ) : (
+        <View style={styles.matchAvatar}>
+          <Text style={styles.matchAvatarText}>{(peer.nickname[0] ?? '?').toUpperCase()}</Text>
+        </View>
+      )}
       <Text style={styles.matchNickname}>{peer.nickname}</Text>
 
       <View style={styles.matchMeta}>
@@ -449,6 +459,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.safeBlue,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  matchAvatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   matchAvatarText: { fontSize: 36, fontWeight: '700', color: Colors.white },
   matchNickname: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },

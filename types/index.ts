@@ -176,6 +176,7 @@ export interface PeerProfile {
   language?: string;
   country?: string;
   needs: string[];
+  avatarUrl?: string;
 }
 
 export interface Match {

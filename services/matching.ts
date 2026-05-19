@@ -39,6 +39,7 @@ export async function syncProfile(profile: UserProfile): Promise<void> {
       hide_from_search: profile.hideFromSearch,
       needs: profile.needs,
       intentions: profile.intentions ?? [],
+      avatar_url: profile.avatarUrl ?? null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" }
@@ -84,7 +85,7 @@ export async function findMatches(
   let query = supabase
     .from("user_profiles")
     .select(
-      "user_id, nickname, age_range, language, country, needs, intentions",
+      "user_id, nickname, age_range, language, country, needs, intentions, avatar_url",
     )
     .eq("hide_from_search", false)
     // Only surface peers who marked themselves open to this intention.
@@ -109,6 +110,7 @@ export async function findMatches(
     language: row.language ?? undefined,
     country: row.country ?? undefined,
     needs: row.needs ?? [],
+    avatarUrl: row.avatar_url ?? undefined,
   }));
 }
 
