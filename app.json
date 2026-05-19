@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.homewithin.app",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Homewithin uses your location to show LGBTQ+ resources near you.",
         "ITSAppUsesNonExemptEncryption": false,
