@@ -28,7 +28,7 @@ export default function OnboardingStep1() {
   const [ageRange, setAgeRange] = useState('');
   const [language, setLanguage] = useState('English');
   const [country, setCountry] = useState('');
-  const [hideFromSearch, setHideFromSearch] = useState(true);
+  const [hideFromSearch, setHideFromSearch] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {
@@ -67,6 +67,7 @@ export default function OnboardingStep1() {
         {/* Progress */}
         <View style={styles.progress}>
           <View style={[styles.dot, styles.dotActive]} />
+          <View style={styles.dot} />
           <View style={styles.dot} />
         </View>
 

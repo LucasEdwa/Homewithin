@@ -2,9 +2,11 @@ import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
+  Animated,
   BackHandler,
   Platform,
   SafeAreaView,
@@ -23,7 +25,33 @@ const PILLARS: { icon: IoniconsName; label: string; color: string }[] = [
   { icon: 'star-outline',             label: 'Growth',     color: Colors.safetyYellow },
 ];
 
+const RING_COUNT = 3;
+const RING_DELAY = 700;
+const RING_DURATION = 2200;
+
 export default function WelcomeScreen() {
+  const rings = useRef(
+    Array.from({ length: RING_COUNT }, () => new Animated.Value(0))
+  ).current;
+
+  useEffect(() => {
+    const animations = rings.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * RING_DELAY),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: RING_DURATION,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ])
+      )
+    );
+    Animated.parallel(animations).start();
+    return () => animations.forEach((a) => a.stop());
+  }, []);
+
   function handleQuickExit() {
     if (Platform.OS === 'android') {
       BackHandler.exitApp();
@@ -34,22 +62,26 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <TouchableOpacity
-        style={styles.quickExit}
-        onPress={handleQuickExit}
-        accessibilityLabel="Quick exit — close app"
-      >
-        <Ionicons name="exit-outline" size={14} color={Colors.white} />
-        <Text style={styles.quickExitText}>Quick Exit</Text>
-      </TouchableOpacity>
-
       <View style={styles.content}>
-        {/* Logo */}
+        {/* Logo with radiating rings */}
         <View style={styles.logoArea}>
-          <View style={styles.logoCircle}>
-            <Ionicons name="home" size={36} color={Colors.safeBlue} />
+          <View style={styles.ringContainer}>
+            {rings.map((anim, i) => {
+              const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] });
+              const opacity = anim.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.35, 0] });
+              return (
+                <Animated.View
+                  key={i}
+                  style={[styles.ring, { transform: [{ scale }], opacity }]}
+                />
+              );
+            })}
+            <Image
+              source={require('../assets/images/homeIcon.png')}
+              style={styles.appIcon}
+              contentFit="contain"
+            />
           </View>
-          <Text style={styles.appName}>HomeWithin</Text>
           <Text style={styles.tagline}>You are safe here.</Text>
         </View>
 
@@ -57,7 +89,7 @@ export default function WelcomeScreen() {
         <View style={styles.pillars}>
           {PILLARS.map((p) => (
             <View key={p.label} style={styles.pillar}>
-              <View style={[styles.pillarIconBg, { backgroundColor: p.color + '18' }]}>
+              <View style={[styles.pillarIconBg, { backgroundColor: p.color + '20' }]}>
                 <Ionicons name={p.icon} size={22} color={p.color} />
               </View>
               <Text style={styles.pillarLabel}>{p.label}</Text>
@@ -91,9 +123,11 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.warmWhite },
+const ICON_SIZE = 180;
+const RING_SIZE = ICON_SIZE  + 40; // Max scale + padding
 
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: 'rgba(251, 249, 240, 1)' },
   content: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
@@ -101,16 +135,26 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xxl,
     paddingBottom: Spacing.xl,
   },
-  logoArea: { alignItems: 'center', marginTop: Spacing.xl, gap: Spacing.sm },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.safeBlue + '18',
+  logoArea: { alignItems: 'center', gap: Spacing.lg, marginTop: Spacing.xl },
+  ringContainer: {
+    width: RING_SIZE,
+    height: RING_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  appName: { fontSize: 32, fontWeight: '700', color: Colors.safeBlue, letterSpacing: -0.5 },
+  ring: {
+    position: 'absolute',
+    width: RING_SIZE ,
+    height: RING_SIZE,
+    borderRadius: RING_SIZE / 2,
+    borderWidth: 2,
+    borderColor: Colors.safeBlue,
+  },
+  appIcon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+      borderRadius: 40,
+  },
   tagline: { fontSize: 18, color: Colors.textSecondary, fontStyle: 'italic' },
   pillars: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: Spacing.xl },
   pillar: { alignItems: 'center', gap: Spacing.xs },
@@ -124,19 +168,10 @@ const styles = StyleSheet.create({
   pillarLabel: { fontSize: 11, fontWeight: '500', color: Colors.textSecondary },
   ctas: { gap: Spacing.md, alignItems: 'center' },
   ctaBtn: { width: '100%' },
-  guestLink: { fontSize: 14, color: Colors.textMuted, textDecorationLine: 'underline', marginTop: Spacing.xs },
-  quickExit: {
-    position: 'absolute',
-    top: 56,
-    right: Spacing.md,
-    zIndex: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.alertRed,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+  guestLink: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textDecorationLine: 'underline',
+    marginTop: Spacing.xs,
   },
-  quickExitText: { color: Colors.white, fontSize: 13, fontWeight: '600' },
 });

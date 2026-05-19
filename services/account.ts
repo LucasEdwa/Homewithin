@@ -12,13 +12,14 @@ const EXTRA_LOCAL_KEYS = [
   "hw_bookmarks",
 ];
 
-// Tables containing user-owned rows. Order matters: rows referencing others
-// first (messages → matches), then leaf tables, then user_profiles.
-const USER_TABLES_BY_USER_ID = ["user_profiles"];
+// Tables containing user-owned rows. Order matters: child rows first, then parents.
+const USER_TABLES_BY_USER_ID = ["circle_members", "user_progress", "check_ins", "journal_entries", "user_profiles"];
 const USER_TABLES_BY_REQUESTER = ["matches"];
-const USER_TABLES_BY_SENDER = ["messages"];
+const USER_TABLES_BY_SENDER = ["messages", "circle_messages"];
 const USER_TABLES_BY_BLOCKER = ["blocks"];
-const USER_TABLES_BY_REPORTER = ["reports"];
+const USER_TABLES_BY_BLOCKED = ["blocks"];
+const USER_TABLES_BY_REPORTER = ["reports", "circle_reports"];
+const USER_TABLES_BY_REPORTED = ["reports"];
 
 export interface DeleteAccountResult {
   localCleared: boolean;
@@ -88,8 +89,14 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
           USER_TABLES_BY_REPORTER.forEach((t) =>
             run(sb.from(t).delete().eq("reporter_id", uid!)),
           );
+          USER_TABLES_BY_REPORTED.forEach((t) =>
+            run(sb.from(t).delete().eq("reported_id", uid!)),
+          );
           USER_TABLES_BY_BLOCKER.forEach((t) =>
             run(sb.from(t).delete().eq("blocker_id", uid!)),
+          );
+          USER_TABLES_BY_BLOCKED.forEach((t) =>
+            run(sb.from(t).delete().eq("blocked_id", uid!)),
           );
           USER_TABLES_BY_REQUESTER.forEach((t) => {
             run(sb.from(t).delete().eq("requester_id", uid!));

@@ -6,25 +6,20 @@ import { syncProfile } from '@/services/matching';
 import { INTENTIONS, type IntentionId } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-export default function IntentionsScreen() {
+export default function OnboardingStep3() {
   const { profile, setProfile } = useSession();
   const [selected, setSelected] = useState<Set<IntentionId>>(new Set());
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setSelected(new Set((profile?.intentions ?? []) as IntentionId[]));
-  }, [profile]);
+  const [loading, setLoading] = useState(false);
 
   function toggle(id: IntentionId) {
     setSelected((prev) => {
@@ -35,38 +30,32 @@ export default function IntentionsScreen() {
     });
   }
 
-  async function handleSave() {
-    if (!profile) return;
-    setSaving(true);
-    try {
-      const intentions = Array.from(selected);
+  async function handleFinish() {
+    setLoading(true);
+    const intentions = Array.from(selected);
+    if (profile) {
       const updated = { ...profile, intentions };
       await setProfile(updated);
-      await syncProfile(updated);
-      Alert.alert('Saved', 'Your matching preferences are updated.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
-    } catch (e: any) {
-      Alert.alert('Could not save', e?.message ?? 'Please check your connection and try again.');
-    } finally {
-      setSaving(false);
+      await syncProfile(updated).catch((e) =>
+        console.warn('Intentions sync failed:', e?.message)
+      );
     }
+    router.replace('/safety');
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.navTitle}>What I'm open to</Text>
-        <View style={styles.navBtn} />
-      </View>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {/* Progress */}
+        <View style={styles.progress}>
+          <View style={styles.dot} />
+          <View style={styles.dot} />
+          <View style={[styles.dot, styles.dotActive]} />
+        </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.intro}>
-          Pick the kinds of connections you're willing to offer others. People searching
-          for one of these will be able to find you. You can change this anytime.
+        <Text style={styles.title}>What are you open to offering?</Text>
+        <Text style={styles.subtitle}>
+          People searching for these will be able to find you. You can change this anytime from your profile.
         </Text>
 
         <View style={styles.list}>
@@ -97,16 +86,24 @@ export default function IntentionsScreen() {
           })}
         </View>
 
+        <Text style={styles.hint}>
+          Leaving everything unchecked means you won't appear in anyone's matches — you can still browse.
+        </Text>
+
         <Button
-          label={saving ? 'Saving…' : 'Save'}
-          onPress={handleSave}
-          loading={saving}
+          label={loading ? 'Finishing…' : 'Get started'}
+          onPress={handleFinish}
+          loading={loading}
           style={styles.cta}
         />
 
-        <Text style={styles.hint}>
-          Leaving everything unchecked means you won't appear in anyone's matches.
-        </Text>
+        <TouchableOpacity onPress={handleFinish} style={styles.skip} accessibilityLabel="Skip this step">
+          <Text style={styles.skipText}>Skip for now</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -114,19 +111,12 @@ export default function IntentionsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  navBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  navTitle: { fontSize: 17, fontWeight: '600', color: Colors.textPrimary },
-  scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 80 },
-  intro: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
+  scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl, gap: Spacing.md },
+  progress: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.border },
+  dotActive: { backgroundColor: Colors.safeBlue, width: 24 },
+  title: { fontSize: 26, fontWeight: '700', color: Colors.textPrimary },
+  subtitle: { fontSize: 15, color: Colors.textSecondary, lineHeight: 22 },
   list: { gap: Spacing.sm },
   row: {
     flexDirection: 'row',
@@ -159,6 +149,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxOn: { backgroundColor: Colors.safeBlue, borderColor: Colors.safeBlue },
-  cta: { marginTop: Spacing.md },
   hint: { fontSize: 12, color: Colors.textMuted, textAlign: 'center' },
+  cta: { marginTop: Spacing.sm },
+  skip: { alignItems: 'center' },
+  skipText: { fontSize: 14, color: Colors.textMuted, textDecorationLine: 'underline' },
+  back: { alignItems: 'center' },
+  backText: { fontSize: 14, color: Colors.textMuted },
 });

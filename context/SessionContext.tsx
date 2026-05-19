@@ -26,6 +26,7 @@ export interface UserProfile {
   needs: string[];
   intentions?: string[];
   isAnonymous: boolean;
+  avatarUrl?: string;
 }
 
 export type SafetyLevel = 'green' | 'yellow' | 'red' | null;
@@ -73,6 +74,39 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   });
   const appState = useRef(AppState.currentState);
 
+  // Re-hydrate profile from Supabase whenever the user signs in.
+  // Without this, the anonymous local profile persists after sign-in.
+  useEffect(() => {
+    const client = supabase;
+    if (!client) return;
+    const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const uid = session.user.id;
+        const { data: row } = await client
+          .from('user_profiles')
+          .select('nickname, age_range, language, country, hide_from_search, needs, intentions')
+          .eq('user_id', uid)
+          .maybeSingle();
+        if (row) {
+          const hydrated: UserProfile = {
+            nickname: row.nickname ?? '',
+            pronouns: '',
+            ageRange: row.age_range ?? '',
+            language: row.language ?? '',
+            country: row.country ?? '',
+            hideFromSearch: !!row.hide_from_search,
+            needs: row.needs ?? [],
+            intentions: row.intentions ?? [],
+            isAnonymous: false,
+          };
+          setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
+          await saveSession(hydrated).catch(() => {});
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   useEffect(() => {
     async function init() {
       const [complete, session, pinExists, disguiseOn, disguiseStyle] = await Promise.all([
@@ -83,10 +117,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         storageGetDisguiseStyle(),
       ]);
 
-      // If there's no local profile but the user is authenticated with Supabase,
-      // hydrate the profile from the user_profiles table so the app is usable.
+      // Always check Supabase auth on startup. An authenticated session overrides
+      // any anonymous local profile so a signed-in user never sees guest data.
       let profile = session as UserProfile | null;
-      if (!profile && supabase) {
+      if (supabase) {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -108,7 +142,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                 hideFromSearch: !!row.hide_from_search,
                 needs: row.needs ?? [],
                 intentions: row.intentions ?? [],
-                isAnonymous: true,
+                isAnonymous: false,
               };
               // Mirror to SecureStore so subsequent launches are offline-ready.
               await saveSession(profile).catch(() => {});

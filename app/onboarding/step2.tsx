@@ -48,25 +48,29 @@ export default function OnboardingStep2() {
     });
   }
 
-  async function handleFinish() {
+  async function handleNext() {
     setLoading(true);
-    if (profile) {
-      await setProfile({ ...profile, needs: Array.from(selected), isAnonymous: true });
-    }
+
+    const authUser = supabase
+      ? (await supabase.auth.getUser().catch(() => ({ data: { user: null } }))).data.user
+      : null;
+
+    const isAnonymous = !authUser;
+    const updated = profile
+      ? { ...profile, needs: Array.from(selected), isAnonymous }
+      : null;
+
+    if (updated) await setProfile(updated);
     await completeOnboarding();
 
-    // Give anonymous users a real Supabase UUID so their data syncs to the DB.
-    // If they later sign up with email, the anonymous account can be upgraded.
-    if (supabase) {
-      const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-      if (!user) {
-        await supabase.auth.signInAnonymously().catch((e) =>
-          console.warn('Anonymous sign-in failed:', e?.message)
-        );
-      }
+    if (!authUser && supabase) {
+      // Guest — create an anonymous Supabase session before step3 so syncProfile works.
+      const { error: anonErr } = await supabase.auth.signInAnonymously();
+      if (anonErr) console.warn('Anonymous sign-in failed:', anonErr.message);
     }
 
-    router.replace('/safety');
+    setLoading(false);
+    router.push('/onboarding/step3');
   }
 
   return (
@@ -75,6 +79,7 @@ export default function OnboardingStep2() {
         <View style={styles.progress}>
           <View style={styles.dot} />
           <View style={[styles.dot, styles.dotActive]} />
+          <View style={styles.dot} />
         </View>
 
         <Text style={styles.title}>What would help most today?</Text>
@@ -113,8 +118,8 @@ export default function OnboardingStep2() {
         </View>
 
         <View style={styles.actions}>
-          <Button label="Get started" onPress={handleFinish} loading={loading} style={styles.cta} />
-          <TouchableOpacity onPress={handleFinish} accessibilityLabel="Skip this step">
+          <Button label="Continue" onPress={handleNext} loading={loading} style={styles.cta} />
+          <TouchableOpacity onPress={handleNext} accessibilityLabel="Skip this step">
             <Text style={styles.skip}>Skip for now</Text>
           </TouchableOpacity>
         </View>

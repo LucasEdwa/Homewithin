@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -42,10 +43,23 @@ export default function SignInScreen() {
     }
     setLoading(true);
     setError('');
-    const { error: authError } = await supabase.auth.signUp({ email, password });
+    const { data, error: authError } = await supabase.auth.signUp({ email, password });
     setLoading(false);
-    if (authError) setError(authError.message);
-    else router.push('/onboarding/step1');
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+    // Supabase returns a session immediately if email confirmation is disabled.
+    // If session is null, the user needs to confirm their email first.
+    if (!data.session) {
+      Alert.alert(
+        'Check your email',
+        'We sent a confirmation link to ' + email.trim() + '. Open it and then sign in.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    router.push('/onboarding/step1');
   }
 
   return (

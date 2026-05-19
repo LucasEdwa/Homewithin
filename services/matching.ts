@@ -22,20 +22,32 @@ export async function getMatchPeerId(matchId: string): Promise<string | null> {
 export async function syncProfile(profile: UserProfile): Promise<void> {
   if (!supabase) return;
   const uid = await currentUserId();
-  if (!uid) return;
+  if (!uid) {
+    console.warn("[syncProfile] No authenticated user — profile saved locally only");
+    return;
+  }
 
-  const { error } = await supabase.from("user_profiles").upsert({
-    user_id: uid,
-    nickname: profile.nickname,
-    age_range: profile.ageRange,
-    language: profile.language,
-    country: profile.country,
-    hide_from_search: profile.hideFromSearch,
-    needs: profile.needs,
-    intentions: profile.intentions ?? [],
-    updated_at: new Date().toISOString(),
-  });
-  if (error) console.error("Profile sync failed:", error.message);
+  console.log("[syncProfile] upserting for uid", uid, "intentions:", profile.intentions);
+
+  const { error } = await supabase.from("user_profiles").upsert(
+    {
+      user_id: uid,
+      nickname: profile.nickname,
+      age_range: profile.ageRange,
+      language: profile.language,
+      country: profile.country,
+      hide_from_search: profile.hideFromSearch,
+      needs: profile.needs,
+      intentions: profile.intentions ?? [],
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+  if (error) {
+    console.error("[syncProfile] upsert failed:", error.message, error.code);
+    throw new Error(error.message);
+  }
+  console.log("[syncProfile] upsert success for uid", uid);
 }
 
 export async function findMatches(

@@ -1,15 +1,50 @@
 import { Colors } from '@/constants/Colors';
 import { useSession } from '@/context/SessionContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
+
+const RING_COUNT = 3;
+const RING_DELAY = 700;
+const RING_DURATION = 2200;
+const MIN_SPLASH_MS = 3000;
+
+const ICON_SIZE = 130;
+const RING_SIZE = ICON_SIZE + 16;
 
 export default function SplashScreen() {
   const { onboardingComplete, loading, locked, disguiseEnabled } = useSession();
+  const [timerDone, setTimerDone] = useState(false);
 
+  const rings = useRef(
+    Array.from({ length: RING_COUNT }, () => new Animated.Value(0))
+  ).current;
+
+  // Start radiating ring animations.
   useEffect(() => {
-    if (loading) return;
+    const animations = rings.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * RING_DELAY),
+          Animated.timing(anim, { toValue: 1, duration: RING_DURATION, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ])
+      )
+    );
+    Animated.parallel(animations).start();
+    return () => animations.forEach((a) => a.stop());
+  }, []);
+
+  // 3-second minimum display.
+  useEffect(() => {
+    const t = setTimeout(() => setTimerDone(true), MIN_SPLASH_MS);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Navigate only when both session and timer are ready.
+  useEffect(() => {
+    if (loading || !timerDone) return;
     if (disguiseEnabled) {
       router.replace('/decoy');
     } else if (locked) {
@@ -19,14 +54,27 @@ export default function SplashScreen() {
     } else {
       router.replace('/welcome');
     }
-  }, [loading, onboardingComplete, locked, disguiseEnabled]);
+  }, [loading, timerDone, onboardingComplete, locked, disguiseEnabled]);
 
   return (
     <View style={styles.container}>
-      <Ionicons name="home" size={56} color={Colors.safeBlue} />
-      <Text style={styles.name}>HomeWithin</Text>
-      <Text style={styles.tagline}>You are safe here.</Text>
-      <ActivityIndicator color={Colors.safeBlue} style={styles.loader} />
+      <View style={styles.ringContainer}>
+        {rings.map((anim, i) => {
+          const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] });
+          const opacity = anim.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.35, 0] });
+          return (
+            <Animated.View
+              key={i}
+              style={[styles.ring, { transform: [{ scale }], opacity }]}
+            />
+          );
+        })}
+        <Image
+          source={require('../assets/images/homeIcon.png')}
+          style={styles.icon}
+          contentFit="contain"
+        />
+      </View>
     </View>
   );
 }
@@ -34,12 +82,28 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.warmWhite,
+    backgroundColor: 'rgba(251, 249, 240, 1)',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
   },
-  name: { fontSize: 32, fontWeight: '700', color: Colors.safeBlue, letterSpacing: -0.5 },
-  tagline: { fontSize: 16, color: Colors.textSecondary, fontStyle: 'italic' },
-  loader: { marginTop: 24 },
+  ringContainer: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ring: {
+    position: 'absolute',
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_SIZE / 2,
+    borderWidth: 2,
+    borderColor: Colors.safeBlue,
+  },
+  icon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    borderRadius: ICON_SIZE / 2,
+    overflow: 'hidden',
+  },
 });

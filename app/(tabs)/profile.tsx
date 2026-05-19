@@ -5,16 +5,21 @@ import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { deleteAccount } from '@/services/account';
+import { uploadAvatar } from '@/services/avatar';
 import { syncProfile } from '@/services/matching';
+import { signOut } from '@/services/supabase';
 import { getBookmarkedResources } from '@/services/resources';
 import { getCheckIns, getJournalEntries } from '@/services/storage';
 import type { Resource } from '@/types';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActionSheetIOS,
+  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -34,12 +39,57 @@ export default function ProfileScreen() {
   const [hidingPending, setHidingPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       getBookmarkedResources().then(setBookmarks);
     }, [])
   );
+
+  async function handlePickAvatar() {
+    if (avatarUploading) return;
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission needed',
+        'Allow photo access in Settings to set a profile photo.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const localUri = result.assets[0].uri;
+
+    // Optimistic local update so the avatar appears instantly.
+    if (profile) {
+      await setProfile({ ...profile, avatarUrl: localUri });
+    }
+
+    setAvatarUploading(true);
+    try {
+      const remoteUrl = await uploadAvatar(localUri);
+      if (profile) {
+        const updated = { ...profile, avatarUrl: remoteUrl };
+        await setProfile(updated);
+        await syncProfile(updated).catch(() => {});
+      }
+    } catch {
+      // Keep the local URI as a fallback — upload failed silently.
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
 
   function handleChangeNickname() {
     if (!profile) return;
@@ -118,6 +168,25 @@ export default function ProfileScreen() {
     );
   }
 
+  function handleSignOut() {
+    Alert.alert(
+      'Sign out?',
+      'You\'ll need to sign in again to access your account.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut().catch(() => {});
+            reset();
+            router.replace('/welcome');
+          },
+        },
+      ]
+    );
+  }
+
   function handleDeleteAccount() {
     if (deleting) return;
     Alert.alert(
@@ -132,16 +201,23 @@ export default function ProfileScreen() {
             setDeleting(true);
             try {
               const result = await deleteAccount();
-              if (result.errors.length > 0) {
-                console.warn('deleteAccount finished with errors:', result.errors);
+              if (!result.authRowDeleted && result.errors.length > 0) {
+                Alert.alert(
+                  'Could not delete account',
+                  result.errors.join('\n') + '\n\nYour local data was cleared. Contact support if the account persists.',
+                  [{ text: 'OK', onPress: () => { reset(); router.replace('/welcome'); } }]
+                );
+                setDeleting(false);
+                return;
               }
             } catch (e: any) {
-              console.error('deleteAccount threw:', e?.message);
-            } finally {
-              reset();
+              Alert.alert('Delete failed', e?.message ?? 'Something went wrong. Please try again.');
               setDeleting(false);
-              router.replace('/welcome');
+              return;
             }
+            reset();
+            setDeleting(false);
+            router.replace('/welcome');
           },
         },
       ]
@@ -207,9 +283,34 @@ export default function ProfileScreen() {
 
         {/* Identity */}
         <Card elevated style={styles.section}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{profile?.nickname?.[0]?.toUpperCase() ?? '?'}</Text>
-          </View>
+          <TouchableOpacity
+            onPress={handlePickAvatar}
+            activeOpacity={0.8}
+            accessibilityLabel="Change profile photo"
+            accessibilityRole="button"
+            accessibilityHint="Double tap to choose a photo from your library"
+            style={styles.avatarWrapper}
+          >
+            {profile?.avatarUrl ? (
+              <Image
+                source={{ uri: profile.avatarUrl }}
+                style={styles.avatarImage}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{profile?.nickname?.[0]?.toUpperCase() ?? '?'}</Text>
+              </View>
+            )}
+            <View style={styles.avatarBadge}>
+              {avatarUploading ? (
+                <ActivityIndicator size={12} color={Colors.white} />
+              ) : (
+                <Ionicons name="camera" size={12} color={Colors.white} />
+              )}
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handleChangeNickname}
             accessibilityLabel="Change nickname"
@@ -311,6 +412,13 @@ export default function ProfileScreen() {
           </Card>
         )}
 
+        {/* Sign out */}
+        <Button
+          label="Sign out"
+          variant="secondary"
+          onPress={handleSignOut}
+        />
+
         {/* Danger zone */}
         <View style={styles.danger}>
           <Button
@@ -355,17 +463,38 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, paddingBottom: 120, gap: Spacing.lg },
   title: { fontSize: 26, fontWeight: '700', color: Colors.textPrimary },
   section: { gap: Spacing.sm },
+  avatarWrapper: {
+    alignSelf: 'center',
+    marginBottom: Spacing.sm,
+    position: 'relative',
+  },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.safeBlue,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: Spacing.sm,
   },
-  avatarText: { fontSize: 30, fontWeight: '700', color: Colors.white },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.safeBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.warmWhite,
+  },
+  avatarText: { fontSize: 32, fontWeight: '700', color: Colors.white },
   nickname: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
   nicknameHint: { fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginTop: 2 },
   pronouns: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center' },

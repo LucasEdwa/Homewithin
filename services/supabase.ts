@@ -59,3 +59,8 @@ export async function currentUserId(): Promise<string | null> {
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   return user?.id ?? null;
 }
+
+export async function signOut(): Promise<void> {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+}
