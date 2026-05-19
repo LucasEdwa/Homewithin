@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
+import { signOut } from '@/services/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -52,6 +53,11 @@ export default function WelcomeScreen() {
     return () => animations.forEach((a) => a.stop());
   }, []);
 
+  async function handleStartAnonymously() {
+    await signOut().catch(() => {});
+    router.push('/onboarding/step1');
+  }
+
   function handleQuickExit() {
     if (Platform.OS === 'android') {
       BackHandler.exitApp();
@@ -101,7 +107,7 @@ export default function WelcomeScreen() {
         <View style={styles.ctas}>
           <Button
             label="Start anonymously"
-            onPress={() => router.push('/onboarding/step1')}
+            onPress={handleStartAnonymously}
             variant="primary"
             style={styles.ctaBtn}
           />
@@ -112,7 +118,7 @@ export default function WelcomeScreen() {
             style={styles.ctaBtn}
           />
           <TouchableOpacity
-            onPress={() => router.push('/onboarding/step1')}
+            onPress={handleStartAnonymously}
             accessibilityLabel="Continue as guest"
           >
             <Text style={styles.guestLink}>Continue as guest — no account needed</Text>

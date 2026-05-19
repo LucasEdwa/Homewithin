@@ -67,7 +67,7 @@ export default function RootLayout() {
             <Stack.Screen name="lock" options={{ gestureEnabled: false }} />
             <Stack.Screen name="emergency" options={{ presentation: 'modal' }} />
             <Stack.Screen name="decoy" />
-            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
           </Stack>
         </LockGate>
         <StatusBar style="dark" />
