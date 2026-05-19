@@ -4,7 +4,7 @@
     "slug": "Homewithin",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/homeIcon.png",
+    "icon": "./assets/images/homeIcon_fixed.png",
     "scheme": "homewithin",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
