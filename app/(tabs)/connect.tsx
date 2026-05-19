@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
+import { useUnread } from '@/context/UnreadContext';
 import {
   acceptIncomingLike,
   connectMatch,
@@ -35,6 +36,7 @@ type View_ = 'intentions' | 'browsing' | 'empty';
 
 export default function ConnectScreen() {
   const { profile } = useSession();
+  const { unreadByMatch, refresh: refreshUnread } = useUnread();
   const [view, setView] = useState<View_>('intentions');
   const [intention, setIntention] = useState<IntentionId | null>(null);
   const [candidates, setCandidates] = useState<PeerProfile[]>([]);
@@ -56,6 +58,7 @@ export default function ConnectScreen() {
         setMyMatches(matches);
         setPendingOutgoing(pending);
         setIncomingLikes(incoming);
+        if (matches.length > 0) refreshUnread(matches.map((m) => m.id));
       })();
     }, [profile])
   );
@@ -69,6 +72,7 @@ export default function ConnectScreen() {
     setMyMatches(matches);
     setPendingOutgoing(pending);
     setIncomingLikes(incoming);
+    if (matches.length > 0) refreshUnread(matches.map((m) => m.id));
   }
 
   async function handleSelectIntention(id: IntentionId) {
@@ -94,7 +98,7 @@ export default function ConnectScreen() {
         [
           {
             text: 'Open chat',
-            onPress: () => router.push({ pathname: '/chat', params: { matchId, nickname: peer.nickname } }),
+            onPress: () => router.push({ pathname: '/chat', params: { matchId, nickname: peer.nickname, avatarUrl: peer.avatarUrl ?? '' } }),
           },
           { text: 'Later' },
         ]
@@ -120,7 +124,7 @@ export default function ConnectScreen() {
         [
           {
             text: 'Open chat',
-            onPress: () => router.push({ pathname: '/chat', params: { matchId: match.id, nickname: match.peer?.nickname ?? 'Someone' } }),
+            onPress: () => router.push({ pathname: '/chat', params: { matchId: match.id, nickname: match.peer?.nickname ?? 'Someone', avatarUrl: match.peer?.avatarUrl ?? '' } }),
           },
           { text: 'Later' },
         ]
@@ -269,26 +273,35 @@ export default function ConnectScreen() {
         {myMatches.length > 0 && (
           <View style={styles.connectionsSection}>
             <Text style={styles.sectionTitle}>Your connections</Text>
-            {myMatches.map((match) => (
-              <TouchableOpacity
-                key={match.id}
-                style={styles.connectionRow}
-                onPress={() => router.push({ pathname: '/chat', params: { matchId: match.id, nickname: match.peer?.nickname ?? 'Someone' } })}
-                accessibilityLabel={`Chat with ${match.peer?.nickname ?? 'Someone'}`}
-                testID={`match-${match.id}`}
-              >
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{(match.peer?.nickname?.[0] ?? '?').toUpperCase()}</Text>
-                </View>
-                <View style={styles.connectionInfo}>
-                  <Text style={styles.connectionName}>{match.peer?.nickname ?? 'Someone'}</Text>
-                  {match.peer?.country ? (
-                    <Text style={styles.connectionMeta}>{match.peer.country}</Text>
-                  ) : null}
-                </View>
-                <Ionicons name="chatbubble-outline" size={18} color={Colors.safeBlue} />
-              </TouchableOpacity>
-            ))}
+            {myMatches.map((match) => {
+              const unread = unreadByMatch[match.id] ?? 0;
+              return (
+                <TouchableOpacity
+                  key={match.id}
+                  style={styles.connectionRow}
+                  onPress={() => router.push({ pathname: '/chat', params: { matchId: match.id, nickname: match.peer?.nickname ?? 'Someone', avatarUrl: match.peer?.avatarUrl ?? '' } })}
+                  accessibilityLabel={`Chat with ${match.peer?.nickname ?? 'Someone'}`}
+                  testID={`match-${match.id}`}
+                >
+                  <PeerAvatar avatarUrl={match.peer?.avatarUrl} nickname={match.peer?.nickname} />
+                  <View style={styles.connectionInfo}>
+                    <Text style={[styles.connectionName, unread > 0 && styles.connectionNameUnread]}>
+                      {match.peer?.nickname ?? 'Someone'}
+                    </Text>
+                    {match.peer?.country ? (
+                      <Text style={styles.connectionMeta}>{match.peer.country}</Text>
+                    ) : null}
+                  </View>
+                  {unread > 0 ? (
+                    <View style={styles.unreadBadge}>
+                      <Text style={styles.unreadBadgeText}>{unread > 99 ? '99+' : unread}</Text>
+                    </View>
+                  ) : (
+                    <Ionicons name="chatbubble-outline" size={18} color={Colors.safeBlue} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
@@ -342,6 +355,26 @@ export default function ConnectScreen() {
   );
 }
 
+function PeerAvatar({ avatarUrl, nickname, size = 44 }: { avatarUrl?: string; nickname?: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const radius = size / 2;
+  if (avatarUrl && !failed) {
+    return (
+      <Image
+        source={{ uri: avatarUrl }}
+        style={{ width: size, height: size, borderRadius: radius }}
+        contentFit="cover"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <View style={[styles.avatar, { width: size, height: size, borderRadius: radius }]}>
+      <Text style={styles.avatarText}>{(nickname?.[0] ?? '?').toUpperCase()}</Text>
+    </View>
+  );
+}
+
 function MatchCard({
   peer,
   remaining,
@@ -355,18 +388,7 @@ function MatchCard({
 }) {
   return (
     <Card elevated style={styles.matchCard}>
-      {peer.avatarUrl ? (
-        <Image
-          source={{ uri: peer.avatarUrl }}
-          style={styles.matchAvatarImage}
-          contentFit="cover"
-          transition={200}
-        />
-      ) : (
-        <View style={styles.matchAvatar}>
-          <Text style={styles.matchAvatarText}>{(peer.nickname[0] ?? '?').toUpperCase()}</Text>
-        </View>
-      )}
+      <PeerAvatar avatarUrl={peer.avatarUrl} nickname={peer.nickname} size={80} />
       <Text style={styles.matchNickname}>{peer.nickname}</Text>
 
       <View style={styles.matchMeta}>
@@ -594,4 +616,16 @@ const styles = StyleSheet.create({
   },
   acceptBtnText: { fontSize: 12, fontWeight: '700', color: Colors.white },
   pendingRow: { opacity: 0.7 },
+  avatarImage: { width: 42, height: 42, borderRadius: 21 },
+  connectionNameUnread: { fontWeight: '700', color: Colors.textPrimary },
+  unreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.safeBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  unreadBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.white },
 });

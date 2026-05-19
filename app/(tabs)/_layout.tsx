@@ -1,7 +1,8 @@
+import { useUnread } from '@/context/UnreadContext';
+import { Colors } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -10,6 +11,7 @@ function TabIcon({ name, color }: { name: IoniconsName; color: string }) {
 }
 
 export default function TabLayout() {
+  const { totalUnread } = useUnread();
   return (
     <Tabs
       screenOptions={{
@@ -45,6 +47,8 @@ export default function TabLayout() {
         options={{
           title: 'Connect',
           tabBarIcon: ({ color }) => <TabIcon name="people-outline" color={color} />,
+          tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+          tabBarBadgeStyle: { backgroundColor: Colors.safeBlue, fontSize: 10 },
         }}
       />
       <Tabs.Screen
