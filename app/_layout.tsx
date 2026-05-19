@@ -1,8 +1,11 @@
 import { SessionProvider, useSession } from '@/context/SessionContext';
+import { UnreadProvider } from '@/context/UnreadContext';
+import { addNotificationResponseListener, registerForPushNotifications } from '@/services/notifications';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -26,19 +29,36 @@ class ErrorBoundary extends React.Component<
 }
 
 function LockGate({ children }: { children: React.ReactNode }) {
-  const { locked, loading } = useSession();
+  const { locked, loading, profile } = useSession();
+
   useEffect(() => {
     if (!loading && locked) {
       router.replace('/lock');
     }
   }, [locked, loading]);
+
+  // Register for push notifications once the user has a profile.
+  useEffect(() => {
+    if (profile) registerForPushNotifications();
+  }, [!!profile]);
+
+  // Navigate to the right chat when the user taps a push notification.
+  useEffect(() => {
+    const sub = addNotificationResponseListener((matchId) => {
+      router.push({ pathname: '/chat', params: { matchId } });
+    });
+    return () => sub.remove();
+  }, []);
+
   return <>{children}</>;
 }
 
 export default function RootLayout() {
   return (
+    <SafeAreaProvider>
     <ErrorBoundary>
       <SessionProvider>
+        <UnreadProvider>
         <LockGate>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
@@ -70,8 +90,10 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
           </Stack>
         </LockGate>
+        </UnreadProvider>
         <StatusBar style="dark" />
       </SessionProvider>
     </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }

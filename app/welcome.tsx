@@ -1,12 +1,16 @@
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
-import { signOut } from '@/services/supabase';
+import type { UserProfile } from '@/context/SessionContext';
+import { useSession } from '@/context/SessionContext';
+import { syncProfile } from '@/services/matching';
+import { signOut, supabase } from '@/services/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   BackHandler,
   Platform,
@@ -30,7 +34,11 @@ const RING_COUNT = 3;
 const RING_DELAY = 700;
 const RING_DURATION = 2200;
 
+const GUEST_NAMES = ['Sage', 'River', 'Quinn', 'Wren', 'Sky', 'Ash', 'Reed', 'Nova', 'Fern', 'Bay'];
+
 export default function WelcomeScreen() {
+  const { setProfile, completeOnboarding } = useSession();
+  const [guestLoading, setGuestLoading] = useState(false);
   const rings = useRef(
     Array.from({ length: RING_COUNT }, () => new Animated.Value(0))
   ).current;
@@ -56,6 +64,40 @@ export default function WelcomeScreen() {
   async function handleStartAnonymously() {
     await signOut().catch(() => {});
     router.push('/onboarding/step1');
+  }
+
+  async function handleContinueAsGuest() {
+    if (guestLoading) return;
+    setGuestLoading(true);
+    try {
+      await signOut().catch(() => {});
+      if (supabase) {
+        const { error: anonErr } = await supabase.auth.signInAnonymously();
+        if (anonErr) {
+          // Anonymous auth unavailable — fall back to full onboarding
+          router.push('/onboarding/step1');
+          return;
+        }
+      }
+      const nickname = GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
+      const profile: UserProfile = {
+        nickname,
+        pronouns: '',
+        ageRange: '',
+        language: 'English',
+        country: '',
+        hideFromSearch: false,
+        needs: [],
+        intentions: [],
+        isAnonymous: true,
+      };
+      await setProfile(profile);
+      await completeOnboarding();
+      await syncProfile(profile).catch(() => {});
+      router.replace('/(tabs)');
+    } finally {
+      setGuestLoading(false);
+    }
   }
 
   function handleQuickExit() {
@@ -118,10 +160,14 @@ export default function WelcomeScreen() {
             style={styles.ctaBtn}
           />
           <TouchableOpacity
-            onPress={handleStartAnonymously}
+            onPress={handleContinueAsGuest}
             accessibilityLabel="Continue as guest"
+            disabled={guestLoading}
           >
-            <Text style={styles.guestLink}>Continue as guest — no account needed</Text>
+            {guestLoading
+              ? <ActivityIndicator size="small" color={Colors.textMuted} />
+              : <Text style={styles.guestLink}>Continue as guest — no account needed</Text>
+            }
           </TouchableOpacity>
         </View>
       </View>

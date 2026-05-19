@@ -84,7 +84,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         const uid = session.user.id;
         const { data: row } = await client
           .from('user_profiles')
-          .select('nickname, age_range, language, country, hide_from_search, needs, intentions')
+          .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
           .eq('user_id', uid)
           .maybeSingle();
         if (row) {
@@ -98,6 +98,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             needs: row.needs ?? [],
             intentions: row.intentions ?? [],
             isAnonymous: false,
+            avatarUrl: row.avatar_url ?? undefined,
           };
           setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
           await saveSession(hydrated).catch(() => {});
@@ -126,7 +127,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           if (user) {
             const { data: row, error } = await supabase
               .from('user_profiles')
-              .select('nickname, age_range, language, country, hide_from_search, needs, intentions')
+              .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
               .eq('user_id', user.id)
               .maybeSingle();
             if (error) {
@@ -143,6 +144,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                 needs: row.needs ?? [],
                 intentions: row.intentions ?? [],
                 isAnonymous: false,
+                avatarUrl: row.avatar_url ?? undefined,
               };
               // Mirror to SecureStore so subsequent launches are offline-ready.
               await saveSession(profile).catch(() => {});
