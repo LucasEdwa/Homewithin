@@ -1,15 +1,21 @@
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { SafetySlider } from '@/components/ui/SafetySlider';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import type { SafetyAnswers } from '@/types';
-import type { LocalResource } from '@/types';
+import type { LocalResource, SafetyAnswers } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { IoniconsName, Step } from './safetyData';
+
+const SAFETY_LEVELS: { value: number; icon: IoniconsName; color: string; label: string }[] = [
+  { value: 2,  icon: 'alert-circle',            color: '#E53935', label: 'Not safe'  },
+  { value: 4,  icon: 'sad-outline',             color: '#E8844E', label: 'Uneasy'    },
+  { value: 6,  icon: 'help-circle-outline',     color: '#FFC107', label: 'Okay'      },
+  { value: 8,  icon: 'happy-outline',           color: '#66BB6A', label: 'Safe'      },
+  { value: 10, icon: 'shield-checkmark-outline',color: '#26A69A', label: 'Very safe' },
+];
 
 interface StepViewProps {
   step: number;
@@ -68,15 +74,32 @@ export default function StepView({
 
         {currentStep.hasSlider && (
           <Card style={styles.sliderCard}>
-            <SafetySlider
-              label="How safe do you feel right now?"
-              minLabel="Not safe"
-              maxLabel="Completely safe"
-              value={moodScore}
-              onValueChange={onMoodChange}
-              minimumValue={1}
-              maximumValue={10}
-            />
+            <Text style={styles.sliderLabel}>How safe do you feel right now?</Text>
+            <View style={styles.safetyPicker}>
+              {SAFETY_LEVELS.map((level) => {
+                const selected = moodScore === level.value;
+                return (
+                  <TouchableOpacity
+                    key={level.value}
+                    style={styles.safetyItem}
+                    onPress={() => onMoodChange(level.value)}
+                    activeOpacity={0.7}
+                    accessibilityRole="radio"
+                    accessibilityLabel={level.label}
+                    accessibilityState={{ selected }}
+                  >
+                    <Ionicons
+                      name={level.icon}
+                      size={34}
+                      color={selected ? level.color : Colors.textMuted}
+                    />
+                    <Text style={[styles.safetyLabel, selected && { color: level.color }]}>
+                      {level.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </Card>
         )}
 
@@ -197,7 +220,11 @@ const styles = StyleSheet.create({
   stepNum: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
   stepTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   stepSubtitle: { fontSize: 14, color: Colors.textSecondary, lineHeight: 21 },
-  sliderCard: { backgroundColor: Colors.white },
+  sliderCard: { gap: Spacing.sm },
+  sliderLabel: { fontSize: 14, fontWeight: '500', color: Colors.textSecondary },
+  safetyPicker: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.xs },
+  safetyItem: { flex: 1, alignItems: 'center', paddingVertical: Spacing.sm, gap: 4 },
+  safetyLabel: { fontSize: 10, fontWeight: '600', color: Colors.textMuted, textAlign: 'center' },
 
   questions: { gap: Spacing.sm },
   question: {

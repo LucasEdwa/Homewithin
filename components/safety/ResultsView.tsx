@@ -3,24 +3,22 @@ import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import type { SafetyStatus } from '@/types';
-import type { LocalResource } from '@/types';
+import type { LocalResource, SafetyStatus } from '@/types';
 import { LOCAL_RESOURCE_TYPE_COLORS, LOCAL_RESOURCE_TYPE_ICONS, LOCAL_RESOURCE_TYPE_LABELS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Linking,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import type { IoniconsName } from './safetyData';
 import { PLAN_PROMPTS } from './safetyData';
@@ -47,7 +45,7 @@ export default function ResultsView({
   onGoHome,
 }: ResultsViewProps) {
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Colors.warmWhite }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           {status === 'green' && <GreenState />}
@@ -213,7 +211,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
   scroll: { padding: Spacing.lg, paddingBottom: 100, gap: Spacing.lg },
 
-  statusCard: { borderWidth: 2, backgroundColor: Colors.white, alignItems: 'center', gap: Spacing.sm },
+  statusCard: { borderWidth: 2, backgroundColor: Colors.softGray, alignItems: 'center', gap: Spacing.sm },
   statusTitle: { fontSize: 19, fontWeight: '700', textAlign: 'center' },
   statusBody: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
 
@@ -259,7 +257,7 @@ const styles = StyleSheet.create({
   },
   seeAllText: { fontSize: 13, color: Colors.safeBlue, fontWeight: '600' },
 
-  planCard: { backgroundColor: Colors.white, gap: Spacing.sm },
+  planCard: { backgroundColor: Colors.softGray, gap: Spacing.sm },
   planTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   planHint: { fontSize: 13, color: Colors.textMuted, lineHeight: 18 },
   planRow: { gap: 4 },
