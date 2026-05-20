@@ -61,17 +61,18 @@ The layering is correct for the app's scale. The issues are **within each layer*
 
 These screens belong to clear feature domains that are currently undifferentiated:
 
-| Domain | Screens |
-|--------|---------|
-| Auth | `welcome`, `signin` |
-| Safety tools | `lock`, `pin`, `disguise`, `decoy`, `emergency` |
-| Social | `chat`, `circles`, `circle`, `circle-intro`, `chosen-family` |
-| Wellness | `checkin`, `journal-entry`, `progress`, `intentions`, `safety` |
-| Content | `article`, `programs`, `program`, `events`, `local-resources` |
+| Domain       | Screens                                                        |
+| ------------ | -------------------------------------------------------------- |
+| Auth         | `welcome`, `signin`                                            |
+| Safety tools | `lock`, `pin`, `disguise`, `decoy`, `emergency`                |
+| Social       | `chat`, `circles`, `circle`, `circle-intro`, `chosen-family`   |
+| Wellness     | `checkin`, `journal-entry`, `progress`, `intentions`, `safety` |
+| Content      | `article`, `programs`, `program`, `events`, `local-resources`  |
 
 Expo Router supports `(group-name)/` folders for logical grouping without affecting the URL. The same pattern is already used correctly for `(tabs)/` and `onboarding/`.
 
 **Target structure:**
+
 ```
 app/
 ├── (tabs)/
@@ -89,15 +90,15 @@ app/
 
 **Problem:** 7 root-level files that should be moved or deleted.
 
-| File | Issue | Action |
-|------|-------|--------|
-| `hello-wave.tsx` | Expo starter kit boilerplate | Delete |
+| File                       | Issue                        | Action           |
+| -------------------------- | ---------------------------- | ---------------- |
+| `hello-wave.tsx`           | Expo starter kit boilerplate | Delete           |
 | `parallax-scroll-view.tsx` | Expo starter kit boilerplate | Delete if unused |
-| `haptic-tab.tsx` | Generic UI primitive | Move → `ui/` |
-| `themed-text.tsx` | Generic UI primitive | Move → `ui/` |
-| `themed-view.tsx` | Generic UI primitive | Move → `ui/` |
-| `external-link.tsx` | Generic UI primitive | Move → `ui/` |
-| `EmergencyButton.tsx` | Feature component | Move → `safety/` |
+| `haptic-tab.tsx`           | Generic UI primitive         | Move → `ui/`     |
+| `themed-text.tsx`          | Generic UI primitive         | Move → `ui/`     |
+| `themed-view.tsx`          | Generic UI primitive         | Move → `ui/`     |
+| `external-link.tsx`        | Generic UI primitive         | Move → `ui/`     |
+| `EmergencyButton.tsx`      | Feature component            | Move → `safety/` |
 
 ---
 
@@ -106,6 +107,7 @@ app/
 **Problem:** `SessionContext` is a god object managing 9 unrelated state slices — profile, safety level, onboarding status, PIN, lock, disguise enabled, disguise style, nearby state, and nearby resources.
 
 **Target structure:**
+
 ```
 context/
 ├── AuthContext.tsx       ← user identity, profile, onboarding
@@ -133,6 +135,7 @@ hooks/
 **Problem:** 16 flat files mix infrastructure (`supabase.ts`), local persistence (`storage.ts`), and domain services all in the same directory.
 
 **Target structure:**
+
 ```
 services/
 ├── supabase.ts           ← infrastructure singleton (used by all)
@@ -194,6 +197,7 @@ data/              ← NEW — static business content
 **Problem:** A single `types/index.ts` for all domain types becomes hard to navigate and causes unnecessary cross-domain imports.
 
 **Target structure:**
+
 ```
 types/
 ├── ui.ts         ← MoodLevel, MoodLabels, tag types, chart types
@@ -207,16 +211,16 @@ types/
 
 ## Refactoring Roadmap
 
-| Priority | Change | Benefit |
-|----------|--------|---------|
-| 🟠 High | Group `app/` screens into route groups `(auth)` `(safety)` `(social)` `(wellness)` `(content)` | Navigability, onboarding new devs |
-| 🟠 High | Split `SessionContext` into 4 focused contexts | Render performance, maintainability |
-| 🟠 High | Create data-fetching hooks in `hooks/` (`useMatches`, `useMessages`, etc.) | Thinner screen files, testability |
-| 🟡 Medium | Move `haptic-tab`, `themed-*`, `external-link`, `EmergencyButton` to correct subfolders | Component discoverability |
-| 🟡 Medium | Delete Expo boilerplate: `hello-wave.tsx`, `parallax-scroll-view.tsx` | Cleaner repo |
-| 🟡 Medium | Group `services/` into `social/` `wellness/` `content/` `user/` subdirectories | Service discoverability |
-| 🟡 Medium | Extract data files from `constants/` into a new `data/` folder | Separation of concerns |
-| 🟢 Low | Split `types/index.ts` into domain-scoped files | Type discoverability |
+| Priority  | Change                                                                                         | Benefit                             |
+| --------- | ---------------------------------------------------------------------------------------------- | ----------------------------------- |
+| 🟠 High   | Group `app/` screens into route groups `(auth)` `(safety)` `(social)` `(wellness)` `(content)` | Navigability, onboarding new devs   |
+| 🟠 High   | Split `SessionContext` into 4 focused contexts                                                 | Render performance, maintainability |
+| 🟠 High   | Create data-fetching hooks in `hooks/` (`useMatches`, `useMessages`, etc.)                     | Thinner screen files, testability   |
+| 🟡 Medium | Move `haptic-tab`, `themed-*`, `external-link`, `EmergencyButton` to correct subfolders        | Component discoverability           |
+| 🟡 Medium | Delete Expo boilerplate: `hello-wave.tsx`, `parallax-scroll-view.tsx`                          | Cleaner repo                        |
+| 🟡 Medium | Group `services/` into `social/` `wellness/` `content/` `user/` subdirectories                 | Service discoverability             |
+| 🟡 Medium | Extract data files from `constants/` into a new `data/` folder                                 | Separation of concerns              |
+| 🟢 Low    | Split `types/index.ts` into domain-scoped files                                                | Type discoverability                |
 
 ---
 
