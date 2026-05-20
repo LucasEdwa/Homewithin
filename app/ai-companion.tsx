@@ -263,6 +263,7 @@ export default function AICompanionScreen() {
           ref={listRef}
           data={messages}
           keyExtractor={(m) => m.id}
+          style={styles.flatList}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             showStarters ? (
@@ -346,8 +347,10 @@ function MessageBubble({ message }: { message: AIMessage }) {
           <Ionicons name="sparkles" size={14} color={Colors.mutedLavender} />
         </View>
       )}
-      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAI]}>
-        <Text style={[styles.bubbleText, isUser && styles.bubbleTextUser]}>{message.body}</Text>
+      <View style={[styles.bubbleCol, isUser && styles.bubbleColUser]}>
+        <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAI]}>
+          <Text style={[styles.bubbleText, isUser && styles.bubbleTextUser]}>{message.body}</Text>
+        </View>
         <Text style={[styles.bubbleTime, isUser && styles.bubbleTimeUser]}>{time}</Text>
       </View>
     </View>
@@ -356,7 +359,8 @@ function MessageBubble({ message }: { message: AIMessage }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: Colors.warmWhite },
+  flatList: { flex: 1, backgroundColor: Colors.warmWhite },
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,7 +396,7 @@ const styles = StyleSheet.create({
   starter: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
@@ -415,6 +419,8 @@ const styles = StyleSheet.create({
   rateNote: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.xs },
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm },
   bubbleRowUser: { flexDirection: 'row-reverse' },
+  bubbleCol: { maxWidth: '78%', gap: 3, alignItems: 'flex-start' },
+  bubbleColUser: { alignItems: 'flex-end' },
   aiAvatar: {
     width: 28,
     height: 28,
@@ -426,18 +432,17 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bubble: {
-    maxWidth: '78%',
     borderRadius: Radius.lg,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     gap: 2,
   },
-  bubbleUser: { backgroundColor: Colors.safeBlue, borderBottomRightRadius: 4 },
-  bubbleAI: { backgroundColor: Colors.white, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: Colors.border },
+  bubbleUser: { backgroundColor: '#2C2724', borderBottomRightRadius: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  bubbleAI: { backgroundColor: Colors.softGray, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: Colors.border },
   bubbleText: { fontSize: 15, color: Colors.textPrimary, lineHeight: 22 },
-  bubbleTextUser: { color: Colors.white },
-  bubbleTime: { fontSize: 10, color: Colors.textMuted, alignSelf: 'flex-end' },
-  bubbleTimeUser: { color: 'rgba(255,255,255,0.6)' },
+  bubbleTextUser: { color: Colors.textPrimary },
+  bubbleTime: { fontSize: 10, color: Colors.textMuted },
+  bubbleTimeUser: { color: Colors.textMuted },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -446,7 +451,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.warmWhite,
   },
   input: {
     flex: 1,

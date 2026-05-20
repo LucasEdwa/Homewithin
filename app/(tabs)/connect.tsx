@@ -333,8 +333,8 @@ function PeerAvatar({ avatarUrl, nickname, size = 44 }: { avatarUrl?: string; ni
     );
   }
   return (
-    <View style={[styles.avatar, { width: size, height: size, borderRadius: radius }]}>
-      <Text style={styles.avatarText}>{(nickname?.[0] ?? '?').toUpperCase()}</Text>
+    <View style={[styles.avatar, { width: size, height: size, borderRadius: radius, backgroundColor: 'rgba(255,255,255,0.08)' }]}>
+      <Text style={[styles.avatarText, { fontSize: size * 0.38 }]}>{(nickname?.[0] ?? '?').toUpperCase()}</Text>
     </View>
   );
 }
@@ -351,26 +351,36 @@ function MatchCard({
   onPass: () => void;
 }) {
   return (
-    <Card elevated style={styles.matchCard}>
-      <PeerAvatar avatarUrl={peer.avatarUrl} nickname={peer.nickname} size={80} />
+    <View style={styles.matchCard}>
+      {/* Counter */}
+      <Text style={styles.remainingText}>
+        {remaining} {remaining === 1 ? 'person' : 'people'} nearby
+      </Text>
+
+      {/* Avatar */}
+      <View style={styles.matchAvatarWrap}>
+        <PeerAvatar avatarUrl={peer.avatarUrl} nickname={peer.nickname} size={120} />
+      </View>
+
+      {/* Name + meta */}
       <Text style={styles.matchNickname}>{peer.nickname}</Text>
 
       <View style={styles.matchMeta}>
         {peer.ageRange ? (
           <View style={styles.metaChip}>
-            <Ionicons name="person-outline" size={12} color={Colors.textMuted} />
+            <Ionicons name="person-outline" size={11} color={Colors.textMuted} />
             <Text style={styles.metaChipText}>{peer.ageRange}</Text>
           </View>
         ) : null}
         {peer.country ? (
           <View style={styles.metaChip}>
-            <Ionicons name="location-outline" size={12} color={Colors.textMuted} />
+            <Ionicons name="location-outline" size={11} color={Colors.textMuted} />
             <Text style={styles.metaChipText}>{peer.country}</Text>
           </View>
         ) : null}
         {peer.language ? (
           <View style={styles.metaChip}>
-            <Ionicons name="language-outline" size={12} color={Colors.textMuted} />
+            <Ionicons name="language-outline" size={11} color={Colors.textMuted} />
             <Text style={styles.metaChipText}>{peer.language}</Text>
           </View>
         ) : null}
@@ -386,19 +396,22 @@ function MatchCard({
         </View>
       )}
 
-      <Text style={styles.remainingText}>{remaining} potential {remaining === 1 ? 'match' : 'matches'}</Text>
+      {/* Divider */}
+      <View style={styles.matchDivider} />
 
+      {/* Actions */}
       <View style={styles.matchActions}>
         <TouchableOpacity style={styles.passBtn} onPress={onPass} accessibilityLabel="Pass" testID="pass-btn">
-          <Ionicons name="close" size={28} color={Colors.textMuted} />
-          <Text style={styles.passBtnText}>Pass</Text>
+          <Ionicons name="close" size={24} color={Colors.textSecondary} />
+          <Text style={styles.passBtnText}>Skip</Text>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.connectBtn} onPress={onConnect} accessibilityLabel="Connect" testID="connect-btn">
-          <Ionicons name="heart" size={28} color={Colors.white} />
+          <Ionicons name="heart" size={24} color={Colors.black} />
           <Text style={styles.connectBtnText}>Connect</Text>
         </TouchableOpacity>
       </View>
-    </Card>
+    </View>
   );
 }
 
@@ -437,28 +450,32 @@ const styles = StyleSheet.create({
   },
   intentionBadgeText: { fontSize: 13, fontWeight: '600' },
   loader: { marginTop: Spacing.xl },
-  matchCard: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.lg },
-  matchAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.safeBlue,
+  matchCard: {
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
-  matchAvatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  matchAvatarWrap: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  matchAvatarText: { fontSize: 36, fontWeight: '700', color: Colors.white },
-  matchNickname: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
+  matchNickname: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, marginTop: Spacing.xs },
   matchMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, justifyContent: 'center' },
   metaChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.softGray,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: Radius.full,
@@ -466,34 +483,38 @@ const styles = StyleSheet.create({
   metaChipText: { fontSize: 12, color: Colors.textMuted },
   needsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, justifyContent: 'center' },
   needChip: {
-    backgroundColor: Colors.softGreen + '22',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  needChipText: { fontSize: 12, color: Colors.softGreen, fontWeight: '600' },
-  remainingText: { fontSize: 12, color: Colors.textMuted },
-  matchActions: { flexDirection: 'row', gap: Spacing.lg, marginTop: Spacing.sm },
+  needChipText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
+  remainingText: { fontSize: 11, color: Colors.textMuted, fontWeight: '500', letterSpacing: 0.3, alignSelf: 'flex-end' },
+  matchDivider: { width: '100%', height: 1, backgroundColor: Colors.border, marginTop: Spacing.xs },
+  matchActions: { flexDirection: 'row', gap: Spacing.xl, paddingVertical: Spacing.sm },
   passBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.softGray,
-    gap: 2,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.12)',
+    gap: 4,
   },
-  passBtnText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+  passBtnText: { fontSize: 10, color: Colors.textMuted, fontWeight: '600', letterSpacing: 0.3 },
   connectBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.safeBlue,
-    gap: 2,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.white,
+    gap: 4,
   },
-  connectBtnText: { fontSize: 11, color: Colors.white, fontWeight: '700' },
+  connectBtnText: { fontSize: 10, color: Colors.black, fontWeight: '700', letterSpacing: 0.3 },
   emptyState: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xl },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
   emptyText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
@@ -505,7 +526,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
     borderRadius: Radius.md,
     padding: Spacing.md,
     borderWidth: 1,
@@ -536,7 +557,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
     borderRadius: Radius.md,
     padding: Spacing.md,
     borderWidth: 1,
