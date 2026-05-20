@@ -65,35 +65,35 @@ function ProgramCard({
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} testID={`program-${program.id}`}>
       <Card elevated style={styles.card}>
-        <View style={[styles.iconBg, { backgroundColor: program.color + '18' }]}>
-          <Ionicons name={program.icon as any} size={26} color={program.color} />
-        </View>
+        <Ionicons name={program.icon as any} size={26} color={Colors.textMuted} style={styles.icon} />
 
         <View style={styles.cardBody}>
           <View style={styles.titleRow}>
             <Text style={styles.cardTitle}>{program.title}</Text>
-            {done && <Ionicons name="checkmark-circle" size={18} color={Colors.softGreen} />}
+            {done && <Ionicons name="checkmark-circle" size={16} color={Colors.textSecondary} />}
           </View>
           <Text style={styles.cardDesc} numberOfLines={2}>{program.description}</Text>
 
           {/* Progress bar */}
           <View style={styles.progressRow}>
             <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${pct * 100}%` as any, backgroundColor: program.color }]} />
+              <View style={[styles.progressFill, { width: `${pct * 100}%` as any }]} />
             </View>
             <Text style={styles.progressLabel}>
-              {program.completed}/{program.total} lessons
+              {program.completed}/{program.total}
             </Text>
           </View>
 
           <View style={styles.lessonMeta}>
-            <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
-            <Text style={styles.lessonMetaText}>{program.total} lessons · ~{program.total * 4} min total</Text>
+            <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.lessonMetaText}>{program.total} lessons · ~{program.total * 4} min</Text>
           </View>
         </View>
 
-        <View style={[styles.cta, { backgroundColor: program.color }]}>
-          <Text style={styles.ctaText}>{done ? 'Review' : started ? 'Continue' : 'Start'}</Text>
+        <View style={[styles.cta, started && !done && styles.ctaStarted]}>
+          <Text style={[styles.ctaText, started && !done && styles.ctaStartedText]}>
+            {done ? 'Review' : started ? 'Continue' : 'Start'}
+          </Text>
         </View>
       </Card>
     </TouchableOpacity>
@@ -107,14 +107,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary },
   subtitle: { fontSize: 15, color: Colors.textSecondary, lineHeight: 22 },
   card: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
-  iconBg: {
-    width: 50,
-    height: 50,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
+  icon: { flexShrink: 0, marginTop: 2 },
   cardBody: { flex: 1, gap: Spacing.xs },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   cardTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
@@ -122,21 +115,28 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 2 },
   progressTrack: {
     flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.border,
+    height: 4,
+    borderRadius: Radius.full,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', borderRadius: 3 },
-  progressLabel: { fontSize: 11, color: Colors.textMuted, minWidth: 60, textAlign: 'right' },
+  progressFill: { height: '100%', borderRadius: Radius.full, backgroundColor: 'rgba(255,255,255,0.35)' },
+  progressLabel: { fontSize: 11, color: Colors.textMuted, minWidth: 36, textAlign: 'right' },
   lessonMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   lessonMetaText: { fontSize: 12, color: Colors.textMuted },
   cta: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: Radius.full,
     alignSelf: 'flex-start',
     marginTop: Spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
-  ctaText: { fontSize: 12, fontWeight: '700', color: Colors.white },
+  ctaStarted: {
+    backgroundColor: Colors.white,
+    borderColor: Colors.white,
+  },
+  ctaText: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary },
+  ctaStartedText: { color: Colors.black },
 });

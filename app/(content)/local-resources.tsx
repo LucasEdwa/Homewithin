@@ -214,8 +214,8 @@ function ResourceCard({ resource, onOpenLink, onCall }: ResourceCardProps) {
   return (
     <View style={styles.card} testID={`resource-${resource.id}`}>
       <View style={styles.cardHeader}>
-        <View style={[styles.typeIcon, { backgroundColor: color + '18' }]}>
-          <Ionicons name={icon} size={18} color={color} />
+        <View style={styles.typeIcon}>
+          <Ionicons name={icon} size={20} color={Colors.textMuted} />
         </View>
         <View style={styles.cardMeta}>
           <View style={[styles.typeBadge, { backgroundColor: color + '18' }]}>
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.xs,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   stateLabel: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
   stateList: {
     marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
     borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    backgroundColor: Colors.white,
+    backgroundColor: 'transparent',
   },
   chipActive: {
     backgroundColor: Colors.safeBlue,
@@ -341,23 +341,18 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
 
   card: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     gap: Spacing.sm,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
   typeIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
   cardMeta: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' },
   typeBadge: {

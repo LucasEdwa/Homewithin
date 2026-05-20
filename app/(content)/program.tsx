@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
     padding: Spacing.md,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
   },
   lessonHeaderDone: { backgroundColor: Colors.softGreen + '0A' },
   lessonNum: {

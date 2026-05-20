@@ -1,21 +1,21 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  SectionList,
-  TouchableOpacity,
-  Linking,
-  Alert,
-} from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
+import { getMeetups, getWorkshops } from '@/services/content/localResources';
+import type { LocalMeetup, Workshop, WorkshopFormat } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
-import { useSession } from '@/context/SessionContext';
-import { getWorkshops, getMeetups } from '@/services/content/localResources';
-import type { Workshop, LocalMeetup, WorkshopFormat } from '@/types';
+import React, { useCallback, useState } from 'react';
+import {
+  Alert,
+  Linking,
+  SafeAreaView,
+  SectionList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type Tab = 'workshops' | 'meetups';
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -173,12 +173,18 @@ function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
       {workshop.link && (
         <TouchableOpacity
           testID={`join-${workshop.id}`}
-          style={styles.joinBtn}
-          onPress={() => onOpenLink(workshop.link!)}
-          accessibilityLabel={`Join ${workshop.title}`}
+          style={styles.joinBtnLocked}
+          onPress={() =>
+            Alert.alert(
+              'Available under organizations',
+              'Joining circles will be available through your organization once the feature launches. Stay tuned!',
+              [{ text: 'Got it' }]
+            )
+          }
+          accessibilityLabel={`Join ${workshop.title} — available under organizations`}
         >
-          <Ionicons name="arrow-forward-circle-outline" size={16} color={Colors.white} />
-          <Text style={styles.joinBtnText}>Join Circle</Text>
+          <Ionicons name="lock-closed" size={16} color={Colors.safetyYellow} />
+          <Text style={styles.joinBtnLockedText}>Join Circle</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -292,7 +298,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: Radius.sm,
   },
-  tabActive: { backgroundColor: Colors.white },
+  tabActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
   tabText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
   tabTextActive: { color: Colors.safeBlue },
 
@@ -307,15 +313,12 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
 
   card: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.softGray,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     gap: Spacing.xs + 2,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   cardTopRow: {
     flexDirection: 'row',
@@ -356,6 +359,19 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   joinBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
+  joinBtnLocked: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.safetyYellow + '18',
+    borderWidth: 1,
+    borderColor: Colors.safetyYellow + '55',
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    marginTop: Spacing.xs,
+  },
+  joinBtnLockedText: { fontSize: 14, fontWeight: '700', color: Colors.safetyYellow },
 
   empty: {
     flex: 1,
