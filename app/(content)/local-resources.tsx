@@ -1,11 +1,11 @@
 import { Colors } from '@/constants/Colors';
-import { SWEDISH_STATES } from '@/constants/localResources';
+import { SWEDISH_STATES } from '@/data/localResources';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import {
   getResources,
   requestLocationPermission,
-} from '@/services/localResources';
+} from '@/services/content/localResources';
 import type { LocalResource, LocalResourceType } from '@/types';
 import {
   LOCAL_RESOURCE_TYPES,

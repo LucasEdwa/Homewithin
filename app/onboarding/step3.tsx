@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import { syncProfile } from '@/services/matching';
+import { syncProfile } from '@/services/social/matching';
 import { INTENTIONS, type IntentionId } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';

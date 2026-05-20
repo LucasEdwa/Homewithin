@@ -12,8 +12,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
-import { EmergencyButton } from '@/components/EmergencyButton';
-import { getAllProgramsWithProgress } from '@/services/programs';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { getAllProgramsWithProgress } from '@/services/content/programs';
 import type { Program } from '@/types';
 
 type ProgramWithProgress = Program & { completed: number; total: number };

@@ -1,7 +1,8 @@
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { getBlockedUsers, unblockUser, type BlockedUser } from '@/services/matching';
+import { getBlockedUsers, unblockUser } from '@/services/social/matching';
+import type { BlockedUser } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';

@@ -1,8 +1,8 @@
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { joinCircle, listCircles } from '@/services/circles';
+import { joinCircle, listCircles } from '@/services/social/circles';
 import type { Circle } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';

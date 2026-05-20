@@ -16,7 +16,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { useSession } from '@/context/SessionContext';
 import {
   sendAIMessage,
@@ -25,12 +25,12 @@ import {
   checkRateLimit,
   buildSystemPrompt,
   AI_DISCLAIMER,
-} from '@/services/ai';
-import type { AIContext, UserContext } from '@/services/ai';
+} from '@/services/wellness/ai';
+import type { AIContext, UserContext } from '@/services/wellness/ai';
 import { getCheckIns, getJournalEntries } from '@/services/storage';
-import { getAllProgramsWithProgress } from '@/services/programs';
-import { getMyMatches } from '@/services/matching';
-import { getSupportPeople } from '@/services/chosenFamily';
+import { getAllProgramsWithProgress } from '@/services/content/programs';
+import { getMyMatches } from '@/services/social/matching';
+import { getSupportPeople } from '@/services/social/chosenFamily';
 import type { AIMessage } from '@/types';
 
 const DEFAULT_STARTERS = [

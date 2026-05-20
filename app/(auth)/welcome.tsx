@@ -3,7 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import type { UserProfile } from '@/context/SessionContext';
 import { useSession } from '@/context/SessionContext';
-import { syncProfile } from '@/services/matching';
+import { syncProfile } from '@/services/social/matching';
 import { signOut, supabase } from '@/services/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -125,7 +125,7 @@ export default function WelcomeScreen() {
               );
             })}
             <Image
-              source={require('../assets/images/homeIcon.png')}
+              source={require('../../assets/images/homeIcon.png')}
               style={styles.appIcon}
               contentFit="contain"
             />

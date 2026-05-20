@@ -1,8 +1,9 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useUnread } from '@/context/UnreadContext';
-import { containsCrisisKeywords, getMessages, sendMessage, subscribeToMessages } from '@/services/chat';
-import { blockUser, getMatchPeerId, reportMessage } from '@/services/matching';
+import { useMessages } from '@/hooks/useMessages';
+import { containsCrisisKeywords, sendMessage } from '@/services/social/chat';
+import { blockUser, getMatchPeerId, reportMessage } from '@/services/social/matching';
 import { supabase } from '@/services/supabase';
 import type { Message } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +13,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     ActionSheetIOS,
     Alert,
-    AppState,
     FlatList,
     KeyboardAvoidingView,
     Platform,
@@ -28,8 +28,8 @@ const CRISIS_HOTLINE = 'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Lin
 
 export default function ChatScreen() {
   const { matchId, nickname, avatarUrl } = useLocalSearchParams<{ matchId: string; nickname: string; avatarUrl?: string }>();
-  const { markRead, setActiveMatch } = useUnread();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { setActiveMatch } = useUnread();
+  const { messages, setMessages } = useMessages(matchId);
   const [input, setInput] = useState('');
   const [disappearing, setDisappearing] = useState(false);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
@@ -48,38 +48,10 @@ export default function ChatScreen() {
     return () => setActiveMatch(null);
   }, [matchId]);
 
+  // Scroll to end when messages load or a new one arrives.
   useEffect(() => {
-    if (!matchId) return;
-
-    function loadMessages() {
-      getMessages(matchId).then((msgs) => {
-        setMessages(msgs);
-        setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
-      });
-      markRead(matchId);
-    }
-
-    loadMessages();
-
-    const unsub = subscribeToMessages(matchId, (msg) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
-      markRead(matchId);
-    });
-
-    // Refetch on foreground — covers WebSocket gaps when the app was backgrounded.
-    const appStateSub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') loadMessages();
-    });
-
-    return () => {
-      unsub();
-      appStateSub.remove();
-    };
-  }, [matchId]);
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: messages.length > 0 }), 50);
+  }, [messages.length]);
 
   async function handleSend() {
     if (!input.trim() || !matchId) return;
@@ -92,7 +64,6 @@ export default function ChatScreen() {
     const msg = await sendMessage(matchId, body, disappearing);
     if (msg) {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     }
     setSending(false);
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,8 +15,8 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
 import { useSession } from '@/context/SessionContext';
-import { getProgressSnapshot } from '@/services/progressStats';
-import type { ProgressSnapshot, MoodDataPoint } from '@/services/progressStats';
+import { useProgress } from '@/hooks/useProgress';
+import type { ProgressSnapshot, MoodDataPoint } from '@/types';
 import { MOOD_COLORS } from '@/types';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -25,23 +25,18 @@ const MOOD_BAR_MAX = 80;
 
 export default function ProgressScreen() {
   const { profile } = useSession();
-  const [snapshot, setSnapshot] = useState<ProgressSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { snapshot, loading } = useProgress();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    getProgressSnapshot(profile)
-      .then((s) => {
-        setSnapshot(s);
-        setLoading(false);
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 350,
-          useNativeDriver: true,
-        }).start();
-      })
-      .catch(() => setLoading(false));
-  }, []);
+    if (!loading && snapshot) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading, snapshot]);
 
   return (
     <SafeAreaView style={styles.safe}>

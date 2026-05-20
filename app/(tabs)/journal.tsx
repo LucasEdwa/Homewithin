@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,14 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { MoodChart } from '@/components/ui/MoodChart';
-import { EmergencyButton } from '@/components/EmergencyButton';
-import { getTodayCheckIn, getRecentCheckIns, getJournalEntries } from '@/services/storage';
-import type { CheckIn, JournalEntry } from '@/types';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { useCheckIns } from '@/hooks/useCheckIns';
 import { MOOD_LABELS, MOOD_ICONS, MOOD_COLORS, EMOTION_COLORS } from '@/types';
 
 function formatDate(iso: string) {
@@ -26,25 +25,7 @@ function formatDate(iso: string) {
 }
 
 export default function JournalScreen() {
-  const [todayCheckIn, setTodayCheckIn] = useState<CheckIn | null>(null);
-  const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([]);
-  const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
-
-  useFocusEffect(
-    useCallback(() => {
-      async function load() {
-        const [today, recent, entries] = await Promise.all([
-          getTodayCheckIn(),
-          getRecentCheckIns(7),
-          getJournalEntries(),
-        ]);
-        setTodayCheckIn(today);
-        setRecentCheckIns(recent);
-        setRecentEntries(entries.slice(0, 4));
-      }
-      load();
-    }, [])
-  );
+  const { todayCheckIn, recentCheckIns, recentEntries } = useCheckIns();
 
   return (
     <SafeAreaView style={styles.safe}>

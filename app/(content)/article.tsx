@@ -13,8 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
-import { EmergencyButton } from '@/components/EmergencyButton';
-import { getResourceById, toggleBookmark, isBookmarked } from '@/services/resources';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { getResourceById, toggleBookmark, isBookmarked } from '@/services/content/resources';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
 import type { Resource } from '@/types';
 

@@ -14,8 +14,8 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { EmergencyButton } from '@/components/EmergencyButton';
-import { getProgramById, getCompletedLessonIds, markLessonComplete } from '@/services/programs';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { getProgramById, getCompletedLessonIds, markLessonComplete } from '@/services/content/programs';
 import type { Program, Lesson } from '@/types';
 
 export default function ProgramScreen() {

@@ -20,7 +20,7 @@ import { Spacing, Radius } from '@/constants/Spacing';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Tag } from '@/components/ui/Tag';
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { supabase } from '@/services/supabase';
 import {
   saveJournalEntry,

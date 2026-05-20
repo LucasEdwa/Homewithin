@@ -1,26 +1,22 @@
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { Card } from '@/components/ui/Card';
 import { Image } from 'expo-image';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { useSession } from '@/context/SessionContext';
 import { useUnread } from '@/context/UnreadContext';
+import { useMatches } from '@/hooks/useMatches';
 import {
   acceptIncomingLike,
   connectMatch,
   declineIncomingLike,
   findMatches,
-  getIncomingLikes,
-  getMyMatches,
-  getPendingOutgoing,
   passMatch,
-  syncProfile,
-} from '@/services/matching';
+} from '@/services/social/matching';
 import type { IntentionId, Match, PeerProfile } from '@/types';
 import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -35,45 +31,13 @@ import {
 type View_ = 'intentions' | 'browsing' | 'empty';
 
 export default function ConnectScreen() {
-  const { profile } = useSession();
-  const { unreadByMatch, refresh: refreshUnread } = useUnread();
+  const { unreadByMatch } = useUnread();
+  const { myMatches, pendingOutgoing, incomingLikes, refreshMatchLists } = useMatches();
   const [view, setView] = useState<View_>('intentions');
   const [intention, setIntention] = useState<IntentionId | null>(null);
   const [candidates, setCandidates] = useState<PeerProfile[]>([]);
-  const [myMatches, setMyMatches] = useState<Match[]>([]);
-  const [pendingOutgoing, setPendingOutgoing] = useState<Match[]>([]);
-  const [incomingLikes, setIncomingLikes] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
   const [browsing, setBrowsing] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      (async () => {
-        if (profile) await syncProfile(profile);
-        const [matches, pending, incoming] = await Promise.all([
-          getMyMatches(),
-          getPendingOutgoing(),
-          getIncomingLikes(),
-        ]);
-        setMyMatches(matches);
-        setPendingOutgoing(pending);
-        setIncomingLikes(incoming);
-        if (matches.length > 0) refreshUnread(matches.map((m) => m.id));
-      })();
-    }, [profile])
-  );
-
-  async function refreshMatchLists() {
-    const [matches, pending, incoming] = await Promise.all([
-      getMyMatches(),
-      getPendingOutgoing(),
-      getIncomingLikes(),
-    ]);
-    setMyMatches(matches);
-    setPendingOutgoing(pending);
-    setIncomingLikes(incoming);
-    if (matches.length > 0) refreshUnread(matches.map((m) => m.id));
-  }
 
   async function handleSelectIntention(id: IntentionId) {
     setIntention(id);

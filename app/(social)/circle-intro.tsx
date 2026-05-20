@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { getCircle, markCircleIntroSeen } from '@/services/circles';
+import { getCircle, markCircleIntroSeen } from '@/services/social/circles';
 import type { Circle } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';

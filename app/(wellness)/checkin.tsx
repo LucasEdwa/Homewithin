@@ -19,7 +19,7 @@ import { MoodPicker } from '@/components/ui/MoodPicker';
 import { MoodChart } from '@/components/ui/MoodChart';
 import { RangeSlider } from '@/components/ui/RangeSlider';
 import { Tag } from '@/components/ui/Tag';
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { useSession } from '@/context/SessionContext';
 import {
   saveCheckIn,

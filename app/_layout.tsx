@@ -1,6 +1,6 @@
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { UnreadProvider } from '@/context/UnreadContext';
-import { addNotificationResponseListener, registerForPushNotifications } from '@/services/notifications';
+import { addNotificationResponseListener, registerForPushNotifications } from '@/services/social/notifications';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
@@ -62,31 +62,31 @@ export default function RootLayout() {
         <LockGate>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
-            <Stack.Screen name="welcome" />
-            <Stack.Screen name="signin" />
+            <Stack.Screen name="(auth)/welcome" />
+            <Stack.Screen name="(auth)/signin" />
             <Stack.Screen name="onboarding" />
-            <Stack.Screen name="safety" />
-            <Stack.Screen name="checkin" />
-            <Stack.Screen name="journal-entry" />
-            <Stack.Screen name="article" />
-            <Stack.Screen name="chat" />
-            <Stack.Screen name="circles" />
-            <Stack.Screen name="circle" />
-            <Stack.Screen name="circle-intro" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="chosen-family" />
-            <Stack.Screen name="programs" />
-            <Stack.Screen name="program" />
+            <Stack.Screen name="(wellness)/safety" />
+            <Stack.Screen name="(wellness)/checkin" />
+            <Stack.Screen name="(wellness)/journal-entry" />
+            <Stack.Screen name="(content)/article" />
+            <Stack.Screen name="(social)/chat" />
+            <Stack.Screen name="(social)/circles" />
+            <Stack.Screen name="(social)/circle" />
+            <Stack.Screen name="(social)/circle-intro" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="(social)/chosen-family" />
+            <Stack.Screen name="(content)/programs" />
+            <Stack.Screen name="(content)/program" />
             <Stack.Screen name="ai-companion" />
-            <Stack.Screen name="local-resources" />
-            <Stack.Screen name="events" />
-            <Stack.Screen name="progress" />
+            <Stack.Screen name="(content)/local-resources" />
+            <Stack.Screen name="(content)/events" />
+            <Stack.Screen name="(wellness)/progress" />
             <Stack.Screen name="blocked-users" />
-            <Stack.Screen name="intentions" />
-            <Stack.Screen name="pin" />
-            <Stack.Screen name="disguise" />
-            <Stack.Screen name="lock" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="emergency" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="decoy" />
+            <Stack.Screen name="(wellness)/intentions" />
+            <Stack.Screen name="(safety)/pin" />
+            <Stack.Screen name="(safety)/disguise" />
+            <Stack.Screen name="(safety)/lock" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="(safety)/emergency" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="(safety)/decoy" />
             <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
           </Stack>
         </LockGate>

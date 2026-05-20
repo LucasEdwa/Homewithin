@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import { getWorkshops, getMeetups } from '@/services/localResources';
+import { getWorkshops, getMeetups } from '@/services/content/localResources';
 import type { Workshop, LocalMeetup, WorkshopFormat } from '@/types';
 
 type Tab = 'workshops' | 'meetups';

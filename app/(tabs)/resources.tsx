@@ -1,8 +1,8 @@
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { getBookmarks, getResources } from '@/services/resources';
+import { getBookmarks, getResources } from '@/services/content/resources';
 import type { Resource, ResourceCategory } from '@/types';
 import {
   CATEGORY_COLORS,

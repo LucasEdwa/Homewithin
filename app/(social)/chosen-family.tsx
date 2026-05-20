@@ -19,16 +19,16 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import {
   getSupportPeople,
   addSupportPerson,
   updateSupportPerson,
   removeSupportPerson,
   getNextSuggestedRole,
-} from '@/services/chosenFamily';
-import { getMyMatches } from '@/services/matching';
-import { listCircles } from '@/services/circles';
+} from '@/services/social/chosenFamily';
+import { getMyMatches } from '@/services/social/matching';
+import { listCircles } from '@/services/social/circles';
 import { SUPPORT_ROLES } from '@/types';
 import type { SupportPerson, SupportRoleMeta, Match, Circle } from '@/types';
 

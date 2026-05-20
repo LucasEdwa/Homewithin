@@ -1,4 +1,4 @@
-import { EmergencyButton } from '@/components/EmergencyButton';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { ProfileBookmarksCard } from '@/components/profile/ProfileBookmarksCard';
 import { ProfileDangerZone, ProfilePrivacyNote } from '@/components/profile/ProfileDangerZone';
 import { ProfileDataCard } from '@/components/profile/ProfileDataCard';
@@ -7,7 +7,7 @@ import { ProfilePrivacyCard } from '@/components/profile/ProfilePrivacyCard';
 import { SettingRow } from '@/components/profile/SettingRow';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
-import { getBookmarkedResources } from '@/services/resources';
+import { getBookmarkedResources } from '@/services/content/resources';
 import type { Resource } from '@/types';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';

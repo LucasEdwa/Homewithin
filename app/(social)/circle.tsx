@@ -1,13 +1,13 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { containsCrisisKeywords } from '@/services/chat';
+import { containsCrisisKeywords } from '@/services/social/chat';
 import {
     getCircleMessages,
     leaveCircle,
     reportInCircle,
     sendCircleMessage,
     subscribeToCircleMessages,
-} from '@/services/circles';
+} from '@/services/social/circles';
 import { supabase } from '@/services/supabase';
 import type { CircleMessage } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
