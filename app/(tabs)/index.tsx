@@ -1,21 +1,19 @@
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
-import { Card } from '@/components/ui/Card';
+import { MoodInsightCard } from '@/components/ui/MoodInsightCard';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import { getTodayCheckIn } from '@/services/storage';
-import type { CheckIn } from '@/types';
-import { EMOTION_COLORS, MOOD_COLORS, MOOD_ICONS, MOOD_LABELS } from '@/types';
+import { useCheckIns } from '@/hooks/useCheckIns';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
 import {
-    Animated,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Animated,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -26,33 +24,33 @@ const SAFETY_COLORS: Record<string, string> = {
   red: Colors.alertRed,
 };
 const SAFETY_LABELS: Record<string, string> = {
-  green: 'You seem safe',
-  yellow: 'Some support may help',
+  green: 'Safe',
+  yellow: 'Some concern',
   red: 'Reach out now',
 };
 
-interface DashCardProps {
-  icon: IoniconsName;
-  title: string;
-  description: string;
-  color: string;
-  onPress: () => void;
-}
+// ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
   const { profile, safetyLevel } = useSession();
-  const [todayCheckIn, setTodayCheckIn] = React.useState<CheckIn | null>(null);
+  const { todayCheckIn, recentCheckIns } = useCheckIns();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
   const name = profile?.nickname ?? 'Friend';
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dayLabel = new Date().toLocaleDateString('en-SE', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
 
   useFocusEffect(
     useCallback(() => {
-      getTodayCheckIn().then(setTodayCheckIn);
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 500,
         useNativeDriver: true,
       }).start();
     }, [])
@@ -60,73 +58,145 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Animated.ScrollView style={{ opacity: fadeAnim }} contentContainerStyle={styles.scroll}>
+      <Animated.ScrollView
+        style={{ opacity: fadeAnim }}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Header ──────────────────────────────────────── */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{greeting}, {name}</Text>
-            <Text style={styles.subGreeting}>How are you feeling today?</Text>
-          </View>
+          <Text style={styles.dayLabel}>{dayLabel}</Text>
+          <Text style={styles.greeting}>
+            {greeting},{'\n'}{name}
+          </Text>
           {safetyLevel && (
-            <View style={[styles.safetyBadge, { backgroundColor: SAFETY_COLORS[safetyLevel] + '20', borderColor: SAFETY_COLORS[safetyLevel] }]}>
+            <View style={[styles.safetyPill, { borderColor: SAFETY_COLORS[safetyLevel] + '60' }]}>
               <View style={[styles.safetyDot, { backgroundColor: SAFETY_COLORS[safetyLevel] }]} />
-              <Text style={[styles.safetyLabel, { color: SAFETY_COLORS[safetyLevel] }]}>
+              <Text style={[styles.safetyPillText, { color: SAFETY_COLORS[safetyLevel] }]}>
                 {SAFETY_LABELS[safetyLevel]}
               </Text>
             </View>
           )}
         </View>
 
-        {/* Feeling summary or check-in prompt */}
-        {todayCheckIn ? (
-          <FeelingSummaryCard checkIn={todayCheckIn} safetyLevel={safetyLevel ?? undefined} />
-        ) : (
-          <CheckInPromptCard safetyLevel={safetyLevel ?? undefined} />
-        )}
+        {/* ── Today's state (hero) ─────────────────────────── */}
+        <SectionLabel label="Today" />
+        <MoodInsightCard
+          todayCheckIn={todayCheckIn}
+          recentCheckIns={recentCheckIns}
+        />
 
-        {/* Category: Daily practice */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Daily practice</Text>
-          <View style={styles.sectionCards}>
-            <DashCard icon="happy-outline"       title="Daily Check-in"   description="Track your mood and feelings"    color={Colors.safeBlue}      onPress={() => router.push('/checkin')} />
-            <DashCard icon="book-outline"        title="Journal"          description="Your private space to express"   color={Colors.mutedLavender} onPress={() => router.push('/journal-entry')} />
-            <DashCard icon="trending-up-outline" title="My Progress"      description="Streaks, milestones, mood trends" color={Colors.softGreen}     onPress={() => router.push('/progress')} />
-          </View>
-        </View>
+        {/* ── Daily practice ───────────────────────────────── */}
+        <SectionLabel label="Daily practice" />
+        <GroupedCard>
+          <OuraRow
+            icon="pulse-outline"
+            iconColor={Colors.textMuted}
+            title="Daily Check-in"
+            subtitle="Track your mood and feelings"
+            onPress={() => router.push('/checkin')}
+          />
+          <OuraRow
+            icon="book-outline"
+            iconColor={Colors.textMuted}
+            title="Journal"
+            subtitle="Your private space to express"
+            onPress={() => router.push('/journal-entry')}
+            divider
+          />
+          <OuraRow
+            icon="bar-chart-outline"
+            iconColor={Colors.textMuted}
+            title="My Progress"
+            subtitle="Streaks, milestones, mood trends"
+            onPress={() => router.push('/progress')}
+            divider
+          />
+        </GroupedCard>
 
-        {/* Category: Safety & support */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Safety & support</Text>
-          <View style={styles.sectionCards}>
-            <DashCard icon="shield-checkmark-outline" title="Safety Assessment" description="Check in on your safety"         color={Colors.alertRed}      onPress={() => router.push('/safety')} />
-            <DashCard icon="sparkles-outline"         title="AI Companion"      description="Talk through what's on your mind" color={Colors.mutedLavender} onPress={() => router.push('/ai-companion')} />
-            <DashCard icon="map-outline"              title="Local Resources"   description="LGBTQ+ centers, shelters, legal aid" color={Colors.softGreen}  onPress={() => router.push('/local-resources')} />
-          </View>
-        </View>
+        {/* ── Safety & support ─────────────────────────────── */}
+        <SectionLabel label="Safety & support" />
+        <GroupedCard>
+          <OuraRow
+            icon="shield-checkmark-outline"
+            iconColor={Colors.textMuted}
+            title="Safety Assessment"
+            subtitle={safetyLevel ? `Status — ${SAFETY_LABELS[safetyLevel].toUpperCase()}` : 'Check in on your safety'}
+            subtitleColor={safetyLevel ? SAFETY_COLORS[safetyLevel] : undefined}
+            onPress={() => router.push('/safety')}
+          />
+          <OuraRow
+            icon="sparkles-outline"
+            iconColor={Colors.textMuted}
+            title="AI Companion"
+            subtitle="Talk through what's on your mind"
+            onPress={() => router.push('/ai-companion')}
+            divider
+          />
+          <OuraRow
+            icon="location-outline"
+            iconColor={Colors.textMuted}
+            title="Local Resources"
+            subtitle="LGBTQ+ centers, shelters, legal aid"
+            onPress={() => router.push('/local-resources')}
+            divider
+          />
+        </GroupedCard>
 
-        {/* Category: Community */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Community</Text>
-          <View style={styles.sectionCards}>
-            <DashCard icon="people-outline"      title="Support Matches" description="Find people who understand"      color={Colors.softGreen}     onPress={() => router.push('/(tabs)/connect')} />
-            <DashCard icon="git-network-outline" title="Chosen Family"   description="Map your support network"       color="#E8844E"              onPress={() => router.push('/chosen-family')} />
-            <DashCard icon="calendar-outline"    title="Events & Circles" description="Workshops, meetups, online circles" color="#E8844E"           onPress={() => router.push('/events')} />
-          </View>
-        </View>
+        {/* ── Community ────────────────────────────────────── */}
+        <SectionLabel label="Community" />
+        <GroupedCard>
+          <OuraRow
+            icon="people-outline"
+            iconColor={Colors.textMuted}
+            title="Support Matches"
+            subtitle="Find people who understand"
+            onPress={() => router.push('/(tabs)/connect')}
+          />
+          <OuraRow
+            icon="git-network-outline"
+            iconColor={Colors.textMuted}
+            title="Chosen Family"
+            subtitle="Map your support network"
+            onPress={() => router.push('/chosen-family')}
+            divider
+          />
+          <OuraRow
+            icon="calendar-outline"
+            iconColor={Colors.textMuted}
+            title="Events & Circles"
+            subtitle="Workshops, meetups, online circles"
+            onPress={() => router.push('/events')}
+            divider
+          />
+        </GroupedCard>
 
-        {/* Category: Growth */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Growth</Text>
-          <View style={styles.sectionCards}>
-            <DashCard icon="library-outline" title="Resources"        description="Guides, articles, and tools"   color={Colors.safeBlue}  onPress={() => router.push('/(tabs)/resources')} />
-            <DashCard icon="layers-outline"  title="Healing Programs" description="Structured paths for recovery" color="#B8A8E3"           onPress={() => router.push('/programs')} />
-          </View>
-        </View>
+        {/* ── Growth ───────────────────────────────────────── */}
+        <SectionLabel label="Growth" />
+        <GroupedCard>
+          <OuraRow
+            icon="library-outline"
+            iconColor={Colors.textMuted}
+            title="Resources"
+            subtitle="Guides, articles, and tools"
+            onPress={() => router.push('/(tabs)/resources')}
+          />
+          <OuraRow
+            icon="layers-outline"
+            iconColor={Colors.textMuted}
+            title="Healing Programs"
+            subtitle="Structured paths for recovery"
+            onPress={() => router.push('/programs')}
+            divider
+          />
+        </GroupedCard>
 
-        <Card style={styles.affirmation}>
+        {/* ── Affirmation ──────────────────────────────────── */}
+        <View style={styles.affirmation}>
           <Text style={styles.affirmationText}>
             "You deserve safety, connection, and belonging — at home, at school, and everywhere you go."
           </Text>
-        </Card>
+        </View>
       </Animated.ScrollView>
 
       <EmergencyButton />
@@ -134,299 +204,239 @@ export default function HomeScreen() {
   );
 }
 
-// ─── Feeling summary card (shown when check-in data exists) ──────────────────
+// ─── Section label ────────────────────────────────────────────────────────────
 
-interface FeelingSummaryCardProps {
-  checkIn: CheckIn;
-  safetyLevel?: string;
+function SectionLabel({ label }: { label: string }) {
+  return <Text style={styles.sectionLabel}>{label.toUpperCase()}</Text>;
 }
 
-function FeelingSummaryCard({ checkIn, safetyLevel }: FeelingSummaryCardProps) {
-  const moodColor = MOOD_COLORS[checkIn.moodScore];
-  const safetyColor = safetyLevel ? SAFETY_COLORS[safetyLevel] : undefined;
+// ─── Grouped card wrapper ─────────────────────────────────────────────────────
 
+function GroupedCard({ children }: { children: React.ReactNode }) {
+  return <View style={styles.groupedCard}>{children}</View>;
+}
+
+// ─── Oura-style row ───────────────────────────────────────────────────────────
+
+interface OuraRowProps {
+  icon: IoniconsName;
+  iconColor: string;
+  title: string;
+  subtitle?: string;
+  subtitleColor?: string;
+  onPress: () => void;
+  divider?: boolean;
+}
+
+function OuraRow({ icon, iconColor, title, subtitle, subtitleColor, onPress, divider }: OuraRowProps) {
   return (
-    <TouchableOpacity
-      style={[styles.summaryCard, { borderLeftColor: moodColor }]}
-      onPress={() => router.push('/checkin')}
-      activeOpacity={0.85}
-    >
-      <View style={styles.summaryHeader}>
-        <Text style={styles.summaryTitle}>Today's wellbeing</Text>
-        <View style={styles.summaryUpdateBtn}>
-          <Text style={[styles.summaryUpdateText, { color: moodColor }]}>Update</Text>
-          <Ionicons name="pencil-outline" size={12} color={moodColor} />
+    <>
+      {divider && <View style={styles.rowDivider} />}
+      <TouchableOpacity
+        style={styles.row}
+        onPress={onPress}
+        activeOpacity={0.65}
+        accessibilityLabel={`${title} — ${subtitle}`}
+      >
+        <View style={styles.rowIcon}>
+          <Ionicons name={icon} size={22} color={iconColor} />
         </View>
-      </View>
-
-      {/* Mood row */}
-      <View style={styles.summaryMoodRow}>
-        <View style={[styles.summaryMoodIcon, { backgroundColor: moodColor + '18' }]}>
-          <Ionicons name={MOOD_ICONS[checkIn.moodScore]} size={26} color={moodColor} />
-        </View>
-        <View style={styles.summaryMoodText}>
-          <Text style={[styles.summaryMoodLabel, { color: moodColor }]}>
-            {MOOD_LABELS[checkIn.moodScore]}
-          </Text>
-          <Text style={styles.summaryMoodScore}>{checkIn.moodScore}/5 mood</Text>
-        </View>
-        {safetyLevel && safetyColor && (
-          <View style={[styles.safetyCapsule, { backgroundColor: safetyColor + '18', borderColor: safetyColor }]}>
-            <View style={[styles.safetyDot, { backgroundColor: safetyColor }]} />
-            <Text style={[styles.safetyCapsuleText, { color: safetyColor }]}>
-              {SAFETY_LABELS[safetyLevel]}
+        <View style={styles.rowText}>
+          <Text style={styles.rowTitle}>{title}</Text>
+          {subtitle && (
+            <Text
+              style={[
+                styles.rowSub,
+                subtitleColor ? { color: subtitleColor, fontWeight: '700', letterSpacing: 0.5 } : null,
+              ]}
+              numberOfLines={1}
+            >
+              {subtitle}
             </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Sub-scores */}
-      <View style={styles.summaryScores}>
-        <ScorePill label="Anxiety" value={checkIn.anxietyScore} color={Colors.alertRed} />
-        <ScorePill label="Lonely" value={checkIn.lonelinessScore} color={Colors.mutedLavender} />
-        <ScorePill label="Safety" value={checkIn.safetyScore} color={Colors.softGreen} invert />
-      </View>
-
-      {/* Emotion tags */}
-      {checkIn.tags.length > 0 && (
-        <View style={styles.summaryTags}>
-          {checkIn.tags.map((tag) => (
-            <View key={tag} style={[styles.summaryTag, { backgroundColor: (EMOTION_COLORS as any)[tag] + '18' ?? Colors.border }]}>
-              <Text style={[styles.summaryTagText, { color: (EMOTION_COLORS as any)[tag] ?? Colors.textMuted }]}>
-                {tag}
-              </Text>
-            </View>
-          ))}
+          )}
         </View>
-      )}
-
-      {/* Hardest thing */}
-      {checkIn.hardestThing?.trim() ? (
-        <Text style={styles.summaryHardest} numberOfLines={1}>
-          "{checkIn.hardestThing}"
-        </Text>
-      ) : null}
-    </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={15} color={Colors.textMuted} />
+      </TouchableOpacity>
+    </>
   );
 }
 
-interface ScorePillProps {
-  label: string;
-  value: number;
-  color: string;
-  invert?: boolean;
-}
-
-function ScorePill({ label, value, color, invert }: ScorePillProps) {
-  const filled = invert ? value : 11 - value;
-  const fillColor = invert
-    ? value >= 7 ? Colors.softGreen : value >= 4 ? '#E8C44E' : Colors.alertRed
-    : value <= 3 ? Colors.softGreen : value <= 6 ? '#E8C44E' : Colors.alertRed;
-  return (
-    <View style={styles.scorePill}>
-      <Text style={styles.scorePillLabel}>{label}</Text>
-      <View style={styles.scorePillBar}>
-        <View style={[styles.scorePillFill, { width: `${(value / 10) * 100}%` as any, backgroundColor: fillColor }]} />
-      </View>
-      <Text style={[styles.scorePillValue, { color: fillColor }]}>{value}</Text>
-    </View>
-  );
-}
-
-// ─── Prompt card (shown when no check-in yet today) ──────────────────────────
-
-function CheckInPromptCard({ safetyLevel }: { safetyLevel?: string }) {
-  const safetyColor = safetyLevel ? SAFETY_COLORS[safetyLevel] : undefined;
-
-  return (
-    <TouchableOpacity
-      style={styles.promptCard}
-      onPress={() => router.push('/checkin')}
-      activeOpacity={0.85}
-    >
-      <View style={styles.promptLeft}>
-        <View style={styles.promptIconBg}>
-          <Ionicons name="pulse-outline" size={22} color={Colors.safeBlue} />
-        </View>
-        <View style={styles.promptText}>
-          <Text style={styles.promptTitle}>How are you feeling today?</Text>
-          <Text style={styles.promptSub}>Your daily check-in takes 30 seconds.</Text>
-        </View>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={Colors.safeBlue} />
-      {safetyLevel && safetyColor && (
-        <View style={[styles.safetyCapsule, { backgroundColor: safetyColor + '18', borderColor: safetyColor, position: 'absolute', top: 8, right: 36 }]}>
-          <View style={[styles.safetyDot, { backgroundColor: safetyColor }]} />
-          <Text style={[styles.safetyCapsuleText, { color: safetyColor }]}>{SAFETY_LABELS[safetyLevel]}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-function DashCard({ icon, title, description, color, onPress }: DashCardProps) {
-  return (
-    <TouchableOpacity
-      style={styles.dashCard}
-      onPress={onPress}
-      activeOpacity={0.75}
-      accessibilityLabel={`${title} — ${description}`}
-    >
-      <View style={[styles.dashIconBg, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon} size={22} color={color} />
-      </View>
-      <View style={styles.dashText}>
-        <Text style={styles.dashTitle}>{title}</Text>
-        <Text style={styles.dashDesc}>{description}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-    </TouchableOpacity>
-  );
-}
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
-  scroll: { padding: Spacing.lg, paddingBottom: 120, gap: Spacing.lg },
-  header: { gap: Spacing.sm },
-  greeting: { fontSize: 26, fontWeight: '700', color: Colors.textPrimary },
-  subGreeting: { fontSize: 15, color: Colors.textSecondary },
-  safetyBadge: {
+  scroll: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: 130,
+    gap: Spacing.sm,
+  },
+
+  // ── Header ────────────────────────────────────────────────
+  header: {
+    paddingBottom: Spacing.sm,
+    gap: 6,
+  },
+  dayLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  greeting: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    lineHeight: 40,
+  },
+  safetyPill: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.full,
-    borderWidth: 1.5,
-  },
-  safetyDot: { width: 8, height: 8, borderRadius: 4 },
-  safetyLabel: { fontSize: 13, fontWeight: '600' },
-
-  // ─── Feeling summary card ────────────────────────────────────────────────────
-  summaryCard: {
-    backgroundColor: Colors.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    borderLeftWidth: 4,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  summaryTitle: { fontSize: 13, fontWeight: '600', color: Colors.textMuted, letterSpacing: 0.4, textTransform: 'uppercase' },
-  summaryUpdateBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  summaryUpdateText: { fontSize: 13, fontWeight: '600' },
-  summaryMoodRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  summaryMoodIcon: { width: 48, height: 48, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
-  summaryMoodText: { flex: 1, gap: 1 },
-  summaryMoodLabel: { fontSize: 20, fontWeight: '700' },
-  summaryMoodScore: { fontSize: 13, color: Colors.textMuted },
-  safetyCapsule: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing.sm,
+    gap: 6,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: Radius.full,
-    borderWidth: 1.5,
+    borderWidth: 1,
+    marginTop: 4,
   },
-  safetyCapsuleText: { fontSize: 11, fontWeight: '600' },
-  summaryScores: { flexDirection: 'row', gap: Spacing.sm },
-  scorePill: { flex: 1, gap: 3 },
-  scorePillLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '500' },
-  scorePillBar: {
-    height: 5,
-    backgroundColor: Colors.border,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  scorePillFill: { height: '100%', borderRadius: 3 },
-  scorePillValue: { fontSize: 12, fontWeight: '700' },
-  summaryTags: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
-  summaryTag: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
-  },
-  summaryTagText: { fontSize: 12, fontWeight: '600' },
-  summaryHardest: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-    lineHeight: 18,
+  safetyDot: { width: 6, height: 6, borderRadius: 3 },
+  safetyPillText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
+
+  // ── Section label ──────────────────────────────────────────
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    letterSpacing: 1,
+    marginTop: Spacing.md,
+    marginBottom: 4,
+    paddingHorizontal: 2,
   },
 
-  // ─── Check-in prompt card ────────────────────────────────────────────────────
-  promptCard: {
+  // ── Grouped card ──────────────────────────────────────────
+  groupedCard: {
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+
+  // ── Oura row ──────────────────────────────────────────────
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 14,
     gap: Spacing.md,
-    borderWidth: 1.5,
-    borderColor: Colors.safeBlue + '40',
-    shadowColor: Colors.safeBlue,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  promptLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  promptIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.safeBlue + '18',
+  rowDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginLeft: 28 + Spacing.md,
+  },
+  rowIcon: {
+    width: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  promptText: { flex: 1, gap: 2 },
-  promptTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  promptSub: { fontSize: 13, color: Colors.textMuted },
+  rowText: { flex: 1, gap: 2 },
+  rowTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  rowSub: { fontSize: 12, color: Colors.textSecondary },
 
-  // ─── Category sections ───────────────────────────────────────────────────────
-  section: { gap: Spacing.sm },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.textMuted,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    paddingHorizontal: 2,
+  // ── Hero check-in card ─────────────────────────────────────
+  heroCard: {
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    gap: Spacing.sm,
   },
-  sectionCards: { gap: Spacing.xs },
-
-  // ─── Dash card ───────────────────────────────────────────────────────────────
-  dashCard: {
+  heroChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
+    alignSelf: 'flex-start',
+    gap: 5,
+  },
+  heroChipText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  heroHeadline: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    lineHeight: 32,
+  },
+  heroMetrics: {
+    flexDirection: 'row',
     gap: Spacing.md,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: 4,
   },
-  dashIconBg: { width: 44, height: 44, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
-  dashText: { flex: 1, gap: 2 },
-  dashTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  dashDesc: { fontSize: 13, color: Colors.textSecondary },
+  heroMetric: { flex: 1, gap: 4 },
+  heroMetricValue: { fontSize: 22, fontWeight: '300', lineHeight: 26 },
+  heroMetricLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '500' },
+  heroMetricTrack: {
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  heroMetricFill: { height: '100%', borderRadius: 2 },
+  heroUpdate: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+
+  // ── Check-in prompt card ────────────────────────────────────
+  promptCard: {
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  promptInner: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  promptIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  promptText: { flex: 1, gap: 3 },
+  promptTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  promptSub: { fontSize: 12, color: Colors.textSecondary },
+  promptCta: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: Radius.full,
+  },
+  promptCtaText: { fontSize: 13, fontWeight: '700', color: Colors.white },
+
+  // ── Affirmation ────────────────────────────────────────────
   affirmation: {
-    backgroundColor: Colors.safeBlue + '10',
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.safeBlue,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
-  affirmationText: { fontSize: 15, color: Colors.safeBlue, fontStyle: 'italic', lineHeight: 22 },
+  affirmationText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
+    lineHeight: 22,
+    textAlign: 'center',
+  },
 });

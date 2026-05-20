@@ -21,14 +21,14 @@ export function MoodPicker({ value, onChange }: MoodPickerProps) {
         return (
           <TouchableOpacity
             key={level}
-            style={[styles.item, selected && { backgroundColor: color + '20', borderColor: color }]}
+            style={styles.item}
             onPress={() => onChange(level)}
             activeOpacity={0.7}
             accessibilityRole="radio"
             accessibilityLabel={MOOD_LABELS[level]}
             accessibilityState={{ selected }}
           >
-            <Ionicons name={MOOD_ICONS[level]} size={32} color={selected ? color : Colors.textMuted} />
+            <Ionicons name={MOOD_ICONS[level]} size={34} color={selected ? color : Colors.textMuted} />
             <Text style={[styles.label, selected && { color }]}>{MOOD_LABELS[level]}</Text>
           </TouchableOpacity>
         );
@@ -47,11 +47,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: Spacing.sm,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
     gap: 4,
-    backgroundColor: Colors.softGray,
   },
   label: {
     fontSize: 10,
