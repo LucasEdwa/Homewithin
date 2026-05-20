@@ -198,6 +198,7 @@ const styles = StyleSheet.create({
     width: ICON_SIZE,
     height: ICON_SIZE,
       borderRadius: 40,
+      objectFit: 'cover',
   },
   tagline: { fontSize: 18, color: Colors.textSecondary, fontStyle: 'italic' },
   pillars: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: Spacing.xl },
