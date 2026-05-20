@@ -2,15 +2,15 @@ import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { renderWithSession } from '../helpers/renderWithSession';
 
-jest.mock('@/services/matching', () => ({
+jest.mock('@/services/social/matching', () => ({
   syncProfile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/services/resources', () => ({
+jest.mock('@/services/content/resources', () => ({
   getBookmarkedResources: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock('@/services/account', () => ({
+jest.mock('@/services/user/account', () => ({
   deleteAccount: jest.fn().mockResolvedValue({
     localCleared: true,
     remoteCleared: true,
@@ -30,13 +30,13 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-jest.mock('@/components/EmergencyButton', () => ({
+jest.mock('@/components/safety/EmergencyButton', () => ({
   EmergencyButton: () => null,
 }));
 
 import ProfileScreen from '@/app/(tabs)/profile';
-import * as accountService from '@/services/account';
-import * as matchingService from '@/services/matching';
+import * as accountService from '@/services/user/account';
+import * as matchingService from '@/services/social/matching';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 

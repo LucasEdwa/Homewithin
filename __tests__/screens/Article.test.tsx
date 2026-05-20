@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { Share } from 'react-native';
 
-jest.mock('@/services/resources', () => ({
+jest.mock('@/services/content/resources', () => ({
   getResourceById: jest.fn(),
   isBookmarked: jest.fn(),
   toggleBookmark: jest.fn(),
@@ -13,8 +13,8 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
-import ArticleScreen from '@/app/article';
-import * as resourcesService from '@/services/resources';
+import ArticleScreen from '@/app/(content)/article';
+import * as resourcesService from '@/services/content/resources';
 import { useLocalSearchParams, router } from 'expo-router';
 
 const mockGetById = resourcesService.getResourceById as jest.Mock;

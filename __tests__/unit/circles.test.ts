@@ -63,7 +63,7 @@ import {
     reportInCircle,
     sendCircleMessage,
     subscribeToCircleMessages,
-} from "@/services/circles";
+} from "@/services/social/circles";
 
 beforeEach(() => {
   // Default: offline (null supabase)

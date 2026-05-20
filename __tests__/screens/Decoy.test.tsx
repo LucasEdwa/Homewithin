@@ -15,7 +15,7 @@ jest.mock('@/context/SessionContext', () => ({
   useSession: () => mockSession,
 }));
 
-import DecoyScreen from '@/app/decoy';
+import DecoyScreen from '@/app/(safety)/decoy';
 import { router } from 'expo-router';
 
 describe('DecoyScreen — secret gesture', () => {

@@ -9,7 +9,7 @@ jest.mock('@/context/SessionContext', () => ({
   useSession: jest.fn(),
 }));
 
-import DisguiseScreen from '@/app/disguise';
+import DisguiseScreen from '@/app/(safety)/disguise';
 import { useSession } from '@/context/SessionContext';
 import { router } from 'expo-router';
 

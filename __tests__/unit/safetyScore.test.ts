@@ -1,4 +1,4 @@
-import { computeSafetyScore, hasCrisisSignal } from '@/services/safetyScore';
+import { computeSafetyScore, hasCrisisSignal } from '@/services/wellness/safetyScore';
 
 describe('hasCrisisSignal', () => {
   it('returns true when self_harm_thoughts is set', () => {

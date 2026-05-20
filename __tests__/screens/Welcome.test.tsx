@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import WelcomeScreen from '@/app/welcome';
+import WelcomeScreen from '@/app/(auth)/welcome';
 
 // expo-router is mocked via __mocks__/expo-router.ts
 

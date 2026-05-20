@@ -2,7 +2,7 @@ import {
   LOCAL_MEETUPS,
   LOCAL_RESOURCES,
   WORKSHOPS,
-} from '@/constants/localResources';
+} from '@/data/localResources';
 import {
   filterResources,
   getMeetups,
@@ -12,7 +12,7 @@ import {
   getResourcesByType,
   getWorkshops,
   sortByDistance,
-} from '@/services/localResources';
+} from '@/services/content/localResources';
 import type { LocalResource } from '@/types';
 
 describe('getResourcesByState', () => {

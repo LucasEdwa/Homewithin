@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import EmergencyScreen from '@/app/emergency';
+import EmergencyScreen from '@/app/(safety)/emergency';
 import { renderWithSession } from '../helpers/renderWithSession';
 
 const mockProfile = {

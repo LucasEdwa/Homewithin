@@ -20,8 +20,8 @@ import {
   markLessonComplete,
   getProgramProgress,
   getAllProgramsWithProgress,
-} from '@/services/programs';
-import { SEED_PROGRAMS as PROGRAMS } from '@/constants/programs';
+} from '@/services/content/programs';
+import { SEED_PROGRAMS as PROGRAMS } from '@/data/programs';
 
 describe('getPrograms', () => {
   it('returns all 5 programs', async () => {

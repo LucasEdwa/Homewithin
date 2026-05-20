@@ -1,4 +1,4 @@
-import { containsCrisisKeywords } from '@/services/chat';
+import { containsCrisisKeywords } from '@/services/social/chat';
 
 describe('containsCrisisKeywords', () => {
   it('returns false for normal text', () => {

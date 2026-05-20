@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-jest.mock('@/services/circles', () => ({
+jest.mock('@/services/social/circles', () => ({
   getCircle: jest.fn(),
   markCircleIntroSeen: jest.fn(),
 }));
@@ -11,8 +11,8 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
-import CircleIntroScreen from '@/app/circle-intro';
-import * as circlesService from '@/services/circles';
+import CircleIntroScreen from '@/app/(social)/circle-intro';
+import * as circlesService from '@/services/social/circles';
 import { router, useLocalSearchParams } from 'expo-router';
 
 const mockGetCircle = circlesService.getCircle as jest.Mock;

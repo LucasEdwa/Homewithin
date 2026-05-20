@@ -13,7 +13,7 @@ jest.mock('@/services/storage', () => ({
   setPin: jest.fn().mockResolvedValue(undefined),
 }));
 
-import JournalEntryScreen from '@/app/journal-entry';
+import JournalEntryScreen from '@/app/(wellness)/journal-entry';
 import * as storage from '@/services/storage';
 
 const mockGetEntries = storage.getJournalEntries as jest.Mock;

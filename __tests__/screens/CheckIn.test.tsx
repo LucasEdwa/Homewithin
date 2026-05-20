@@ -15,7 +15,7 @@ jest.mock('@/services/storage', () => ({
   getRecentCheckIns: jest.fn().mockResolvedValue([]),
 }));
 
-import CheckInScreen from '@/app/checkin';
+import CheckInScreen from '@/app/(wellness)/checkin';
 import * as storage from '@/services/storage';
 
 const mockGetToday = storage.getTodayCheckIn as jest.Mock;

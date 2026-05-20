@@ -32,7 +32,7 @@ jest.mock("@/services/storage", () => ({
   deleteSensitiveData: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { deleteAccount } from "@/services/account";
+import { deleteAccount } from "@/services/user/account";
 import { deleteSensitiveData } from "@/services/storage";
 
 const setItem = SecureStore.setItemAsync as jest.Mock;

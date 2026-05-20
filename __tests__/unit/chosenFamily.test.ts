@@ -19,7 +19,7 @@ import {
   updateSupportPerson,
   removeSupportPerson,
   getNextSuggestedRole,
-} from '@/services/chosenFamily';
+} from '@/services/social/chosenFamily';
 import { SUPPORT_ROLES } from '@/types';
 import type { SupportPerson } from '@/types';
 

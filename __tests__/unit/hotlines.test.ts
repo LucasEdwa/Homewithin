@@ -1,4 +1,4 @@
-import { CRISIS_HOTLINES, getHotlinesForCountry } from '@/constants/hotlines';
+import { CRISIS_HOTLINES, getHotlinesForCountry } from '@/data/hotlines';
 
 describe('CRISIS_HOTLINES', () => {
   it('contains at least 10 countries', () => {

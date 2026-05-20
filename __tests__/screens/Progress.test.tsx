@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
 
-jest.mock('@/services/progressStats', () => ({
+jest.mock('@/services/wellness/progressStats', () => ({
   getProgressSnapshot: jest.fn(),
 }));
 
@@ -23,8 +23,8 @@ jest.mock('@/context/SessionContext', () => ({
   }),
 }));
 
-import ProgressScreen from '@/app/progress';
-import * as statsService from '@/services/progressStats';
+import ProgressScreen from '@/app/(wellness)/progress';
+import * as statsService from '@/services/wellness/progressStats';
 
 const mockGetSnapshot = statsService.getProgressSnapshot as jest.Mock;
 

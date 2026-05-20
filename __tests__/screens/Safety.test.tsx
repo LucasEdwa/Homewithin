@@ -1,15 +1,15 @@
-import SafetyScreen from '@/app/safety';
+import SafetyScreen from '@/app/(wellness)/safety';
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import React from 'react';
 import { renderWithSession } from '../helpers/renderWithSession';
 
-jest.mock('@/services/localResources', () => ({
+jest.mock('@/services/content/localResources', () => ({
   requestLocationPermission: jest.fn(),
   getResources: jest.fn(),
 }));
 
-import * as localResourcesService from '@/services/localResources';
+import * as localResourcesService from '@/services/content/localResources';
 const mockRequestLocation = localResourcesService.requestLocationPermission as jest.Mock;
 const mockGetResources = localResourcesService.getResources as jest.Mock;
 

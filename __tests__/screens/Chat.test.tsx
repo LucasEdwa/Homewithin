@@ -1,14 +1,14 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
-jest.mock('@/services/chat', () => ({
+jest.mock('@/services/social/chat', () => ({
   getMessages: jest.fn(),
   sendMessage: jest.fn(),
   subscribeToMessages: jest.fn(),
   containsCrisisKeywords: jest.fn(),
 }));
 
-jest.mock('@/services/matching', () => ({
+jest.mock('@/services/social/matching', () => ({
   blockUser: jest.fn(),
   reportMessage: jest.fn(),
 }));
@@ -25,8 +25,8 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(),
 }));
 
-import ChatScreen from '@/app/chat';
-import * as chatService from '@/services/chat';
+import ChatScreen from '@/app/(social)/chat';
+import * as chatService from '@/services/social/chat';
 import { useLocalSearchParams } from 'expo-router';
 
 const mockGetMessages = chatService.getMessages as jest.Mock;

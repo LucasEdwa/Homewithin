@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
-jest.mock('@/services/matching', () => ({
+jest.mock('@/services/social/matching', () => ({
   syncProfile: jest.fn().mockResolvedValue(undefined),
   findMatches: jest.fn(),
   connectMatch: jest.fn(),
@@ -40,7 +40,7 @@ jest.mock('@/context/SessionContext', () => ({
 }));
 
 import ConnectScreen from '@/app/(tabs)/connect';
-import * as matchingService from '@/services/matching';
+import * as matchingService from '@/services/social/matching';
 import { router } from 'expo-router';
 
 const mockFind = matchingService.findMatches as jest.Mock;

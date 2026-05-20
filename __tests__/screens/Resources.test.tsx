@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
-jest.mock('@/services/resources', () => ({
+jest.mock('@/services/content/resources', () => ({
   getResources: jest.fn(),
   getBookmarks: jest.fn(),
 }));
@@ -18,7 +18,7 @@ jest.mock('expo-router', () => ({
 }));
 
 import ResourcesScreen from '@/app/(tabs)/resources';
-import * as resourcesService from '@/services/resources';
+import * as resourcesService from '@/services/content/resources';
 
 const mockGetResources = resourcesService.getResources as jest.Mock;
 const mockGetBookmarks = resourcesService.getBookmarks as jest.Mock;

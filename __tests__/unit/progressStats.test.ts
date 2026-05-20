@@ -2,10 +2,10 @@ import * as SecureStore from 'expo-secure-store';
 
 jest.mock('expo-secure-store');
 jest.mock('@/services/supabase', () => ({ supabase: null }));
-jest.mock('@/services/matching', () => ({
+jest.mock('@/services/social/matching', () => ({
   getMyMatches: jest.fn().mockResolvedValue([]),
 }));
-jest.mock('@/constants/programs', () => ({
+jest.mock('@/data/programs', () => ({
   SEED_PROGRAMS: [
     {
       id: 'p1',
@@ -31,7 +31,7 @@ import {
   getSafetyDelta,
   getProfileCompletion,
   getProgressSnapshot,
-} from '@/services/progressStats';
+} from '@/services/wellness/progressStats';
 import type { UserProfile } from '@/context/SessionContext';
 
 // ── helpers ───────────────────────────────────────────────────────────────────

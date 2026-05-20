@@ -14,8 +14,8 @@ beforeEach(() => {
   mockStore.deleteItemAsync.mockImplementation(async (key) => { delete store[key]; });
 });
 
-import { getResources, getResourceById, getBookmarks, isBookmarked, toggleBookmark, getBookmarkedResources } from '@/services/resources';
-import { SEED_ARTICLES } from '@/constants/articles';
+import { getResources, getResourceById, getBookmarks, isBookmarked, toggleBookmark, getBookmarkedResources } from '@/services/content/resources';
+import { SEED_ARTICLES } from '@/data/articles';
 
 describe('getResources', () => {
   it('returns all seed articles when Supabase is null', async () => {

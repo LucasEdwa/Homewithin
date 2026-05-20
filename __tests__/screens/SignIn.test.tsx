@@ -15,7 +15,7 @@ jest.mock('@/services/supabase', () => ({
   isSupabaseConfigured: true,
 }));
 
-import SignInScreen from '@/app/signin';
+import SignInScreen from '@/app/(auth)/signin';
 import * as supabaseModule from '@/services/supabase';
 
 // Typed accessors into the mocked module

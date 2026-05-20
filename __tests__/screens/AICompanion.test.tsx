@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 
-jest.mock('@/services/ai', () => ({
+jest.mock('@/services/wellness/ai', () => ({
   sendAIMessage: jest.fn(),
   getHistory: jest.fn(),
   clearHistory: jest.fn(),
@@ -27,20 +27,20 @@ jest.mock('@/services/storage', () => ({
   getJournalEntries: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock('@/services/programs', () => ({
+jest.mock('@/services/content/programs', () => ({
   getAllProgramsWithProgress: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock('@/services/matching', () => ({
+jest.mock('@/services/social/matching', () => ({
   getMyMatches: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock('@/services/chosenFamily', () => ({
+jest.mock('@/services/social/chosenFamily', () => ({
   getSupportPeople: jest.fn().mockResolvedValue([]),
 }));
 
 import AICompanionScreen from '@/app/ai-companion';
-import * as aiService from '@/services/ai';
+import * as aiService from '@/services/wellness/ai';
 
 const mockSend = aiService.sendAIMessage as jest.Mock;
 const mockGetHistory = aiService.getHistory as jest.Mock;

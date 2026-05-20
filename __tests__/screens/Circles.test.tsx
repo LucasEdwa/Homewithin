@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-jest.mock('@/services/circles', () => ({
+jest.mock('@/services/social/circles', () => ({
   listCircles: jest.fn(),
   joinCircle: jest.fn(),
 }));
@@ -17,8 +17,8 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-import CirclesScreen from '@/app/circles';
-import * as circlesService from '@/services/circles';
+import CirclesScreen from '@/app/(social)/circles';
+import * as circlesService from '@/services/social/circles';
 import { router } from 'expo-router';
 
 const mockList = circlesService.listCircles as jest.Mock;

@@ -20,7 +20,7 @@ import {
   clearHistory,
   sendAIMessage,
   AI_DISCLAIMER,
-} from '@/services/ai';
+} from '@/services/wellness/ai';
 
 describe('AI_DISCLAIMER', () => {
   it('is a non-empty string', () => {
