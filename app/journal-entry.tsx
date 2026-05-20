@@ -57,6 +57,7 @@ export default function JournalEntryScreen() {
   const [loading, setLoading] = useState(false);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [showList, setShowList] = useState(!id);
+  const [editingId, setEditingId] = useState<string | undefined>(id);
 
   // PIN modal state
   const [pinModal, setPinModal] = useState<'verify' | 'set' | null>(null);
@@ -97,15 +98,14 @@ export default function JournalEntryScreen() {
       return;
     }
     setLoading(true);
+    const existing = editingId ? entries.find((e) => e.id === editingId) : undefined;
     const entry: JournalEntry = {
-      id: id ?? uuid(),
-      date: todayISO(),
+      id: editingId ?? uuid(),
+      date: existing?.date ?? todayISO(),
       body: body.trim(),
       emotionTags,
       isHidden,
-      createdAt: id
-        ? (entries.find((e) => e.id === id)?.createdAt ?? new Date().toISOString())
-        : new Date().toISOString(),
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     await saveJournalEntry(entry);
 
@@ -134,6 +134,7 @@ export default function JournalEntryScreen() {
     setBody('');
     setEmotionTags([]);
     setIsHidden(false);
+    setEditingId(undefined);
 
     if (!entry.isHidden) {
       Alert.alert('Saved', 'Your journal entry has been saved.', [
@@ -213,6 +214,7 @@ export default function JournalEntryScreen() {
     setBody(entry.body);
     setEmotionTags(entry.emotionTags);
     setIsHidden(entry.isHidden);
+    setEditingId(entryId);
     setShowList(false);
   }
 
@@ -220,6 +222,7 @@ export default function JournalEntryScreen() {
     setBody('');
     setEmotionTags([]);
     setIsHidden(false);
+    setEditingId(undefined);
     setShowList(false);
   }
 
@@ -232,7 +235,7 @@ export default function JournalEntryScreen() {
         }} accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={22} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{showList ? 'Journal' : (id ? 'Edit Entry' : 'New Entry')}</Text>
+        <Text style={styles.headerTitle}>{showList ? 'Journal' : (editingId ? 'Edit Entry' : 'New Entry')}</Text>
         {showList ? (
           <TouchableOpacity onPress={handleExport} accessibilityLabel="Export journal">
             <Ionicons name="share-outline" size={22} color={Colors.textSecondary} />

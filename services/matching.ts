@@ -59,13 +59,18 @@ export async function findMatches(
   const uid = await currentUserId();
   if (!uid) return [];
 
-  // Only exclude users the current user has ALREADY ACTED ON (as requester).
-  // Users who liked the current user should still appear so they can like back.
-  const [{ data: myActions }, { data: blocked }] = await Promise.all([
+  // Exclude users the current user has acted on (as requester) AND users who
+  // have acted on the current user (as target). This prevents the same pair
+  // from appearing in multiple interests and creating duplicate matches.
+  const [{ data: myActions }, { data: theirActions }, { data: blocked }] = await Promise.all([
     supabase
       .from("matches")
       .select("target_id")
       .eq("requester_id", uid),
+    supabase
+      .from("matches")
+      .select("requester_id")
+      .eq("target_id", uid),
     supabase
       .from("blocks")
       .select("blocker_id, blocked_id")
@@ -74,6 +79,7 @@ export async function findMatches(
 
   const exclude = new Set<string>([uid]);
   (myActions ?? []).forEach((m: any) => exclude.add(m.target_id));
+  (theirActions ?? []).forEach((m: any) => exclude.add(m.requester_id));
   (blocked ?? []).forEach((b: any) => {
     exclude.add(b.blocker_id);
     exclude.add(b.blocked_id);
