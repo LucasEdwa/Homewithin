@@ -195,6 +195,7 @@ export default function ChatScreen() {
           ref={listRef}
           data={messages.filter((m) => !isExpired(m))}
           keyExtractor={(m) => m.id}
+          style={styles.flatList}
           contentContainerStyle={styles.messageList}
           renderItem={({ item }) => (
             <MessageBubble
@@ -266,11 +267,13 @@ function MessageBubble({
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   return (
     <View style={[styles.bubbleRow, isMe && styles.bubbleRowMe]}>
-      <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-        <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
+      <View style={[styles.bubbleCol, isMe && styles.bubbleColMe]}>
+        <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+          <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
+        </View>
         <View style={styles.bubbleMeta}>
           {disappearing && (
-            <Ionicons name="timer-outline" size={11} color={isMe ? 'rgba(255,255,255,0.6)' : Colors.textMuted} />
+            <Ionicons name="timer-outline" size={11} color={Colors.textMuted} />
           )}
           <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>{time}</Text>
         </View>
@@ -281,7 +284,8 @@ function MessageBubble({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: Colors.warmWhite },
+  flatList: { flex: 1, backgroundColor: Colors.warmWhite },
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,20 +332,21 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', color: Colors.textMuted, marginTop: Spacing.xl * 2, fontSize: 14 },
   bubbleRow: { flexDirection: 'row', justifyContent: 'flex-start' },
   bubbleRowMe: { justifyContent: 'flex-end' },
+  bubbleCol: { maxWidth: '78%', gap: 3, alignItems: 'flex-start' },
+  bubbleColMe: { alignItems: 'flex-end' },
   bubble: {
-    maxWidth: '78%',
     borderRadius: Radius.lg,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     gap: 2,
   },
-  bubbleMe: { backgroundColor: Colors.safeBlue, borderBottomRightRadius: 4 },
+  bubbleMe: { backgroundColor: '#2C2724', borderBottomRightRadius: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   bubbleThem: { backgroundColor: Colors.softGray, borderBottomLeftRadius: 4 },
   bubbleText: { fontSize: 15, color: Colors.textPrimary, lineHeight: 21 },
-  bubbleTextMe: { color: Colors.white },
-  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, alignSelf: 'flex-end' },
-  bubbleTime: { fontSize: 11, color: Colors.textMuted },
-  bubbleTimeMe: { color: 'rgba(255,255,255,0.65)' },
+  bubbleTextMe: { color: Colors.textPrimary },
+  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  bubbleTime: { fontSize: 10, color: Colors.textMuted },
+  bubbleTimeMe: { color: Colors.textMuted },
   disappearToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -365,7 +370,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.warmWhite,
   },
   input: {
     flex: 1,
