@@ -44,9 +44,14 @@ function LockGate({ children }: { children: React.ReactNode }) {
 
   // Navigate to the right chat when the user taps a push notification.
   useEffect(() => {
-    const sub = addNotificationResponseListener((matchId) => {
-      router.push({ pathname: '/chat', params: { matchId } });
-    });
+    const sub = addNotificationResponseListener(
+      (matchId) => {
+        router.push({ pathname: '/chat', params: { matchId } });
+      },
+      (screen) => {
+        if (screen === 'connect') router.push('/(tabs)/connect');
+      },
+    );
     return () => sub.remove();
   }, []);
 
