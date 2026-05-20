@@ -12,13 +12,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
-  BackHandler,
-  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -100,13 +98,7 @@ export default function WelcomeScreen() {
     }
   }
 
-  function handleQuickExit() {
-    if (Platform.OS === 'android') {
-      BackHandler.exitApp();
-    } else {
-      router.replace('/decoy');
-    }
-  }
+ 
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -175,8 +167,8 @@ export default function WelcomeScreen() {
   );
 }
 
-const ICON_SIZE = 180;
-const RING_SIZE = ICON_SIZE  + 40; // Max scale + padding
+const ICON_SIZE = 460;
+const RING_SIZE = ICON_SIZE -20; 
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
