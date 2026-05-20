@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Slider from '@react-native-community/slider';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { Spacing } from '@/constants/Spacing';
+import { Spacing, Radius } from '@/constants/Spacing';
 
 interface RangeSliderProps {
   label: string;
@@ -25,23 +24,43 @@ export function RangeSlider({
   onValueChange,
   color = Colors.safeBlue,
 }: RangeSliderProps) {
+  const steps = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  const pct = (value - min) / (max - min);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={[styles.value, { color }]}>{value}</Text>
+        <Text style={styles.valueText}>{value}<Text style={styles.maxText}>/{max}</Text></Text>
       </View>
-      <Slider
-        minimumValue={min}
-        maximumValue={max}
-        step={1}
-        value={value}
-        onValueChange={onValueChange}
-        minimumTrackTintColor={color}
-        maximumTrackTintColor={Colors.softGray}
-        thumbTintColor={color}
-        accessibilityLabel={label}
-      />
+
+      <View style={styles.track}>
+        {steps.map((step) => {
+          const active = step <= value;
+          const isSelected = step === value;
+          const opacity = active ? 0.15 + (step / max) * 0.55 : 0.07;
+          return (
+            <TouchableOpacity
+              key={step}
+              onPress={() => onValueChange(step)}
+              activeOpacity={0.7}
+              accessibilityRole="radio"
+              accessibilityLabel={`${label} ${step}`}
+              accessibilityState={{ selected: isSelected }}
+              style={styles.segmentWrap}
+            >
+              <View
+                style={[
+                  styles.segment,
+                  { backgroundColor: `rgba(255,255,255,${opacity})` },
+                  isSelected && styles.segmentSelected,
+                ]}
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       {(minLabel || maxLabel) && (
         <View style={styles.labels}>
           {minLabel ? <Text style={styles.rangeLabel}>{minLabel}</Text> : <View />}
@@ -53,10 +72,28 @@ export function RangeSlider({
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 2 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { fontSize: 14, fontWeight: '500', color: Colors.textSecondary },
-  value: { fontSize: 16, fontWeight: '700' },
-  labels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 },
-  rangeLabel: { fontSize: 10, color: Colors.textMuted },
+  container: { gap: Spacing.xs },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  label: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
+  valueText: { fontSize: 20, fontWeight: '800', lineHeight: 24, color: Colors.textPrimary },
+  maxText: { fontSize: 12, fontWeight: '500', color: Colors.textMuted },
+
+  track: {
+    flexDirection: 'row',
+    gap: 4,
+    height: 28,
+    alignItems: 'center',
+  },
+  segmentWrap: { flex: 1, height: '100%', justifyContent: 'center' },
+  segment: {
+    height: 6,
+    borderRadius: Radius.full,
+  },
+  segmentSelected: {
+    height: 10,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+  },
+
+  labels: { flexDirection: 'row', justifyContent: 'space-between' },
+  rangeLabel: { fontSize: 10, color: Colors.textMuted, fontWeight: '500' },
 });

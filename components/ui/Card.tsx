@@ -23,13 +23,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.softGray,
     borderRadius: Radius.lg,
     padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   elevated: {
-    backgroundColor: Colors.white,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: '#241F1C',
+    borderColor: 'rgba(255,255,255,0.12)',
   },
 });

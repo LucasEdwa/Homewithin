@@ -45,7 +45,7 @@ export function Button({
       testID={testID}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'secondary' || variant === 'ghost' ? Colors.safeBlue : Colors.white} />
+        <ActivityIndicator color={variant === 'primary' ? Colors.black : Colors.textPrimary} />
       ) : (
         <Text style={[styles.text, styles[`${variant}Text`], textStyle]}>{label}</Text>
       )}
@@ -62,12 +62,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   primary: {
-    backgroundColor: Colors.safeBlue,
+    backgroundColor: Colors.white,
   },
   secondary: {
-    backgroundColor: Colors.warmWhite,
+    backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: Colors.safeBlue,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   danger: {
     backgroundColor: Colors.alertRed,
@@ -83,10 +83,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   primaryText: {
-    color: Colors.white,
+    color: Colors.black,
   },
   secondaryText: {
-    color: Colors.safeBlue,
+    color: Colors.textPrimary,
   },
   dangerText: {
     color: Colors.white,
