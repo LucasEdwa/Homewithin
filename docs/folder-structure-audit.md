@@ -226,51 +226,53 @@ types/
 
 ## TODO List
 
-### Sprint A — High Priority (structural clarity)
+### Sprint A — High Priority (structural clarity) ✅ DONE 2026-05-20
 
-- [ ] Create `app/(auth)/` group and move `welcome.tsx`, `signin.tsx` into it
-- [ ] Create `app/(safety)/` group and move `lock.tsx`, `pin.tsx`, `disguise.tsx`, `decoy.tsx`, `emergency.tsx` into it
-- [ ] Create `app/(social)/` group and move `chat.tsx`, `circles.tsx`, `circle.tsx`, `circle-intro.tsx`, `chosen-family.tsx` into it
-- [ ] Create `app/(wellness)/` group and move `checkin.tsx`, `journal-entry.tsx`, `progress.tsx`, `intentions.tsx`, `safety.tsx` into it
-- [ ] Create `app/(content)/` group and move `article.tsx`, `programs.tsx`, `program.tsx`, `events.tsx`, `local-resources.tsx` into it
-- [ ] Split `SessionContext.tsx` into `AuthContext.tsx`, `SafetyContext.tsx`, `SecurityContext.tsx`, `LocationContext.tsx`
-- [ ] Create `hooks/useMatches.ts` — extract matching data logic from `connect.tsx`
-- [ ] Create `hooks/useMessages.ts` — extract chat subscription logic from `chat.tsx`
-- [ ] Create `hooks/useProgress.ts` — extract progress fetch logic from `progress.tsx`
-- [ ] Create `hooks/useCheckIns.ts` — extract check-in fetch logic from `journal.tsx`
+- [x] Create `app/(auth)/` group and move `welcome.tsx`, `signin.tsx` into it
+- [x] Create `app/(safety)/` group and move `lock.tsx`, `pin.tsx`, `disguise.tsx`, `decoy.tsx`, `emergency.tsx` into it
+- [x] Create `app/(social)/` group and move `chat.tsx`, `circles.tsx`, `circle.tsx`, `circle-intro.tsx`, `chosen-family.tsx` into it
+- [x] Create `app/(wellness)/` group and move `checkin.tsx`, `journal-entry.tsx`, `progress.tsx`, `intentions.tsx`, `safety.tsx` into it
+- [x] Create `app/(content)/` group and move `article.tsx`, `programs.tsx`, `program.tsx`, `events.tsx`, `local-resources.tsx` into it
+- [x] Split `SessionContext.tsx` into `AuthContext.tsx`, `SafetyContext.tsx`, `SecurityContext.tsx`, `LocationContext.tsx` — `useSession()` kept as backward-compatible aggregate hook via `SessionBridge`
+- [x] Create `hooks/useMatches.ts` — extract matching data logic from `connect.tsx`
+- [x] Create `hooks/useMessages.ts` — extract chat subscription logic from `chat.tsx`
+- [x] Create `hooks/useProgress.ts` — extract progress fetch logic from `progress.tsx`
+- [x] Create `hooks/useCheckIns.ts` — extract check-in fetch logic from `journal.tsx`
 
-### Sprint B — Medium Priority (component hygiene)
+### Sprint B — Medium Priority (component hygiene) ✅ DONE 2026-05-20
 
-- [ ] Delete `components/hello-wave.tsx` (unused Expo starter boilerplate)
-- [ ] Delete `components/parallax-scroll-view.tsx` (unused Expo starter boilerplate — verify first with grep)
-- [ ] Move `components/haptic-tab.tsx` → `components/ui/haptic-tab.tsx`
-- [ ] Move `components/themed-text.tsx` → `components/ui/themed-text.tsx`
-- [ ] Move `components/themed-view.tsx` → `components/ui/themed-view.tsx`
-- [ ] Move `components/external-link.tsx` → `components/ui/external-link.tsx`
-- [ ] Move `components/EmergencyButton.tsx` → `components/safety/EmergencyButton.tsx`
-- [ ] Create `services/social/` and move `chat.ts`, `matching.ts`, `circles.ts`, `chosenFamily.ts`, `notifications.ts`, `unread.ts`
-- [ ] Create `services/wellness/` and move `ai.ts`, `safetyScore.ts`, `progressStats.ts`
-- [ ] Create `services/content/` and move `resources.ts`, `programs.ts`, `localResources.ts`
-- [ ] Create `services/user/` and move `account.ts`, `avatar.ts`
-- [ ] Update all import paths after service moves
+- [x] Delete `components/hello-wave.tsx` (unused Expo starter boilerplate)
+- [x] `components/parallax-scroll-view.tsx` — IS used in explore.tsx; moved to `components/ui/parallax-scroll-view.tsx` instead of deleted
+- [x] Move `components/haptic-tab.tsx` → `components/ui/haptic-tab.tsx`
+- [x] Move `components/themed-text.tsx` → `components/ui/themed-text.tsx`
+- [x] Move `components/themed-view.tsx` → `components/ui/themed-view.tsx`
+- [x] Move `components/external-link.tsx` → `components/ui/external-link.tsx`
+- [x] Move `components/EmergencyButton.tsx` → `components/safety/EmergencyButton.tsx`
+- [x] Create `services/social/` and move `chat.ts`, `matching.ts`, `circles.ts`, `chosenFamily.ts`, `notifications.ts`, `unread.ts`
+- [x] Create `services/wellness/` and move `ai.ts`, `safetyScore.ts`, `progressStats.ts`
+- [x] Create `services/content/` and move `resources.ts`, `programs.ts`, `localResources.ts`
+- [x] Create `services/user/` and move `account.ts`, `avatar.ts`
+- [x] Update all import paths after service moves
 
-### Sprint C — Medium Priority (constants / data split)
+### Sprint C — Medium Priority (constants / data split) ✅ DONE 2026-05-20
 
-- [ ] Create `data/` folder at project root
-- [ ] Move `constants/articles.ts` → `data/articles.ts`
-- [ ] Move `constants/hotlines.ts` → `data/hotlines.ts`
-- [ ] Move `constants/localResources.ts` → `data/localResources.ts`
-- [ ] Move `constants/programs.ts` → `data/programs.ts`
-- [ ] Update all imports that reference the moved constants
+- [x] Create `data/` folder at project root
+- [x] Move `constants/articles.ts` → `data/articles.ts`
+- [x] Move `constants/hotlines.ts` → `data/hotlines.ts`
+- [x] Move `constants/localResources.ts` → `data/localResources.ts`
+- [x] Move `constants/programs.ts` → `data/programs.ts`
+- [x] Update all imports that reference the moved constants
 
-### Sprint D — Low Priority (types)
+### Sprint D — Low Priority (types) ✅ DONE 2026-05-20
 
-- [ ] Create `types/ui.ts` — move `MoodLevel`, `MoodLabels`, `MoodColors`, tag types, chart types
-- [ ] Create `types/social.ts` — move `Match`, `Message`, `PeerProfile`, `IntentionId`
-- [ ] Create `types/wellness.ts` — move `CheckIn`, `JournalEntry`, `AIMessage`
-- [ ] Create `types/content.ts` — move `Resource`, `Article`, `Program`, `LocalResource`
-- [ ] Create `types/user.ts` — move `UserProfile`, `SafetyLevel` (currently in `SessionContext.tsx`)
-- [ ] Update `types/index.ts` to re-export from domain files (keep as barrel for backwards compat)
+- [x] Create `types/ui.ts` — `MoodLevel`, `MOOD_LABELS`, `MOOD_ICONS`, `MOOD_COLORS`, `TRIGGER_TAGS`, `TriggerTag`, `EMOTION_TAGS`, `EmotionTag`, `EMOTION_COLORS`
+- [x] Create `types/social.ts` — `Match`, `Message`, `PeerProfile`, `IntentionId`, `Circle`, `CircleMessage`, `SupportPerson`, etc.
+- [x] Create `types/wellness.ts` — `CheckIn`, `JournalEntry`, `AIMessage` (imports `MoodLevel`, `TriggerTag`, `EmotionTag` from `./ui`)
+- [x] Create `types/content.ts` — `Resource`, `ResourceCategory`, `Program`, `Lesson`, `LocalResource`, `Workshop`, `LocalMeetup`, etc.
+- [x] Create `types/user.ts` — `UserProfile`, `SafetyLevel` (moved from context files)
+- [x] Update `context/AuthContext.tsx` to import `UserProfile` from `@/types/user`
+- [x] Update `context/SafetyContext.tsx` to import `SafetyLevel` from `@/types/user`
+- [x] Rewrite `types/index.ts` as pure re-export barrel (`export * from './ui'` etc.) — all existing `@/types` imports unchanged
 
 ---
 
