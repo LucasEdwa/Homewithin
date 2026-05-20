@@ -179,7 +179,7 @@ const ICON_SIZE = 180;
 const RING_SIZE = ICON_SIZE  + 40; // Max scale + padding
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'rgba(251, 249, 240, 1)' },
+  safe: { flex: 1, backgroundColor: Colors.warmWhite },
   content: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
