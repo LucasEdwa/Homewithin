@@ -3,7 +3,7 @@ import { SettingRow } from '@/components/profile/SettingRow';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import { syncProfile } from '@/services/matching';
+import { syncProfile } from '@/services/social/matching';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {

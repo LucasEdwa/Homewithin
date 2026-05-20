@@ -1,4 +1,4 @@
-import type { SafetyAnswers } from '@/services/safetyScore';
+import type { SafetyAnswers } from '@/types';
 import type { Ionicons } from '@expo/vector-icons';
 import type React from 'react';
 import { Colors } from '@/constants/Colors';

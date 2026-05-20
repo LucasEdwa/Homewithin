@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import { deleteAccount } from '@/services/account';
+import { deleteAccount } from '@/services/user/account';
 import { signOut } from '@/services/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';

@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
-import type { SafetyStatus } from '@/services/safetyScore';
+import type { SafetyStatus } from '@/types';
 import type { LocalResource } from '@/types';
 import { LOCAL_RESOURCE_TYPE_COLORS, LOCAL_RESOURCE_TYPE_ICONS, LOCAL_RESOURCE_TYPE_LABELS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';

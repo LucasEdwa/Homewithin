@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { SafetySlider } from '@/components/ui/SafetySlider';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import type { SafetyAnswers } from '@/services/safetyScore';
+import type { SafetyAnswers } from '@/types';
 import type { LocalResource } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
