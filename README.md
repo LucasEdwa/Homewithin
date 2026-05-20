@@ -267,6 +267,111 @@ HomeWithin helps you build it.
 
 ---
 
+## For Developers
+
+### Prerequisites
+
+- Node.js 18+
+- [Expo CLI](https://docs.expo.dev/get-started/installation/) (`npm install -g expo`)
+- iOS Simulator (Xcode) or Android Emulator, or the Expo Go app on a physical device
+- A Supabase project (see `supabase/` for schema migrations and edge functions)
+
+### Quick start
+
+```bash
+git clone https://github.com/LucasEdwa/Homewithin.git
+cd Homewithin
+npm install
+npx expo start
+```
+
+Copy `.env.example` to `.env.local` and fill in your Supabase URL and anon key before starting.
+
+### Architecture
+
+HomeWithin follows a **Layered Architecture** across four layers:
+
+| Layer | Folder | Responsibility |
+|---|---|---|
+| View | `app/` + `components/` | Expo Router screens and React Native UI |
+| State | `context/` | React Context — auth, safety level, security, location |
+| Service | `services/` | Supabase queries, SecureStore, business logic |
+| Data | `supabase/` + `data/` | DB schema, edge functions, static content |
+
+### Folder structure
+
+```
+Homewithin/
+├── app/
+│   ├── (tabs)/          ← bottom-tab screens (home, connect, journal, safety, resources)
+│   ├── onboarding/      ← 3-step onboarding flow
+│   ├── (auth)/          ← welcome, sign-in
+│   ├── (safety)/        ← lock, PIN, disguise, decoy, emergency
+│   ├── (social)/        ← chat, circles, chosen-family
+│   ├── (wellness)/      ← check-in, journal entry, progress, intentions
+│   └── (content)/       ← articles, programs, events, local-resources
+│
+├── components/
+│   ├── ui/              ← design-system primitives (Button, Card, Input, …)
+│   ├── profile/         ← profile-scoped components
+│   └── safety/          ← safety-scoped components (EmergencyButton, …)
+│
+├── services/
+│   ├── supabase.ts      ← Supabase client singleton
+│   ├── storage.ts       ← Expo SecureStore (journal, safety plan, PIN)
+│   ├── social/          ← chat, matching, circles, chosen-family, notifications
+│   ├── wellness/        ← AI companion, safety score, progress stats
+│   ├── content/         ← resources, programs, local-resources
+│   └── user/            ← account, avatar
+│
+├── context/
+│   ├── AuthContext.tsx      ← user profile + onboarding state
+│   ├── SafetyContext.tsx    ← safety level (green / yellow / red)
+│   ├── SecurityContext.tsx  ← PIN, lock screen, disguise mode
+│   ├── LocationContext.tsx  ← GPS-derived nearby state and resources
+│   ├── UnreadContext.tsx    ← unread message badge count
+│   └── SessionContext.tsx   ← aggregated hook (useSession) + SessionBridge
+│
+├── hooks/               ← data-fetching hooks (useMatches, useMessages, useProgress, useCheckIns)
+├── constants/           ← design tokens only (Colors, Spacing, Typography, theme)
+├── data/                ← static business content (articles, hotlines, programs, localResources)
+├── types/               ← domain-scoped TypeScript types; index.ts is a re-export barrel
+└── supabase/
+    ├── functions/       ← Deno edge functions (AI companion, match scoring)
+    └── migrations/      ← SQL schema migrations
+```
+
+### State management
+
+Four focused React Contexts replace the original monolithic `SessionContext`:
+
+- **AuthContext** — Supabase auth listener, profile hydration, onboarding flag
+- **SafetyContext** — safety assessment result (green / yellow / red)
+- **SecurityContext** — PIN-lock, disguise mode, AppState re-lock on background
+- **LocationContext** — GPS county detection, nearby resource list
+
+All four are composed inside `SessionProvider`. Existing screens call `useSession()` unchanged; tests can still use `<SessionContext.Provider value={mock}>` directly.
+
+### Testing
+
+```bash
+npm test                 # run all Jest tests
+npm test -- --watch      # watch mode
+```
+
+Tests live in `__tests__/` mirroring the source structure. Test helpers in `__tests__/helpers/renderWithSession.tsx` provide a pre-wired session mock.
+
+### Database
+
+Supabase project schema is version-controlled in `supabase/migrations/`. Apply locally with the [Supabase CLI](https://supabase.com/docs/guides/cli):
+
+```bash
+supabase db reset        # apply all migrations from scratch
+supabase functions serve # run edge functions locally
+```
+
+---
+
 ## Contact
 
 Built with care in Sweden.
