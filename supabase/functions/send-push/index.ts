@@ -19,32 +19,92 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !serviceKey || !anonKey) return json({ error: "Server misconfigured" }, 500);
+  if (!supabaseUrl || !serviceKey || !anonKey)
+    return json({ error: "Server misconfigured" }, 500);
 
   const authHeader = req.headers.get("Authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) return json({ error: "Missing bearer token" }, 401);
+  if (!authHeader.startsWith("Bearer "))
+    return json({ error: "Missing bearer token" }, 401);
 
   // Identify caller from their JWT.
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData?.user) return json({ error: "Invalid session" }, 401);
+  if (userErr || !userData?.user)
+    return json({ error: "Invalid session" }, 401);
   const senderId = userData.user.id;
 
-  const { matchId, body } = await req.json().catch(() => ({}));
-  if (!matchId || !body) return json({ error: "matchId and body are required" }, 400);
+  const { matchId, body, type, targetId } = await req.json().catch(() => ({}));
 
   // Use service role for cross-user reads.
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  // ── Like notification ────────────────────────────────────────────────────────
+  if (type === "like") {
+    if (!targetId)
+      return json(
+        { error: "targetId is required for like notifications" },
+        400,
+      );
+
+    const [{ data: senderProfile }, { data: recipientProfile }] =
+      await Promise.all([
+        admin
+          .from("user_profiles")
+          .select("nickname")
+          .eq("user_id", senderId)
+          .maybeSingle(),
+        admin
+          .from("user_profiles")
+          .select("push_token")
+          .eq("user_id", targetId)
+          .maybeSingle(),
+      ]);
+
+    const pushToken = recipientProfile?.push_token;
+    if (!pushToken)
+      return json({ skipped: "recipient has no push token" }, 200);
+
+    const senderName = senderProfile?.nickname ?? "Someone";
+
+    const expoPush = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        to: pushToken,
+        title: "New like ✨",
+        body: `${senderName} liked your profile`,
+        data: { screen: "connect" },
+        sound: "default",
+        channelId: "chat",
+      }),
+    });
+
+    if (!expoPush.ok) {
+      const err = await expoPush.text();
+      console.error("[send-push] Expo API error (like):", err);
+      return json({ error: "Push delivery failed" }, 500);
+    }
+
+    return json({ sent: true }, 200);
+  }
+
+  // ── Chat message notification ────────────────────────────────────────────────
+  if (!matchId || !body)
+    return json({ error: "matchId and body are required" }, 400);
 
   // Get match to find the recipient.
   const { data: match, error: matchErr } = await admin
@@ -54,13 +114,23 @@ Deno.serve(async (req: Request) => {
     .single();
   if (matchErr || !match) return json({ error: "Match not found" }, 404);
 
-  const recipientId = match.requester_id === senderId ? match.target_id : match.requester_id;
+  const recipientId =
+    match.requester_id === senderId ? match.target_id : match.requester_id;
 
   // Get sender nickname + recipient push token in parallel.
-  const [{ data: senderProfile }, { data: recipientProfile }] = await Promise.all([
-    admin.from("user_profiles").select("nickname").eq("user_id", senderId).maybeSingle(),
-    admin.from("user_profiles").select("push_token").eq("user_id", recipientId).maybeSingle(),
-  ]);
+  const [{ data: senderProfile }, { data: recipientProfile }] =
+    await Promise.all([
+      admin
+        .from("user_profiles")
+        .select("nickname")
+        .eq("user_id", senderId)
+        .maybeSingle(),
+      admin
+        .from("user_profiles")
+        .select("push_token")
+        .eq("user_id", recipientId)
+        .maybeSingle(),
+    ]);
 
   const pushToken = recipientProfile?.push_token;
   if (!pushToken) return json({ skipped: "recipient has no push token" }, 200);

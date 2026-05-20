@@ -23,11 +23,18 @@ export async function syncProfile(profile: UserProfile): Promise<void> {
   if (!supabase) return;
   const uid = await currentUserId();
   if (!uid) {
-    console.warn("[syncProfile] No authenticated user — profile saved locally only");
+    console.warn(
+      "[syncProfile] No authenticated user — profile saved locally only",
+    );
     return;
   }
 
-  console.log("[syncProfile] upserting for uid", uid, "intentions:", profile.intentions);
+  console.log(
+    "[syncProfile] upserting for uid",
+    uid,
+    "intentions:",
+    profile.intentions,
+  );
 
   const { error } = await supabase.from("user_profiles").upsert(
     {
@@ -42,7 +49,7 @@ export async function syncProfile(profile: UserProfile): Promise<void> {
       avatar_url: profile.avatarUrl ?? null,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "user_id" }
+    { onConflict: "user_id" },
   );
   if (error) {
     console.error("[syncProfile] upsert failed:", error.message, error.code);
@@ -62,20 +69,15 @@ export async function findMatches(
   // Exclude users the current user has acted on (as requester) AND users who
   // have acted on the current user (as target). This prevents the same pair
   // from appearing in multiple interests and creating duplicate matches.
-  const [{ data: myActions }, { data: theirActions }, { data: blocked }] = await Promise.all([
-    supabase
-      .from("matches")
-      .select("target_id")
-      .eq("requester_id", uid),
-    supabase
-      .from("matches")
-      .select("requester_id")
-      .eq("target_id", uid),
-    supabase
-      .from("blocks")
-      .select("blocker_id, blocked_id")
-      .or(`blocker_id.eq.${uid},blocked_id.eq.${uid}`),
-  ]);
+  const [{ data: myActions }, { data: theirActions }, { data: blocked }] =
+    await Promise.all([
+      supabase.from("matches").select("target_id").eq("requester_id", uid),
+      supabase.from("matches").select("requester_id").eq("target_id", uid),
+      supabase
+        .from("blocks")
+        .select("blocker_id, blocked_id")
+        .or(`blocker_id.eq.${uid},blocked_id.eq.${uid}`),
+    ]);
 
   const exclude = new Set<string>([uid]);
   (myActions ?? []).forEach((m: any) => exclude.add(m.target_id));
@@ -151,19 +153,23 @@ export async function connectMatch(
   }
 
   // One-sided like — insert as pending; chat unlocks only when they like back
-  const { error } = await supabase
-    .from("matches")
-    .insert({
-      requester_id: uid,
-      target_id: targetId,
-      intention,
-      status: "pending",
-    });
+  const { error } = await supabase.from("matches").insert({
+    requester_id: uid,
+    target_id: targetId,
+    intention,
+    status: "pending",
+  });
 
   if (error) {
     console.error("Connect failed:", error.message);
     return { matchId: null, mutual: false };
   }
+
+  // Notify the target that they received a like — ignore failures.
+  supabase.functions
+    .invoke("send-push", { body: { type: "like", targetId } })
+    .catch(() => {});
+
   return { matchId: null, mutual: false };
 }
 
@@ -175,28 +181,25 @@ export async function passMatch(
   const uid = await currentUserId();
   if (!uid) return;
 
-  const { error } = await supabase
-    .from("matches")
-    .insert({
-      requester_id: uid,
-      target_id: targetId,
-      intention,
-      status: "passed",
-    });
+  const { error } = await supabase.from("matches").insert({
+    requester_id: uid,
+    target_id: targetId,
+    intention,
+    status: "passed",
+  });
   if (error) console.error("Pass failed:", error.message);
 }
 
-async function matchesWithProfiles(
-  rows: any[],
-  uid: string,
-): Promise<Match[]> {
+async function matchesWithProfiles(rows: any[], uid: string): Promise<Match[]> {
   if (!supabase || rows.length === 0) return [];
   const peerIds = rows.map((r) =>
     r.requester_id === uid ? r.target_id : r.requester_id,
   );
   const { data: profiles } = await supabase
     .from("user_profiles")
-    .select("user_id, nickname, age_range, language, country, needs, avatar_url")
+    .select(
+      "user_id, nickname, age_range, language, country, needs, avatar_url",
+    )
     .in("user_id", peerIds);
   const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
 
@@ -383,7 +386,7 @@ export async function getBlockedUserIds(): Promise<string[]> {
   return (data ?? []).map((row: any) => row.blocked_id);
 }
 
-import type { BlockedUser } from '@/types/social';
+import type { BlockedUser } from "@/types/social";
 export type { BlockedUser };
 
 export async function getBlockedUsers(): Promise<BlockedUser[]> {

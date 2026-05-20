@@ -1,17 +1,17 @@
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
-import { currentUserId, supabase } from '../supabase';
+import Constants from "expo-constants";
+import { Platform } from "react-native";
+import { currentUserId, supabase } from "../supabase";
 
 // expo-notifications throws at import time in Expo Go SDK 53+ because remote
 // push support was removed. Use a lazy require so it never loads there.
-const isExpoGo = Constants.executionEnvironment === 'storeClient';
+const isExpoGo = Constants.executionEnvironment === "storeClient";
 
-type NotifModule = typeof import('expo-notifications');
+type NotifModule = typeof import("expo-notifications");
 let Notif: NotifModule | null = null;
 
-if (!isExpoGo && Platform.OS !== 'web') {
+if (!isExpoGo && Platform.OS !== "web") {
   try {
-    Notif = require('expo-notifications') as NotifModule;
+    Notif = require("expo-notifications") as NotifModule;
     Notif.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowBanner: true,
@@ -31,15 +31,17 @@ export async function registerForPushNotifications(): Promise<void> {
   try {
     const { status: existing } = await Notif.getPermissionsAsync();
     let finalStatus = existing;
-    if (existing !== 'granted') {
+    if (existing !== "granted") {
       const { status } = await Notif.requestPermissionsAsync();
       finalStatus = status;
     }
-    if (finalStatus !== 'granted') return;
+    if (finalStatus !== "granted") return;
 
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId as
+      | string
+      | undefined;
     if (!projectId) {
-      console.warn('[notifications] No EAS projectId in app config');
+      console.warn("[notifications] No EAS projectId in app config");
       return;
     }
 
@@ -48,7 +50,7 @@ export async function registerForPushNotifications(): Promise<void> {
       const result = await Notif.getExpoPushTokenAsync({ projectId });
       token = result.data;
     } catch (e: any) {
-      console.warn('[notifications] Push token unavailable:', e?.message);
+      console.warn("[notifications] Push token unavailable:", e?.message);
       return;
     }
 
@@ -56,21 +58,29 @@ export async function registerForPushNotifications(): Promise<void> {
     if (!uid || !supabase) return;
 
     const { error } = await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .update({ push_token: token })
-      .eq('user_id', uid);
-    if (error) console.warn('[notifications] Failed to save push token:', error.message);
+      .eq("user_id", uid);
+    if (error)
+      console.warn("[notifications] Failed to save push token:", error.message);
   } catch (e: any) {
-    console.warn('[notifications] registerForPushNotifications failed:', e?.message);
+    console.warn(
+      "[notifications] registerForPushNotifications failed:",
+      e?.message,
+    );
   }
 }
 
 export function addNotificationResponseListener(
   onMatchId: (matchId: string) => void,
+  onScreen?: (screen: string) => void,
 ): { remove: () => void } {
   if (!Notif) return { remove: () => {} };
   return Notif.addNotificationResponseReceivedListener((response) => {
-    const matchId = response.notification.request.content.data?.matchId as string | undefined;
+    const data = response.notification.request.content.data ?? {};
+    const matchId = data.matchId as string | undefined;
+    const screen = data.screen as string | undefined;
     if (matchId) onMatchId(matchId);
+    else if (screen && onScreen) onScreen(screen);
   });
 }
