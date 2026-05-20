@@ -1,23 +1,23 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Animated,
-  ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
+import { ArcGauge } from '@/components/ui/ArcGauge';
 import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { useProgress } from '@/hooks/useProgress';
-import type { ProgressSnapshot, MoodDataPoint } from '@/types';
+import type { MoodDataPoint } from '@/types';
 import { MOOD_COLORS } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -62,12 +62,16 @@ export default function ProgressScreen() {
           style={{ opacity: fadeAnim }}
           contentContainerStyle={styles.scroll}
         >
-          {/* Profile completion badge */}
-          <ProfileBadge
-            completion={snapshot.profileCompletion}
-            onboardingBadge={snapshot.onboardingBadge}
-            nickname={profile?.nickname}
-          />
+          {/* Arc gauge — lessons progress */}
+          <Card style={styles.gaugeCard}>
+            <ArcGauge
+              value={snapshot.lessonsCompleted}
+              max={snapshot.totalLessons}
+              label="Lessons Progress"
+              icon="layers-outline"
+              color={Colors.softGreen}
+            />
+          </Card>
 
           {/* Stat cards row 1 */}
           <View style={styles.statRow}>
@@ -228,8 +232,8 @@ function StatCard({
 }) {
   return (
     <Card style={styles.statCard} testID={testID}>
-      <View style={[styles.statIcon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon} size={20} color={color} />
+      <View style={styles.statIcon}>
+        <Ionicons name={icon} size={24} color={color} />
       </View>
       <Text style={styles.sublabel}>{sublabel}</Text>
       {empty ? (
@@ -250,8 +254,8 @@ function SafetyCard({ delta }: { delta: number | null }) {
   if (delta === null) {
     return (
       <Card style={styles.statCard} testID="stat-safety">
-        <View style={[styles.statIcon, { backgroundColor: Colors.alertRed + '18' }]}>
-          <Ionicons name="shield-outline" size={20} color={Colors.alertRed} />
+        <View style={styles.statIcon}>
+          <Ionicons name="shield-outline" size={24} color={Colors.alertRed} />
         </View>
         <Text style={styles.sublabel}>Safety</Text>
         <Text style={styles.emptyStatText}>Need 14 days of check-ins</Text>
@@ -274,8 +278,8 @@ function SafetyCard({ delta }: { delta: number | null }) {
 
   return (
     <Card style={styles.statCard} testID="stat-safety">
-      <View style={[styles.statIcon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon} size={20} color={color} />
+      <View style={styles.statIcon}>
+        <Ionicons name={icon} size={24} color={color} />
       </View>
       <Text style={styles.sublabel}>Safety</Text>
       <Text style={[styles.statValue, { color }]}>
@@ -286,11 +290,10 @@ function SafetyCard({ delta }: { delta: number | null }) {
   );
 }
 
-// ── Mood trend chart (30-day spark line with bars) ────────────────────────────
+// ── Mood trend chart ─────────────────────────────────────────────────────────
 
 function MoodTrendChart({ data }: { data: MoodDataPoint[] }) {
   const last = data.slice(-14);
-
   return (
     <View style={styles.moodBars} testID="mood-chart">
       {last.map((point, i) => {
@@ -334,8 +337,8 @@ function QuickLink({
       accessibilityLabel={label}
       accessibilityRole="button"
     >
-      <View style={[styles.quickIcon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon} size={18} color={color} />
+      <View style={styles.quickIcon}>
+        <Ionicons name={icon} size={22} color={color} />
       </View>
       <Text style={styles.quickLabel}>{label}</Text>
       <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
@@ -360,6 +363,8 @@ const styles = StyleSheet.create({
   errorHint: { fontSize: 14, color: Colors.textMuted },
 
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
+
+  gaugeCard: { paddingBottom: Spacing.lg },
 
   badgeCard: { gap: Spacing.sm },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
@@ -399,11 +404,6 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statCard: { flex: 1, gap: 4, alignItems: 'flex-start' },
   statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 4,
   },
   sublabel: { fontSize: 11, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -436,6 +436,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  quickIcon: { width: 32, height: 32, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
+  quickIcon: { width: 24, alignItems: 'center', justifyContent: 'center' },
   quickLabel: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
 });
