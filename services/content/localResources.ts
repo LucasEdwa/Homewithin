@@ -3,7 +3,7 @@ import {
     LOCAL_RESOURCES,
     SWEDISH_STATES,
     WORKSHOPS,
-} from "@/constants/localResources";
+} from "@/data/localResources";
 import type {
     LocalMeetup,
     LocalResource,

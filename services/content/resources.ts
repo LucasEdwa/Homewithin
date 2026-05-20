@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from './supabase';
-import { SEED_ARTICLES } from '@/constants/articles';
+import { supabase } from '../supabase';
+import { SEED_ARTICLES } from '@/data/articles';
 import type { Resource, ResourceCategory } from '@/types';
 
 const BOOKMARKS_KEY = 'hw_bookmarks';

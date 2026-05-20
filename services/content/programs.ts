@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from './supabase';
-import { SEED_PROGRAMS } from '@/constants/programs';
+import { supabase } from '../supabase';
+import { SEED_PROGRAMS } from '@/data/programs';
 import type { Program, LessonProgress } from '@/types';
 
 const PROGRESS_KEY = 'hw_lesson_progress';

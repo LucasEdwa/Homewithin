@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { currentUserId, supabase } from './supabase';
+import { currentUserId, supabase } from '../supabase';
 
 // expo-notifications throws at import time in Expo Go SDK 53+ because remote
 // push support was removed. Use a lazy require so it never loads there.

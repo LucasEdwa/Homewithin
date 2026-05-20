@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '../supabase';
 import type { Message } from '@/types';
 
 const CRISIS_KEYWORDS = [

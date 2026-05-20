@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
-import { deleteSensitiveData } from "./storage";
-import { supabase } from "./supabase";
+import { deleteSensitiveData } from "../storage";
+import { supabase } from "../supabase";
 
 // Keys we want to wipe in addition to whatever deleteSensitiveData() handles.
 // (deleteSensitiveData removes session, journal, safety plan, check-ins.)

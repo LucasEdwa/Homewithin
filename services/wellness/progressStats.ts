@@ -1,25 +1,11 @@
 import type { UserProfile } from '@/context/SessionContext';
-import { SEED_PROGRAMS } from '@/constants/programs';
-import { getMyMatches } from './matching';
-import { getCompletedLessonIds } from './programs';
-import { getCheckIns, getJournalEntries } from './storage';
+import type { MoodDataPoint, ProgressSnapshot } from '@/types/wellness';
+import { SEED_PROGRAMS } from '@/data/programs';
+import { getMyMatches } from '../social/matching';
+import { getCompletedLessonIds } from '../content/programs';
+import { getCheckIns, getJournalEntries } from '../storage';
 
-export interface MoodDataPoint {
-  date: string;
-  mood: number;
-  safety: number;
-}
-
-export interface ProgressSnapshot {
-  moodTrend: MoodDataPoint[];
-  journalStreak: number;
-  safetyDelta: number | null; // positive = improved, negative = declined
-  connectionsCount: number;
-  lessonsCompleted: number;
-  totalLessons: number;
-  profileCompletion: number; // 0–100
-  onboardingBadge: boolean;
-}
+export type { MoodDataPoint, ProgressSnapshot };
 
 // ── Mood trend (last N days) ──────────────────────────────────────────────────
 

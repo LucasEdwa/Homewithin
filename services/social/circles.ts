@@ -1,5 +1,5 @@
 import type { Circle, CircleMessage } from "@/types";
-import { currentUserId, supabase } from "./supabase";
+import { currentUserId, supabase } from "../supabase";
 
 function rowToMessage(
   row: any,

@@ -1,4 +1,4 @@
-import type { CheckIn, JournalEntry } from "@/types";
+import type { CheckIn, DisguiseStyle, JournalEntry } from "@/types";
 import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 
@@ -9,7 +9,7 @@ const PIN_KEY = "hw_pin";
 const DISGUISE_ENABLED_KEY = "hw_disguise_enabled";
 const DISGUISE_STYLE_KEY = "hw_disguise_style";
 
-export type DisguiseStyle = "weather" | "calculator" | "notes";
+export type { DisguiseStyle };
 
 // Check-ins: one entry per day, keyed by date
 const CHECKIN_DATES_KEY = "hw_checkin_dates";

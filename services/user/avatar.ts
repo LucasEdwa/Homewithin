@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { currentUserId, supabase } from './supabase';
+import { currentUserId, supabase } from '../supabase';
 
 const BUCKET = 'avatars';
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';

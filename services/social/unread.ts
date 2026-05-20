@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { currentUserId, supabase } from './supabase';
+import { currentUserId, supabase } from '../supabase';
 
 const STORE_KEY = 'hw_last_read';
 

@@ -1,33 +1,6 @@
-export type SafetyStatus = "green" | "yellow" | "red";
+import type { SafetyAnswers, SafetyStatus } from '@/types/wellness';
 
-export interface SafetyAnswers {
-  // Step 1 — This moment
-  currently_in_danger?: boolean;
-
-  // Step 2 — Home & body
-  physical_abuse?: boolean;
-  emotional_control?: boolean;
-  housing_unstable?: boolean;
-
-  // Step 3 — Identity pressure
-  conversion_pressure?: boolean;
-  outed_recently?: boolean;
-  phone_surveillance?: boolean;
-
-  // Step 4 — School & community
-  bullied_at_school?: boolean;
-  community_hostility?: boolean;
-  unsafe_outside_home?: boolean;
-
-  // Step 5 — Mind
-  self_harm_thoughts?: boolean;
-  hopelessness?: boolean;
-
-  // Step 6 — Resources (protective factors)
-  trusted_contact?: boolean;
-  safe_place?: boolean;
-  basic_needs_met?: boolean;
-}
+export type { SafetyAnswers, SafetyStatus };
 
 export function computeSafetyScore(
   moodScore: number,
