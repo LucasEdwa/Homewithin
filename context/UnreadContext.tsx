@@ -1,4 +1,4 @@
-import { getUnreadCounts, markMatchRead } from '@/services/unread';
+import { getUnreadCounts, markMatchRead } from '@/services/social/unread';
 import { currentUserId, supabase } from '@/services/supabase';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 

@@ -1,50 +1,28 @@
-import { getResources, requestLocationPermission } from '@/services/localResources';
-import {
-    getSession,
-    isOnboardingComplete,
-    markOnboardingComplete,
-    saveSession,
-    getDisguiseEnabled as storageGetDisguiseEnabled,
-    getDisguiseStyle as storageGetDisguiseStyle,
-    hasPin as storageHasPin,
-    setDisguiseEnabled as storageSetDisguiseEnabled,
-    setDisguiseStyle as storageSetDisguiseStyle,
-    type DisguiseStyle,
-} from '@/services/storage';
-import { supabase } from '@/services/supabase';
+// Aggregated session context. All state lives in the four focused sub-contexts;
+// SessionBridge reads them and publishes a single SessionContext value so that:
+//   - production code calls useSession() unchanged
+//   - test helpers can still use <SessionContext.Provider value={mock}> directly
+import React, { createContext, useContext } from 'react';
+import { AuthProvider, useAuth, type UserProfile } from './AuthContext';
+import { LocationProvider, useLocation } from './LocationContext';
+import { SafetyProvider, useSafety, type SafetyLevel } from './SafetyContext';
+import { SecurityProvider, useSecurity } from './SecurityContext';
+import type { DisguiseStyle } from '@/types/user';
 import type { LocalResource } from '@/types';
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
 
-export interface UserProfile {
-  nickname: string;
-  pronouns: string;
-  ageRange: string;
-  language: string;
-  country: string;
-  hideFromSearch: boolean;
-  needs: string[];
-  intentions?: string[];
-  isAnonymous: boolean;
-  avatarUrl?: string;
-}
+export type { SafetyLevel, UserProfile };
 
-export type SafetyLevel = 'green' | 'yellow' | 'red' | null;
-
-interface SessionState {
+interface SessionContextValue {
   profile: UserProfile | null;
-  safetyLevel: SafetyLevel;
   onboardingComplete: boolean;
   loading: boolean;
+  safetyLevel: SafetyLevel;
   pinEnabled: boolean;
   locked: boolean;
   disguiseEnabled: boolean;
   disguiseStyle: DisguiseStyle;
   nearbyState: string | null;
   nearbyResources: LocalResource[];
-}
-
-interface SessionContextValue extends SessionState {
   setProfile: (profile: UserProfile) => Promise<void>;
   setSafetyLevel: (level: SafetyLevel) => void;
   completeOnboarding: () => Promise<void>;
@@ -59,273 +37,53 @@ interface SessionContextValue extends SessionState {
 
 export const SessionContext = createContext<SessionContextValue | null>(null);
 
-export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<SessionState>({
-    profile: null,
-    safetyLevel: null,
-    onboardingComplete: false,
-    loading: true,
-    pinEnabled: false,
-    locked: false,
-    disguiseEnabled: false,
-    disguiseStyle: 'weather',
-    nearbyState: null,
-    nearbyResources: [],
-  });
-  const appState = useRef(AppState.currentState);
+function SessionBridge({ children }: { children: React.ReactNode }) {
+  const auth = useAuth();
+  const safety = useSafety();
+  const security = useSecurity();
+  const location = useLocation();
 
-  // Re-hydrate profile from Supabase whenever the user signs in.
-  // Without this, the anonymous local profile persists after sign-in.
-  useEffect(() => {
-    const client = supabase;
-    if (!client) return;
-    const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const uid = session.user.id;
-        const { data: row } = await client
-          .from('user_profiles')
-          .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
-          .eq('user_id', uid)
-          .maybeSingle();
-        if (row) {
-          const hydrated: UserProfile = {
-            nickname: row.nickname ?? '',
-            pronouns: '',
-            ageRange: row.age_range ?? '',
-            language: row.language ?? '',
-            country: row.country ?? '',
-            hideFromSearch: !!row.hide_from_search,
-            needs: row.needs ?? [],
-            intentions: row.intentions ?? [],
-            isAnonymous: false,
-            avatarUrl: row.avatar_url ?? undefined,
-          };
-          setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
-          await saveSession(hydrated).catch(() => {});
-        }
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    async function init() {
-      const [complete, session, pinExists, disguiseOn, disguiseStyle] = await Promise.all([
-        isOnboardingComplete(),
-        getSession(),
-        storageHasPin(),
-        storageGetDisguiseEnabled(),
-        storageGetDisguiseStyle(),
-      ]);
-
-      // Always check Supabase auth on startup. An authenticated session overrides
-      // any anonymous local profile so a signed-in user never sees guest data.
-      let profile = session as UserProfile | null;
-      if (supabase) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data: row, error } = await supabase
-              .from('user_profiles')
-              .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
-              .eq('user_id', user.id)
-              .maybeSingle();
-            if (error) {
-              console.warn('Profile hydrate select error:', error.message);
-            }
-            if (row) {
-              profile = {
-                nickname: row.nickname ?? '',
-                pronouns: '',
-                ageRange: row.age_range ?? '',
-                language: row.language ?? '',
-                country: row.country ?? '',
-                hideFromSearch: !!row.hide_from_search,
-                needs: row.needs ?? [],
-                intentions: row.intentions ?? [],
-                isAnonymous: false,
-                avatarUrl: row.avatar_url ?? undefined,
-              };
-              // Mirror to SecureStore so subsequent launches are offline-ready.
-              await saveSession(profile).catch(() => {});
-            } else {
-              console.warn('Profile hydrate: no user_profiles row for uid', user.id, '— creating default');
-              // Auto-create a minimal profile so the app is usable. User can edit later.
-              const defaultRow = {
-                user_id: user.id,
-                nickname: user.email?.split('@')[0]?.slice(0, 24) || 'Friend',
-                age_range: '',
-                language: 'English',
-                country: '',
-                hide_from_search: false,
-                needs: [],
-                intentions: [],
-              };
-              const { error: insertErr } = await supabase
-                .from('user_profiles')
-                .insert(defaultRow);
-              if (insertErr) {
-                console.warn('Profile auto-create failed:', insertErr.message);
-              } else {
-                profile = {
-                  nickname: defaultRow.nickname,
-                  pronouns: '',
-                  ageRange: '',
-                  language: 'English',
-                  country: '',
-                  hideFromSearch: false,
-                  needs: [],
-                  intentions: [],
-                  isAnonymous: true,
-                };
-                await saveSession(profile).catch(() => {});
-              }
-            }
-          } else {
-            console.warn('Profile hydrate: no authenticated Supabase user');
-          }
-        } catch (e: any) {
-          console.warn('Profile hydrate from Supabase failed:', e?.message);
-        }
-      }
-
-      setState((s) => ({
-        ...s,
-        onboardingComplete: complete || !!profile,
-        profile,
-        pinEnabled: pinExists,
-        locked: pinExists, // require PIN entry on cold start
-        disguiseEnabled: disguiseOn,
-        disguiseStyle,
-        loading: false,
-      }));
-
-      // Detect location in background — updates state when user responds to the OS prompt.
-      ;(async () => {
-        try {
-          const result = await requestLocationPermission();
-          if (result.granted && result.state) {
-            setState(s => ({
-              ...s,
-              nearbyState: result.state!,
-              nearbyResources: getResources(result.state!).slice(0, 5),
-            }));
-          }
-        } catch { /* silently ignore */ }
-      })();
-    }
-    init();
-  }, []);
-
-  // Re-lock when the app goes to background.
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
-      const prev = appState.current;
-      appState.current = next;
-      if (prev === 'active' && next.match(/inactive|background/)) {
-        setState((s) => (s.pinEnabled ? { ...s, locked: true } : s));
-      }
-    });
-    return () => sub.remove();
-  }, []);
-
-  async function setProfile(profile: UserProfile) {
-    // Update React state first so controlled inputs (Switches, etc.) reflect
-    // the change immediately; persist to secure storage in the background.
-    setState((s) => ({ ...s, profile }));
-    try {
-      await saveSession(profile);
-    } catch (e: any) {
-      console.error('saveSession failed:', e?.message);
-      throw e;
-    }
-  }
-
-  function setSafetyLevel(safetyLevel: SafetyLevel) {
-    setState((s) => ({ ...s, safetyLevel }));
-  }
-
-  async function completeOnboarding() {
-    await markOnboardingComplete();
-    setState((s) => ({ ...s, onboardingComplete: true }));
-  }
-
-  function setPinEnabled(enabled: boolean) {
-    setState((s) => ({ ...s, pinEnabled: enabled, locked: enabled ? s.locked : false }));
-  }
-
-  function unlock() {
-    setState((s) => ({ ...s, locked: false }));
-  }
-
-  function lock() {
-    setState((s) => (s.pinEnabled ? { ...s, locked: true } : s));
-  }
-
-  function reset() {
-    setState({
-      profile: null,
-      safetyLevel: null,
-      onboardingComplete: false,
-      loading: false,
-      pinEnabled: false,
-      locked: false,
-      disguiseEnabled: false,
-      disguiseStyle: 'weather',
-      nearbyState: null,
-      nearbyResources: [],
-    });
-  }
-
-  async function setDisguiseEnabled(enabled: boolean) {
-    setState((s) => ({ ...s, disguiseEnabled: enabled }));
-    try {
-      await storageSetDisguiseEnabled(enabled);
-    } catch (e: any) {
-      console.error('setDisguiseEnabled failed:', e?.message);
-    }
-  }
-
-  async function refreshLocation() {
-    try {
-      const result = await requestLocationPermission();
-      if (result.granted && result.state) {
-        setState((s) => ({
-          ...s,
-          nearbyState: result.state!,
-          nearbyResources: getResources(result.state!).slice(0, 5),
-        }));
-      }
-    } catch { /* silently ignore */ }
-  }
-
-  async function setDisguiseStyle(style: DisguiseStyle) {
-    setState((s) => ({ ...s, disguiseStyle: style }));
-    try {
-      await storageSetDisguiseStyle(style);
-    } catch (e: any) {
-      console.error('setDisguiseStyle failed:', e?.message);
-    }
-  }
+  const value: SessionContextValue = {
+    profile: auth.profile,
+    onboardingComplete: auth.onboardingComplete,
+    loading: auth.loading || security.securityLoading,
+    setProfile: auth.setProfile,
+    completeOnboarding: auth.completeOnboarding,
+    reset: auth.reset,
+    safetyLevel: safety.safetyLevel,
+    setSafetyLevel: safety.setSafetyLevel,
+    pinEnabled: security.pinEnabled,
+    locked: security.locked,
+    disguiseEnabled: security.disguiseEnabled,
+    disguiseStyle: security.disguiseStyle,
+    setPinEnabled: security.setPinEnabled,
+    unlock: security.unlock,
+    lock: security.lock,
+    setDisguiseEnabled: security.setDisguiseEnabled,
+    setDisguiseStyle: security.setDisguiseStyle,
+    nearbyState: location.nearbyState,
+    nearbyResources: location.nearbyResources,
+    refreshLocation: location.refreshLocation,
+  };
 
   return (
-    <SessionContext.Provider
-      value={{
-        ...state,
-        setProfile,
-        setSafetyLevel,
-        completeOnboarding,
-        reset,
-        setPinEnabled,
-        unlock,
-        lock,
-        setDisguiseEnabled,
-        setDisguiseStyle,
-        refreshLocation,
-      }}
-    >
+    <SessionContext.Provider value={value}>
       {children}
     </SessionContext.Provider>
+  );
+}
+
+export function SessionProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <SafetyProvider>
+        <SecurityProvider>
+          <LocationProvider>
+            <SessionBridge>{children}</SessionBridge>
+          </LocationProvider>
+        </SecurityProvider>
+      </SafetyProvider>
+    </AuthProvider>
   );
 }
 
