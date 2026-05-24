@@ -1,7 +1,7 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { router } from 'expo-router';
 import WelcomeScreen from '@/app/(auth)/welcome';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
+import React from 'react';
 
 jest.mock('@/context/SessionContext', () => ({
   useSession: () => ({

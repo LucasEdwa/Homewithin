@@ -3,8 +3,8 @@ import React from 'react';
 import { renderWithSession } from '../helpers/renderWithSession';
 
 import ProfileScreen from '@/app/(tabs)/profile';
-import * as accountService from '@/services/user/account';
 import * as matchingService from '@/services/social/matching';
+import * as accountService from '@/services/user/account';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 

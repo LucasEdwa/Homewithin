@@ -1,5 +1,5 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 
 import AICompanionScreen from '@/app/ai-companion';
 import * as aiService from '@/services/wellness/ai';

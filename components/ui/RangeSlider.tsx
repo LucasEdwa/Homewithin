@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
+import { Radius, Spacing } from '@/constants/Spacing';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface RangeSliderProps {
   label: string;

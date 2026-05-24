@@ -1,5 +1,5 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
 import ChatScreen from '@/app/(social)/chat';
 import * as chatService from '@/services/social/chat';

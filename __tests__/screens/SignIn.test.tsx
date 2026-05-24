@@ -1,6 +1,6 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
+import React from 'react';
 
 import SignInScreen from '@/app/(auth)/signin';
 import * as supabaseModule from '@/services/supabase';

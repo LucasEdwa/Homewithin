@@ -1,5 +1,5 @@
-import { Card } from '@/components/ui/Card';
 import { SettingRow } from '@/components/profile/SettingRow';
+import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
@@ -7,14 +7,14 @@ import { syncProfile } from '@/services/social/matching';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActionSheetIOS,
-  Alert,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
+    ActionSheetIOS,
+    Alert,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Switch,
+    Text,
+    View,
 } from 'react-native';
 
 export function ProfilePrivacyCard() {

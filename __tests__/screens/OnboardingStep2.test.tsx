@@ -1,7 +1,7 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { router } from 'expo-router';
 import OnboardingStep2 from '@/app/onboarding/step2';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
+import React from 'react';
 import { renderWithSession } from '../helpers/renderWithSession';
 
 const mockProfile = {
