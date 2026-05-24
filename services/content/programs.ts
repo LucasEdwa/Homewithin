@@ -68,7 +68,7 @@ let programsCache: Program[] | null = null;
 
 async function fetchFromSupabase(): Promise<Program[] | null> {
   if (!supabase) {
-    console.warn('[programs] supabase client is null — using local fallback');
+    console.warn("[programs] supabase client is null — using local fallback");
     return null;
   }
   try {
@@ -77,16 +77,16 @@ async function fetchFromSupabase(): Promise<Program[] | null> {
       .select("*, lessons(*)")
       .order("sort_order");
     if (error) {
-      console.warn('[programs] Supabase fetch error:', error.message);
+      console.warn("[programs] Supabase fetch error:", error.message);
       return null;
     }
     if (!data?.length) {
-      console.warn('[programs] No programs in DB — using local fallback');
+      console.warn("[programs] No programs in DB — using local fallback");
       return null;
     }
     return (data as DbProgram[]).map(normalizeProgram);
   } catch (e) {
-    console.warn('[programs] Supabase fetch threw:', e);
+    console.warn("[programs] Supabase fetch threw:", e);
     return null;
   }
 }

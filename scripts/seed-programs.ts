@@ -12,9 +12,9 @@
  * It is safe to re-run — it uses upsert (ON CONFLICT DO UPDATE).
  */
 
+import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { createClient } from "@supabase/supabase-js";
 import { SEED_PROGRAMS } from "../data/programs";
 
 // Auto-load .env from project root (no extra packages needed)
