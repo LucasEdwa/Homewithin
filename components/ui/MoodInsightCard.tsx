@@ -39,7 +39,7 @@ const BODY_COPY: Record<MoodLevel, string> = {
 
 // ─── Build last-7-days data ────────────────────────────────────────────────────
 
-function buildChartData(checkIns: CheckIn[]): Array<{ date: string; value: number | null }> {
+function buildChartData(checkIns: CheckIn[]): { date: string; value: number | null }[] {
   const byDate: Record<string, number> = {};
   checkIns.forEach((c) => { byDate[c.date] = c.moodScore; });
 
@@ -57,7 +57,7 @@ const CHART_H = 72;
 const CHART_PAD_X = 4;
 const DOT_R = 4;
 
-function MoodLineChart({ data }: { data: Array<{ date: string; value: number | null }> }) {
+function MoodLineChart({ data }: { data: { date: string; value: number | null }[] }) {
   const [chartW, setChartW] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setChartW(e.nativeEvent.layout.width);
 
@@ -78,7 +78,7 @@ function MoodLineChart({ data }: { data: Array<{ date: string; value: number | n
   );
 
   // Build line segments between consecutive valid points
-  const segments: Array<{ cx: number; cy: number; len: number; angle: number; color: string }> = [];
+  const segments: { cx: number; cy: number; len: number; angle: number; color: string }[] = [];
   for (let i = 0; i < points.length - 1; i++) {
     const a = points[i];
     const b = points[i + 1];

@@ -3,6 +3,9 @@ import { Alert, Share } from 'react-native';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
+import JournalEntryScreen from '@/app/(wellness)/journal-entry';
+import * as storage from '@/services/storage';
+
 jest.mock('@/services/storage', () => ({
   saveJournalEntry: jest.fn().mockResolvedValue(undefined),
   getJournalEntries: jest.fn().mockResolvedValue([]),
@@ -12,9 +15,6 @@ jest.mock('@/services/storage', () => ({
   hasPin: jest.fn().mockResolvedValue(false),
   setPin: jest.fn().mockResolvedValue(undefined),
 }));
-
-import JournalEntryScreen from '@/app/(wellness)/journal-entry';
-import * as storage from '@/services/storage';
 
 const mockGetEntries = storage.getJournalEntries as jest.Mock;
 const mockSaveEntry = storage.saveJournalEntry as jest.Mock;

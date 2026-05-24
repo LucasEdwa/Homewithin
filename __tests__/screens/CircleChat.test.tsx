@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
+import CircleChatScreen from '@/app/(social)/circle';
+import * as chatService from '@/services/social/chat';
+import * as circlesService from '@/services/social/circles';
+import { useLocalSearchParams } from 'expo-router';
+
 jest.mock('@/services/social/circles', () => ({
   getCircleMessages: jest.fn(),
   sendCircleMessage: jest.fn(),
@@ -24,11 +29,6 @@ jest.mock('expo-router', () => ({
   router: { back: jest.fn() },
   useLocalSearchParams: jest.fn(),
 }));
-
-import CircleChatScreen from '@/app/(social)/circle';
-import * as chatService from '@/services/social/chat';
-import * as circlesService from '@/services/social/circles';
-import { useLocalSearchParams } from 'expo-router';
 
 const mockGetMessages = circlesService.getCircleMessages as jest.Mock;
 const mockSend = circlesService.sendCircleMessage as jest.Mock;

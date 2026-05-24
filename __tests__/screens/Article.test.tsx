@@ -2,6 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { Share } from 'react-native';
 
+import ArticleScreen from '@/app/(content)/article';
+import * as resourcesService from '@/services/content/resources';
+import { useLocalSearchParams, router } from 'expo-router';
+
 jest.mock('@/services/content/resources', () => ({
   getResourceById: jest.fn(),
   isBookmarked: jest.fn(),
@@ -12,10 +16,6 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn() },
   useLocalSearchParams: jest.fn(),
 }));
-
-import ArticleScreen from '@/app/(content)/article';
-import * as resourcesService from '@/services/content/resources';
-import { useLocalSearchParams, router } from 'expo-router';
 
 const mockGetById = resourcesService.getResourceById as jest.Mock;
 const mockIsBookmarked = resourcesService.isBookmarked as jest.Mock;

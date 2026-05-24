@@ -78,14 +78,14 @@ HomeWithin includes a complete, curated directory of LGBTQ+ support organization
 
 Every county shows local RFSL chapters alongside national resources always available regardless of location:
 
-| Organization | Type | Contact |
-|---|---|---|
-| Mind – Självmordslinjen | Crisis support | 90101 |
-| BRIS – Barnens Rätt i Samhället | Youth support | 116 111 |
-| RFSL – Riksförbundet för HBTQ+ | LGBTQ+ center | rfsl.se |
-| FPES – Riksförbundet för transpersoner | Trans support | fpes.se |
-| Diskrimineringsombudsmannen (DO) | Legal aid | do.se |
-| UMO – Ungdomsmottagningen online | Youth health | umo.se |
+| Organization                           | Type           | Contact |
+| -------------------------------------- | -------------- | ------- |
+| Mind – Självmordslinjen                | Crisis support | 90101   |
+| BRIS – Barnens Rätt i Samhället        | Youth support  | 116 111 |
+| RFSL – Riksförbundet för HBTQ+         | LGBTQ+ center  | rfsl.se |
+| FPES – Riksförbundet för transpersoner | Trans support  | fpes.se |
+| Diskrimineringsombudsmannen (DO)       | Legal aid      | do.se   |
+| UMO – Ungdomsmottagningen online       | Youth health   | umo.se  |
 
 Resources are filterable by type: **LGBTQ+ Centers · Shelters · Therapists · Legal Aid · Support Groups**
 
@@ -103,7 +103,7 @@ Before every conversation, the AI receives a compact summary of:
 - Your **mood history** — the last 30 check-ins with dates and scores
 - Your **profile** — pronouns, age range, language, what matters to how you're addressed
 
-When you write *"I've been feeling like I'm disappearing lately,"* the AI can gently notice that the same theme appeared in your journal two weeks ago and your mood has been declining since. It does not just respond to the message — it responds to **you**.
+When you write _"I've been feeling like I'm disappearing lately,"_ the AI can gently notice that the same theme appeared in your journal two weeks ago and your mood has been declining since. It does not just respond to the message — it responds to **you**.
 
 The companion is session-aware, rate-limited, and designed to hold space rather than give advice. It is a 2am voice that does not judge, does not get tired, and never tells you to just stay positive.
 
@@ -238,13 +238,13 @@ HomeWithin is built for **any LGBTQ+ person in Sweden** who needs support, but t
 
 ## Technology & Privacy
 
-| Layer | Technology | Privacy impact |
-|---|---|---|
-| Mobile app | React Native / Expo (iOS + Android) | Runs natively, no browser history |
-| Auth & data | Supabase — EU-hosted, end-to-end encrypted | GDPR-compliant by architecture |
-| Local data | Expo SecureStore | Journal, safety plan, mood — encrypted on-device only |
-| AI | Session-based, no persistent server storage | No conversation history saved after session ends |
-| Tracking | None | Zero advertising SDKs, zero third-party data sharing |
+| Layer       | Technology                                  | Privacy impact                                        |
+| ----------- | ------------------------------------------- | ----------------------------------------------------- |
+| Mobile app  | React Native / Expo (iOS + Android)         | Runs natively, no browser history                     |
+| Auth & data | Supabase — EU-hosted, end-to-end encrypted  | GDPR-compliant by architecture                        |
+| Local data  | Expo SecureStore                            | Journal, safety plan, mood — encrypted on-device only |
+| AI          | Session-based, no persistent server storage | No conversation history saved after session ends      |
+| Tracking    | None                                        | Zero advertising SDKs, zero third-party data sharing  |
 
 HomeWithin collects **no advertising data**, uses **no tracking SDKs**, and shares **nothing with third parties**.
 
@@ -291,12 +291,12 @@ Copy `.env.example` to `.env.local` and fill in your Supabase URL and anon key b
 
 HomeWithin follows a **Layered Architecture** across four layers:
 
-| Layer | Folder | Responsibility |
-|---|---|---|
-| View | `app/` + `components/` | Expo Router screens and React Native UI |
-| State | `context/` | React Context — auth, safety level, security, location |
-| Service | `services/` | Supabase queries, SecureStore, business logic |
-| Data | `supabase/` + `data/` | DB schema, edge functions, static content |
+| Layer   | Folder                 | Responsibility                                         |
+| ------- | ---------------------- | ------------------------------------------------------ |
+| View    | `app/` + `components/` | Expo Router screens and React Native UI                |
+| State   | `context/`             | React Context — auth, safety level, security, location |
+| Service | `services/`            | Supabase queries, SecureStore, business logic          |
+| Data    | `supabase/` + `data/`  | DB schema, edge functions, static content              |
 
 ### Folder structure
 
@@ -352,6 +352,22 @@ Four focused React Contexts replace the original monolithic `SessionContext`:
 
 All four are composed inside `SessionProvider`. Existing screens call `useSession()` unchanged; tests can still use `<SessionContext.Provider value={mock}>` directly.
 
+### Engineering Decisions
+
+**1. SessionBridge facade pattern**
+
+State is split across four focused providers (`AuthContext`, `SafetyContext`, `SecurityContext`, `LocationContext`) rather than a single monolithic context. A `SessionBridge` component sits at the bottom of the provider tree, reads all four contexts, and publishes one unified `SessionContext`. Production screens call `useSession()` and get everything; tests skip the providers entirely and render `<SessionContext.Provider value={mock}>` directly. The pattern was chosen to make testing predictable without introducing a state management library.
+
+**2. Security threat model**
+
+The app is designed for users who may be monitored by a hostile person on the same device. PIN is stored as a SHA-256 hash (never plaintext) via `expo-crypto`. Auth tokens are stored in `expo-secure-store` with `AFTER_FIRST_UNLOCK` — inaccessible while the device is locked. `AppState` fires a re-lock on `inactive` or `background` transitions. `detectSessionInUrl: false` prevents auth tokens from leaking through deep link URLs. Disguise mode is a direct response to this threat: one tap replaces the app shell with a convincing Weather, Calculator, or Notes interface.
+
+**3. Real-time chat with AppState resume handling**
+
+Chat uses a Supabase realtime channel subscription for live message delivery. WebSocket connections silently drop when the app moves to the background on iOS/Android. On `AppState` change to `active`, `useMessages` explicitly refetches the message list to fill any gap that occurred while the socket was disconnected — ensuring no messages are missed without requiring a full reconnect cycle.
+
+---
+
 ### Testing
 
 ```bash
@@ -381,4 +397,4 @@ For partnerships, press inquiries, or collaboration with RFSL and Swedish LGBTQ+
 
 ---
 
-*HomeWithin is not a medical device and does not replace professional mental health care. If you are in immediate danger, call 112.*
+_HomeWithin is not a medical device and does not replace professional mental health care. If you are in immediate danger, call 112._

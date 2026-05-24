@@ -10,7 +10,7 @@ describe('RangeSlider', () => {
 
   it('renders the current value', () => {
     render(<RangeSlider label="Anxiety" value={7} onValueChange={() => {}} />);
-    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.getByText('7/10')).toBeTruthy();
   });
 
   it('renders minLabel and maxLabel when provided', () => {

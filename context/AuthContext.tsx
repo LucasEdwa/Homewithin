@@ -24,6 +24,32 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+type ProfileRow = {
+  nickname: string | null;
+  age_range: string | null;
+  language: string | null;
+  country: string | null;
+  hide_from_search: boolean | null;
+  needs: string[] | null;
+  intentions: string[] | null;
+  avatar_url: string | null;
+};
+
+function buildHydratedProfile(row: ProfileRow): UserProfile {
+  return {
+    nickname: row.nickname ?? '',
+    pronouns: '',
+    ageRange: row.age_range ?? '',
+    language: row.language ?? '',
+    country: row.country ?? '',
+    hideFromSearch: !!row.hide_from_search,
+    needs: row.needs ?? [],
+    intentions: row.intentions ?? [],
+    isAnonymous: false,
+    avatarUrl: row.avatar_url ?? undefined,
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     profile: null,
@@ -43,18 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq('user_id', uid)
           .maybeSingle();
         if (row) {
-          const hydrated: UserProfile = {
-            nickname: row.nickname ?? '',
-            pronouns: '',
-            ageRange: row.age_range ?? '',
-            language: row.language ?? '',
-            country: row.country ?? '',
-            hideFromSearch: !!row.hide_from_search,
-            needs: row.needs ?? [],
-            intentions: row.intentions ?? [],
-            isAnonymous: false,
-            avatarUrl: row.avatar_url ?? undefined,
-          };
+          const hydrated = buildHydratedProfile(row);
           setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
           await saveSession(hydrated).catch(() => {});
         }
@@ -84,18 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.warn('Profile hydrate select error:', error.message);
             }
             if (row) {
-              profile = {
-                nickname: row.nickname ?? '',
-                pronouns: '',
-                ageRange: row.age_range ?? '',
-                language: row.language ?? '',
-                country: row.country ?? '',
-                hideFromSearch: !!row.hide_from_search,
-                needs: row.needs ?? [],
-                intentions: row.intentions ?? [],
-                isAnonymous: false,
-                avatarUrl: row.avatar_url ?? undefined,
-              };
+              profile = buildHydratedProfile(row);
               await saveSession(profile).catch(() => {});
             } else {
               console.warn('Profile hydrate: no user_profiles row for uid', user.id, '— creating default');

@@ -1,8 +1,6 @@
 import type { SafetyLevel } from '@/types/user';
 import React, { createContext, useContext, useState } from 'react';
 
-export type { SafetyLevel };
-
 interface SafetyContextValue {
   safetyLevel: SafetyLevel;
   setSafetyLevel: (level: SafetyLevel) => void;

@@ -81,7 +81,7 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
       if (!result.authRowDeleted) {
         try {
           const sb = supabase;
-          const ops: Array<Promise<any>> = [];
+          const ops: Promise<any>[] = [];
           const run = (b: any) => ops.push(Promise.resolve(b));
           USER_TABLES_BY_SENDER.forEach((t) =>
             run(sb.from(t).delete().eq("sender_id", uid!)),

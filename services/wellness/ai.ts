@@ -93,15 +93,15 @@ export interface UserContext {
   journalPreview?: string;      // snippet from the entry that triggered opening
 
   // Programs
-  programProgress?: Array<{ title: string; completed: number; total: number }>;
+  programProgress?: { title: string; completed: number; total: number }[];
 
   // Connections
   connectionsCount?: number;
   chosenFamilyCount?: number;
 
   // Full history for pattern matching
-  journalSummaries?: Array<{ date: string; tags: string[]; snippet: string }>;
-  moodHistory?: Array<{ date: string; score: number }>;
+  journalSummaries?: { date: string; tags: string[]; snippet: string }[];
+  moodHistory?: { date: string; score: number }[];
 }
 
 /** Builds the full personalized system prompt from live user data. */

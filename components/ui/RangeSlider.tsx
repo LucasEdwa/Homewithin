@@ -28,7 +28,7 @@ export function RangeSlider({
   const pct = (value - min) / (max - min);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLabel={label}>
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.valueText}>{value}<Text style={styles.maxText}>/{max}</Text></Text>

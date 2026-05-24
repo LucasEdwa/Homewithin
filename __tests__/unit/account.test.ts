@@ -1,8 +1,11 @@
 import * as SecureStore from "expo-secure-store";
 
+import { deleteAccount } from "@/services/user/account";
+import { deleteSensitiveData } from "@/services/storage";
+
 // Build a chainable supabase mock where .from(t).delete().eq(col, val)
 // resolves to { error: null } and records the call.
-const calls: Array<{ table: string; column: string; value: string }> = [];
+const calls: { table: string; column: string; value: string }[] = [];
 
 function makeQuery(table: string) {
   const obj: any = {
@@ -31,9 +34,6 @@ jest.mock("@/services/supabase", () => ({
 jest.mock("@/services/storage", () => ({
   deleteSensitiveData: jest.fn().mockResolvedValue(undefined),
 }));
-
-import { deleteAccount } from "@/services/user/account";
-import { deleteSensitiveData } from "@/services/storage";
 
 const setItem = SecureStore.setItemAsync as jest.Mock;
 const deleteItem = SecureStore.deleteItemAsync as jest.Mock;

@@ -160,7 +160,7 @@ export async function getProgramProgress(
 }
 
 export async function getAllProgramsWithProgress(): Promise<
-  Array<Program & { completed: number; total: number }>
+  (Program & { completed: number; total: number })[]
 > {
   const [programs, completed] = await Promise.all([
     getPrograms(),

@@ -2,14 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
+import JournalScreen from '@/app/(tabs)/journal';
+import * as storage from '@/services/storage';
+
 jest.mock('@/services/storage', () => ({
   getTodayCheckIn: jest.fn().mockResolvedValue(null),
   getRecentCheckIns: jest.fn().mockResolvedValue([]),
   getJournalEntries: jest.fn().mockResolvedValue([]),
 }));
-
-import JournalScreen from '@/app/(tabs)/journal';
-import * as storage from '@/services/storage';
 
 const mockGetToday = storage.getTodayCheckIn as jest.Mock;
 const mockGetRecent = storage.getRecentCheckIns as jest.Mock;

@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import { CheckIn, MoodDataPoint, MOOD_COLORS, MOOD_LABELS } from '@/types';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
-import { useState } from 'react';
 
 interface MoodChartProps {
   checkIns?: CheckIn[];

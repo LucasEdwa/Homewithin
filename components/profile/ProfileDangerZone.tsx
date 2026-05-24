@@ -58,8 +58,9 @@ export function ProfileDangerZone() {
               }
             } catch (e: any) {
               Alert.alert('Delete failed', e?.message ?? 'Something went wrong. Please try again.');
+              reset();
               setDeleting(false);
-              return;
+              router.replace('/welcome');
             }
             reset();
             setDeleting(false);

@@ -2,6 +2,8 @@ import type { UserProfile } from "@/context/SessionContext";
 import type { IntentionId, Match, PeerProfile } from "@/types";
 import { currentUserId, supabase } from "../supabase";
 
+import type { BlockedUser } from "@/types/social";
+
 export async function getMatchPeerId(matchId: string): Promise<string | null> {
   if (!supabase) return null;
   const uid = await currentUserId();
@@ -385,8 +387,6 @@ export async function getBlockedUserIds(): Promise<string[]> {
   }
   return (data ?? []).map((row: any) => row.blocked_id);
 }
-
-import type { BlockedUser } from "@/types/social";
 export type { BlockedUser };
 
 export async function getBlockedUsers(): Promise<BlockedUser[]> {

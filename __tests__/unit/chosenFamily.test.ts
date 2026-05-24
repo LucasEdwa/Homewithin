@@ -1,5 +1,16 @@
 import * as SecureStore from 'expo-secure-store';
 
+import {
+  getSupportPeople,
+  getSupportPersonByRole,
+  addSupportPerson,
+  updateSupportPerson,
+  removeSupportPerson,
+  getNextSuggestedRole,
+} from '@/services/social/chosenFamily';
+import { SUPPORT_ROLES } from '@/types';
+import type { SupportPerson } from '@/types';
+
 jest.mock('expo-secure-store');
 
 const mockStore = SecureStore as jest.Mocked<typeof SecureStore>;
@@ -11,17 +22,6 @@ beforeEach(() => {
   mockStore.setItemAsync.mockImplementation(async (key, value) => { store[key] = value; });
   mockStore.deleteItemAsync.mockImplementation(async (key) => { delete store[key]; });
 });
-
-import {
-  getSupportPeople,
-  getSupportPersonByRole,
-  addSupportPerson,
-  updateSupportPerson,
-  removeSupportPerson,
-  getNextSuggestedRole,
-} from '@/services/social/chosenFamily';
-import { SUPPORT_ROLES } from '@/types';
-import type { SupportPerson } from '@/types';
 
 describe('getSupportPeople', () => {
   it('returns empty array when nothing stored', async () => {

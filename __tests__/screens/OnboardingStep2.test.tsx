@@ -35,7 +35,7 @@ describe('OnboardingStep2', () => {
 
   it('renders Get started button', () => {
     renderWithSession(<OnboardingStep2 />, { profile: mockProfile });
-    expect(screen.getByText('Get started')).toBeTruthy();
+    expect(screen.getByText('Continue')).toBeTruthy();
   });
 
   it('renders Skip for now link', () => {
@@ -73,14 +73,14 @@ describe('OnboardingStep2', () => {
     renderWithSession(<OnboardingStep2 />, { profile: mockProfile, setProfile, completeOnboarding });
 
     fireEvent.press(screen.getByRole('checkbox', { name: /Healing/i }));
-    fireEvent.press(screen.getByText('Get started'));
+    fireEvent.press(screen.getByText('Continue'));
 
     await waitFor(() => {
       expect(setProfile).toHaveBeenCalledWith(expect.objectContaining({
         needs: ['healing'],
       }));
       expect(completeOnboarding).toHaveBeenCalled();
-      expect(router.replace).toHaveBeenCalledWith('/safety');
+      expect(router.push).toHaveBeenCalledWith('/onboarding/step3');
     });
   });
 
@@ -92,7 +92,7 @@ describe('OnboardingStep2', () => {
 
     await waitFor(() => {
       expect(completeOnboarding).toHaveBeenCalled();
-      expect(router.replace).toHaveBeenCalledWith('/safety');
+      expect(router.push).toHaveBeenCalledWith('/onboarding/step3');
     });
   });
 });

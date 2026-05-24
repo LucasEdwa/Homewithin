@@ -4,12 +4,12 @@ import { router } from 'expo-router';
 import React from 'react';
 import { renderWithSession } from '../helpers/renderWithSession';
 
+import * as localResourcesService from '@/services/content/localResources';
+
 jest.mock('@/services/content/localResources', () => ({
   requestLocationPermission: jest.fn(),
   getResources: jest.fn(),
 }));
-
-import * as localResourcesService from '@/services/content/localResources';
 const mockRequestLocation = localResourcesService.requestLocationPermission as jest.Mock;
 const mockGetResources = localResourcesService.getResources as jest.Mock;
 

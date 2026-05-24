@@ -4,6 +4,18 @@
 
 // ─── Configurable mock state ──────────────────────────────────────────────────
 
+import {
+    getCircle,
+    getCircleMessages,
+    joinCircle,
+    leaveCircle,
+    listCircles,
+    markCircleIntroSeen,
+    reportInCircle,
+    sendCircleMessage,
+    subscribeToCircleMessages,
+} from "@/services/social/circles";
+
 interface MockConfig {
   enabled: boolean;
   authUser: { id: string } | null;
@@ -52,18 +64,6 @@ jest.mock("@/services/supabase", () => ({
     return mockCfg.authUser.id;
   },
 }));
-
-import {
-    getCircle,
-    getCircleMessages,
-    joinCircle,
-    leaveCircle,
-    listCircles,
-    markCircleIntroSeen,
-    reportInCircle,
-    sendCircleMessage,
-    subscribeToCircleMessages,
-} from "@/services/social/circles";
 
 beforeEach(() => {
   // Default: offline (null supabase)

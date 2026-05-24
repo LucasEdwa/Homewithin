@@ -77,6 +77,7 @@ export function ProfilePrivacyCard() {
         </View>
         <View pointerEvents="none">
           <Switch
+            accessibilityLabel="Hide from search"
             value={!!profile?.hideFromSearch}
             onValueChange={handleToggleHideFromSearch}
             disabled={!profile || hidingPending}

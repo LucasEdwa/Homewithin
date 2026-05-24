@@ -4,6 +4,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react-nativ
 import { router } from 'expo-router';
 import { renderWithSession } from '../helpers/renderWithSession';
 
+import CheckInScreen from '@/app/(wellness)/checkin';
+import * as storage from '@/services/storage';
+
 jest.mock('@/services/supabase', () => ({
   supabase: null,
   isSupabaseConfigured: false,
@@ -14,9 +17,6 @@ jest.mock('@/services/storage', () => ({
   getTodayCheckIn: jest.fn().mockResolvedValue(null),
   getRecentCheckIns: jest.fn().mockResolvedValue([]),
 }));
-
-import CheckInScreen from '@/app/(wellness)/checkin';
-import * as storage from '@/services/storage';
 
 const mockGetToday = storage.getTodayCheckIn as jest.Mock;
 const mockGetRecent = storage.getRecentCheckIns as jest.Mock;

@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
+import DisguiseScreen from '@/app/(safety)/disguise';
+import { useSession } from '@/context/SessionContext';
+import { router } from 'expo-router';
+
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
 }));
@@ -8,10 +12,6 @@ jest.mock('expo-router', () => ({
 jest.mock('@/context/SessionContext', () => ({
   useSession: jest.fn(),
 }));
-
-import DisguiseScreen from '@/app/(safety)/disguise';
-import { useSession } from '@/context/SessionContext';
-import { router } from 'expo-router';
 
 const setDisguiseEnabled = jest.fn().mockResolvedValue(undefined);
 const setDisguiseStyle = jest.fn().mockResolvedValue(undefined);

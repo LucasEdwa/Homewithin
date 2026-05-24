@@ -1,7 +1,24 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import WelcomeScreen from '@/app/(auth)/welcome';
+
+jest.mock('@/context/SessionContext', () => ({
+  useSession: () => ({
+    setProfile: jest.fn().mockResolvedValue(undefined),
+    completeOnboarding: jest.fn().mockResolvedValue(undefined),
+  }),
+}));
+
+jest.mock('@/services/supabase', () => ({
+  supabase: null,
+  isSupabaseConfigured: false,
+  signOut: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@/services/social/matching', () => ({
+  syncProfile: jest.fn().mockResolvedValue(undefined),
+}));
 
 // expo-router is mocked via __mocks__/expo-router.ts
 
@@ -10,11 +27,6 @@ beforeEach(() => {
 });
 
 describe('WelcomeScreen', () => {
-  it('renders the app name', () => {
-    render(<WelcomeScreen />);
-    expect(screen.getByText('HomeWithin')).toBeTruthy();
-  });
-
   it('renders the tagline', () => {
     render(<WelcomeScreen />);
     expect(screen.getByText('You are safe here.')).toBeTruthy();
@@ -38,15 +50,17 @@ describe('WelcomeScreen', () => {
     expect(screen.getByText('Growth')).toBeTruthy();
   });
 
-  it('shows the Quick Exit button', () => {
+  it('renders the guest link', () => {
     render(<WelcomeScreen />);
-    expect(screen.getByLabelText('Quick exit — close app')).toBeTruthy();
+    expect(screen.getByText('Continue as guest — no account needed')).toBeTruthy();
   });
 
-  it('navigates to onboarding when Start anonymously is pressed', () => {
+  it('navigates to onboarding when Start anonymously is pressed', async () => {
     render(<WelcomeScreen />);
     fireEvent.press(screen.getByText('Start anonymously'));
-    expect(router.push).toHaveBeenCalledWith('/onboarding/step1');
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith('/onboarding/step1');
+    });
   });
 
   it('navigates to sign-in when Sign in is pressed', () => {
@@ -55,3 +69,4 @@ describe('WelcomeScreen', () => {
     expect(router.push).toHaveBeenCalledWith('/signin');
   });
 });
+

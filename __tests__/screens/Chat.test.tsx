@@ -1,6 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
+import ChatScreen from '@/app/(social)/chat';
+import * as chatService from '@/services/social/chat';
+import { useLocalSearchParams } from 'expo-router';
+
 jest.mock('@/services/social/chat', () => ({
   getMessages: jest.fn(),
   sendMessage: jest.fn(),
@@ -11,6 +15,16 @@ jest.mock('@/services/social/chat', () => ({
 jest.mock('@/services/social/matching', () => ({
   blockUser: jest.fn(),
   reportMessage: jest.fn(),
+}));
+
+jest.mock('@/context/UnreadContext', () => ({
+  useUnread: () => ({
+    unreadByMatch: {},
+    totalUnread: 0,
+    refresh: jest.fn().mockResolvedValue(undefined),
+    markRead: jest.fn().mockResolvedValue(undefined),
+    setActiveMatch: jest.fn(),
+  }),
 }));
 
 jest.mock('@/services/supabase', () => ({
@@ -24,10 +38,6 @@ jest.mock('expo-router', () => ({
   router: { back: jest.fn() },
   useLocalSearchParams: jest.fn(),
 }));
-
-import ChatScreen from '@/app/(social)/chat';
-import * as chatService from '@/services/social/chat';
-import { useLocalSearchParams } from 'expo-router';
 
 const mockGetMessages = chatService.getMessages as jest.Mock;
 const mockSendMessage = chatService.sendMessage as jest.Mock;

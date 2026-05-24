@@ -1,6 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
+import EventsScreen from '@/app/(content)/events';
+import * as service from '@/services/content/localResources';
+
 jest.mock('@/services/content/localResources', () => ({
   getWorkshops: jest.fn(),
   getMeetups: jest.fn(),
@@ -20,9 +23,6 @@ jest.mock('react-native/Libraries/Linking/Linking', () => ({
   openURL: jest.fn().mockResolvedValue(undefined),
   canOpenURL: jest.fn().mockResolvedValue(true),
 }));
-
-import EventsScreen from '@/app/(content)/events';
-import * as service from '@/services/content/localResources';
 
 const mockGetWorkshops = service.getWorkshops as jest.Mock;
 const mockGetMeetups = service.getMeetups as jest.Mock;

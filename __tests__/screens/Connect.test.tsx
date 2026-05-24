@@ -1,6 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
+import ConnectScreen from '@/app/(tabs)/connect';
+import * as matchingService from '@/services/social/matching';
+import { router } from 'expo-router';
+
 jest.mock('@/services/social/matching', () => ({
   syncProfile: jest.fn().mockResolvedValue(undefined),
   findMatches: jest.fn(),
@@ -24,6 +28,16 @@ jest.mock('expo-router', () => ({
   },
 }));
 
+jest.mock('@/context/UnreadContext', () => ({
+  useUnread: () => ({
+    unreadByMatch: {},
+    totalUnread: 0,
+    refresh: jest.fn().mockResolvedValue(undefined),
+    markRead: jest.fn().mockResolvedValue(undefined),
+    setActiveMatch: jest.fn(),
+  }),
+}));
+
 jest.mock('@/context/SessionContext', () => ({
   useSession: () => ({
     profile: {
@@ -38,10 +52,6 @@ jest.mock('@/context/SessionContext', () => ({
     },
   }),
 }));
-
-import ConnectScreen from '@/app/(tabs)/connect';
-import * as matchingService from '@/services/social/matching';
-import { router } from 'expo-router';
 
 const mockFind = matchingService.findMatches as jest.Mock;
 const mockConnect = matchingService.connectMatch as jest.Mock;
@@ -178,7 +188,7 @@ describe('ConnectScreen — existing connections', () => {
     fireEvent.press(screen.getByTestId('match-match-1'));
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/chat',
-      params: { matchId: 'match-1', nickname: 'Jordan' },
+      params: { matchId: 'match-1', nickname: 'Jordan', avatarUrl: '' },
     });
   });
 });

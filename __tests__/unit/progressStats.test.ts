@@ -1,5 +1,14 @@
 import * as SecureStore from 'expo-secure-store';
 
+import {
+  getMoodTrend,
+  getJournalStreak,
+  getSafetyDelta,
+  getProfileCompletion,
+  getProgressSnapshot,
+} from '@/services/wellness/progressStats';
+import type { UserProfile } from '@/context/SessionContext';
+
 jest.mock('expo-secure-store');
 jest.mock('@/services/supabase', () => ({ supabase: null }));
 jest.mock('@/services/social/matching', () => ({
@@ -24,15 +33,6 @@ beforeEach(() => {
   mockStore.setItemAsync.mockImplementation(async (key, value) => { store[key] = value; });
   mockStore.deleteItemAsync.mockImplementation(async (key) => { delete store[key]; });
 });
-
-import {
-  getMoodTrend,
-  getJournalStreak,
-  getSafetyDelta,
-  getProfileCompletion,
-  getProgressSnapshot,
-} from '@/services/wellness/progressStats';
-import type { UserProfile } from '@/context/SessionContext';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
+import DecoyScreen from '@/app/(safety)/decoy';
+import { router } from 'expo-router';
+
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn(), push: jest.fn(), back: jest.fn() },
 }));
@@ -14,9 +17,6 @@ const mockSession = {
 jest.mock('@/context/SessionContext', () => ({
   useSession: () => mockSession,
 }));
-
-import DecoyScreen from '@/app/(safety)/decoy';
-import { router } from 'expo-router';
 
 describe('DecoyScreen — secret gesture', () => {
   beforeEach(() => {

@@ -73,6 +73,12 @@ export default function ProgressScreen() {
             />
           </Card>
 
+          <ProfileBadge
+            completion={snapshot.profileCompletion}
+            onboardingBadge={snapshot.onboardingBadge}
+            nickname={profile?.nickname}
+          />
+
           {/* Stat cards row 1 */}
           <View style={styles.statRow}>
             <StatCard

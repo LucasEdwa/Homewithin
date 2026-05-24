@@ -2,6 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
+import SignInScreen from '@/app/(auth)/signin';
+import * as supabaseModule from '@/services/supabase';
+
 // jest.mock is hoisted to the top by Babel — outer-scope variables assigned via
 // `const foo = jest.fn()` don't exist yet when the factory runs. Use jest.fn()
 // directly inside the factory, then access the fns through the imported module.
@@ -15,9 +18,6 @@ jest.mock('@/services/supabase', () => ({
   isSupabaseConfigured: true,
 }));
 
-import SignInScreen from '@/app/(auth)/signin';
-import * as supabaseModule from '@/services/supabase';
-
 // Typed accessors into the mocked module
 const mockAuth = (supabaseModule.supabase as any).auth as {
   signInWithPassword: jest.Mock;
@@ -27,7 +27,7 @@ const mockAuth = (supabaseModule.supabase as any).auth as {
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuth.signInWithPassword.mockResolvedValue({ error: null });
-  mockAuth.signUp.mockResolvedValue({ error: null });
+  mockAuth.signUp.mockResolvedValue({ data: { session: { user: { id: 'test-uid' } } }, error: null });
 });
 
 function fillForm(email: string, password: string) {

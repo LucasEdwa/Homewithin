@@ -17,7 +17,7 @@ import {
     View,
 } from 'react-native';
 
-const STYLES: Array<{ id: DisguiseStyle; label: string; icon: keyof typeof Ionicons.glyphMap; description: string }> = [
+const STYLES: { id: DisguiseStyle; label: string; icon: keyof typeof Ionicons.glyphMap; description: string }[] = [
   { id: 'weather',    label: 'Weather',    icon: 'partly-sunny-outline',     description: 'A simple weather screen.' },
   { id: 'calculator', label: 'Calculator', icon: 'calculator-outline',       description: 'A working-looking calculator.' },
   { id: 'notes',      label: 'Notes',      icon: 'document-text-outline',    description: 'A plain notes list.' },

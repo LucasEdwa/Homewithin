@@ -1,5 +1,13 @@
 import * as SecureStore from 'expo-secure-store';
 
+import {
+  checkRateLimit,
+  getHistory,
+  clearHistory,
+  sendAIMessage,
+  AI_DISCLAIMER,
+} from '@/services/wellness/ai';
+
 jest.mock('expo-secure-store');
 jest.mock('@/services/supabase', () => ({ supabase: null, isSupabaseConfigured: false }));
 
@@ -13,14 +21,6 @@ beforeEach(() => {
   mockStore.setItemAsync.mockImplementation(async (key, value) => { store[key] = value; });
   mockStore.deleteItemAsync.mockImplementation(async (key) => { delete store[key]; });
 });
-
-import {
-  checkRateLimit,
-  getHistory,
-  clearHistory,
-  sendAIMessage,
-  AI_DISCLAIMER,
-} from '@/services/wellness/ai';
 
 describe('AI_DISCLAIMER', () => {
   it('is a non-empty string', () => {

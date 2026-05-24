@@ -1,6 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
+import ChosenFamilyScreen from '@/app/(social)/chosen-family';
+import * as cfService from '@/services/social/chosenFamily';
+import { SUPPORT_ROLES } from '@/types';
+
 jest.mock('@/services/social/chosenFamily', () => ({
   getSupportPeople: jest.fn(),
   addSupportPerson: jest.fn(),
@@ -24,10 +28,6 @@ jest.mock('react-native/Libraries/Linking/Linking', () => ({
   canOpenURL: jest.fn().mockResolvedValue(true),
   openURL: jest.fn(),
 }));
-
-import ChosenFamilyScreen from '@/app/(social)/chosen-family';
-import * as cfService from '@/services/social/chosenFamily';
-import { SUPPORT_ROLES } from '@/types';
 
 const mockGetPeople = cfService.getSupportPeople as jest.Mock;
 const mockAdd = cfService.addSupportPerson as jest.Mock;

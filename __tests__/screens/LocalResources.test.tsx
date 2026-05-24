@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
+import LocalResourcesScreen from '@/app/(content)/local-resources';
+import * as service from '@/services/content/localResources';
+
 jest.mock('@/services/content/localResources', () => ({
   getResources: jest.fn(),
   requestLocationPermission: jest.fn(),
@@ -21,9 +24,6 @@ jest.mock('react-native/Libraries/Linking/Linking', () => ({
   openURL: jest.fn().mockResolvedValue(undefined),
   canOpenURL: jest.fn().mockResolvedValue(true),
 }));
-
-import LocalResourcesScreen from '@/app/(content)/local-resources';
-import * as service from '@/services/content/localResources';
 
 const mockGetResources = service.getResources as jest.Mock;
 const mockRequestLocation = service.requestLocationPermission as jest.Mock;

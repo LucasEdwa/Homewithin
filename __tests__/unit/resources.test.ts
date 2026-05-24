@@ -1,5 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 
+import { getResources, getResourceById, getBookmarks, isBookmarked, toggleBookmark, getBookmarkedResources } from '@/services/content/resources';
+import { SEED_ARTICLES } from '@/data/articles';
+
 jest.mock('expo-secure-store');
 jest.mock('@/services/supabase', () => ({ supabase: null, isSupabaseConfigured: false }));
 
@@ -13,9 +16,6 @@ beforeEach(() => {
   mockStore.setItemAsync.mockImplementation(async (key, value) => { store[key] = value; });
   mockStore.deleteItemAsync.mockImplementation(async (key) => { delete store[key]; });
 });
-
-import { getResources, getResourceById, getBookmarks, isBookmarked, toggleBookmark, getBookmarkedResources } from '@/services/content/resources';
-import { SEED_ARTICLES } from '@/data/articles';
 
 describe('getResources', () => {
   it('returns all seed articles when Supabase is null', async () => {

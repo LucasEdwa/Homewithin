@@ -2,13 +2,13 @@
 // SessionBridge reads them and publishes a single SessionContext value so that:
 //   - production code calls useSession() unchanged
 //   - test helpers can still use <SessionContext.Provider value={mock}> directly
+import type { LocalResource } from '@/types';
+import type { DisguiseStyle, SafetyLevel } from '@/types/user';
 import React, { createContext, useContext } from 'react';
 import { AuthProvider, useAuth, type UserProfile } from './AuthContext';
 import { LocationProvider, useLocation } from './LocationContext';
-import { SafetyProvider, useSafety, type SafetyLevel } from './SafetyContext';
+import { SafetyProvider, useSafety } from './SafetyContext';
 import { SecurityProvider, useSecurity } from './SecurityContext';
-import type { DisguiseStyle } from '@/types/user';
-import type { LocalResource } from '@/types';
 
 export type { SafetyLevel, UserProfile };
 

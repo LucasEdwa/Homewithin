@@ -1,6 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
+import ProgramsScreen from '@/app/(content)/programs';
+import ProgramScreen from '@/app/(content)/program';
+import * as programsService from '@/services/content/programs';
+
 jest.mock('@/services/content/programs', () => ({
   getAllProgramsWithProgress: jest.fn(),
   getProgramById: jest.fn(),
@@ -19,10 +23,6 @@ jest.mock('expo-router', () => ({
     }, []);
   },
 }));
-
-import ProgramsScreen from '@/app/(content)/programs';
-import ProgramScreen from '@/app/(content)/program';
-import * as programsService from '@/services/content/programs';
 
 const mockGetAll = programsService.getAllProgramsWithProgress as jest.Mock;
 const mockGetById = programsService.getProgramById as jest.Mock;

@@ -2,6 +2,12 @@ import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { renderWithSession } from '../helpers/renderWithSession';
 
+import ProfileScreen from '@/app/(tabs)/profile';
+import * as accountService from '@/services/user/account';
+import * as matchingService from '@/services/social/matching';
+import { router } from 'expo-router';
+import { Alert } from 'react-native';
+
 jest.mock('@/services/social/matching', () => ({
   syncProfile: jest.fn().mockResolvedValue(undefined),
 }));
@@ -34,12 +40,6 @@ jest.mock('@/components/safety/EmergencyButton', () => ({
   EmergencyButton: () => null,
 }));
 
-import ProfileScreen from '@/app/(tabs)/profile';
-import * as accountService from '@/services/user/account';
-import * as matchingService from '@/services/social/matching';
-import { router } from 'expo-router';
-import { Alert } from 'react-native';
-
 const baseProfile = {
   nickname: 'River',
   pronouns: 'they/them',
@@ -49,7 +49,7 @@ const baseProfile = {
   hideFromSearch: false,
   needs: ['someone_to_talk'],
   intentions: [],
-  isAnonymous: true,
+  isAnonymous: false,
 };
 
 describe('ProfileScreen — Hide from search toggle', () => {
