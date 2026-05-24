@@ -1,4 +1,6 @@
--- HomeWithin — Sprint 5 RLS fix
+-- HomeWithin — Fix circles RLS infinite-recursion bug
+-- Simplifies circle_members SELECT policy that was self-referencing and causing stack overflows.
+-- Also adds a denormalized member_count column to circles to avoid expensive subqueries.
 --
 -- Problem 1: "Members see circle membership" SELECT policy queried circle_members
 --   from within itself → infinite recursion on every SELECT.

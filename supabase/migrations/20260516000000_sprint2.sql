@@ -1,5 +1,6 @@
--- HomeWithin — Supabase schema
--- Run this in your Supabase SQL editor: https://supabase.com/dashboard/project/_/sql
+-- HomeWithin — Create check_ins table
+-- Records daily mood, anxiety, loneliness, and safety scores with freeform emotion tags.
+-- Powers the wellness check-in flow and mood history chart.
 
 -- ─── Sprint 2: Check-ins ─────────────────────────────────────────────────────
 

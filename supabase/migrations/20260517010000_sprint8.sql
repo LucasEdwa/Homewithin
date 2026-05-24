@@ -1,7 +1,7 @@
--- Sprint 8: Local Resources & Events
--- Provides CMS tables for admins to manage resources and workshops.
--- The app ships with a static seed dataset; these tables allow future
--- server-side overrides without requiring an app update.
+-- HomeWithin — Create local_resources table
+-- Stores LGBTQ+ centres, shelters, therapists, and legal-aid providers filterable by country/city.
+-- The app ships with a static fallback (data/localResources.ts); this table allows
+-- content updates without requiring a new app release.
 
 -- ─── local_resources ──────────────────────────────────────────────────────────
 

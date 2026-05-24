@@ -1,4 +1,7 @@
--- HomeWithin — Sprint 4: Peer Matching & Chat
+-- HomeWithin — Create user_profiles, matches, and messages tables
+-- user_profiles: public display info (nickname, country, needs, intentions).
+-- matches: mutual-consent peer pairing system.
+-- messages: real-time 1-to-1 chat between matched users.
 
 -- ─── User public profiles ─────────────────────────────────────────────────────
 

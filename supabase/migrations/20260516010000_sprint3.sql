@@ -1,5 +1,6 @@
--- HomeWithin — Sprint 3: Resource Library
--- Run this in your Supabase SQL editor or via: supabase db push
+-- HomeWithin — Create resources table
+-- Stores educational articles (title, summary, body, category, language, read_time).
+-- Powers the "Learn & Grow" in-app content library.
 
 -- ─── Resources table ─────────────────────────────────────────────────────────
 

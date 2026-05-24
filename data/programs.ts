@@ -1,18 +1,19 @@
-import type { Program } from '@/types';
+import type { Program } from "@/types";
 
 export const SEED_PROGRAMS: Program[] = [
   {
-    id: 'prog-001',
-    title: 'Healing from Parental Rejection',
-    description: 'A 5-part journey through the grief of family rejection — toward peace and self-belonging.',
-    color: '#D9534F',
-    icon: 'heart-dislike-outline',
+    id: "prog-001",
+    title: "Healing from Parental Rejection",
+    description:
+      "A 5-part journey through the grief of family rejection — toward peace and self-belonging.",
+    color: "#D9534F",
+    icon: "heart-dislike-outline",
     lessons: [
       {
-        id: 'prog-001-l1',
-        programId: 'prog-001',
+        id: "prog-001-l1",
+        programId: "prog-001",
         order: 1,
-        title: 'Understanding What Happened',
+        title: "Understanding What Happened",
         body: `Parental rejection is not a simple event — it is a rupture in what should have been the safest relationship in your life. Before you can heal from it, it helps to understand what it actually is and what it isn't.
 
 What it is: a response rooted in your parents' fear, conditioning, beliefs, and limitations. Their reaction reflects what they were taught to believe about identity, family, and what it means to be "good" — not who you actually are.
@@ -24,14 +25,15 @@ Parental rejection often looks different for different people. It might be overt
 It also often unfolds in stages — shock, grief, bargaining, anger, and sometimes, eventually, some form of acceptance. You are allowed to be in whatever stage you are in right now. You do not have to rush.
 
 One thing that helps many people is simply naming what happened. Not to assign blame, but to call it what it was: a wound. Wounds can heal. But they need to be acknowledged first.`,
-        reflectionPrompt: 'In your own words, what happened? Write about the moment or the pattern — without trying to justify anyone\'s actions. Just describe it.',
+        reflectionPrompt:
+          "In your own words, what happened? Write about the moment or the pattern — without trying to justify anyone's actions. Just describe it.",
         readTime: 4,
       },
       {
-        id: 'prog-001-l2',
-        programId: 'prog-001',
+        id: "prog-001-l2",
+        programId: "prog-001",
         order: 2,
-        title: 'The Grief You Are Allowed to Feel',
+        title: "The Grief You Are Allowed to Feel",
         body: `One of the most overlooked parts of parental rejection is the grief. Not just grief over the rejection itself — but grief over what you lost. Or, more precisely, what you never had.
 
 You may be grieving the parent you needed but didn't get. The holiday table where you could be fully yourself. The phone call where someone says "I'm proud of you." The safety of knowing that home would always be home. These are real losses, and they deserve to be grieved.
@@ -43,14 +45,15 @@ But unprocessed grief doesn't go away — it leaks. It shows up as numbness, rag
 Grief is not giving up. It is not weakness. It is the process your nervous system uses to integrate a loss so that you can move forward carrying it, rather than being stopped by it.
 
 You are allowed to grieve. You are allowed to cry. You are allowed to be angry. You are allowed to wish it had been different. None of that changes who you are or what you deserve.`,
-        reflectionPrompt: 'What have you lost — or never had — because of this rejection? Let yourself write about the relationship you wish you could have had.',
+        reflectionPrompt:
+          "What have you lost — or never had — because of this rejection? Let yourself write about the relationship you wish you could have had.",
         readTime: 4,
       },
       {
-        id: 'prog-001-l3',
-        programId: 'prog-001',
+        id: "prog-001-l3",
+        programId: "prog-001",
         order: 3,
-        title: 'Their Rejection Is Not Your Truth',
+        title: "Their Rejection Is Not Your Truth",
         body: `When someone who was supposed to love you unconditionally rejects you, the mind does a very human thing: it looks for an explanation. And often, it finds one inside you.
 
 "Maybe I am too much."
@@ -66,14 +69,15 @@ You are not too much. You are not broken. You are not wrong for being who you ar
 Here is a useful exercise: imagine a close friend coming to you with the same story. What would you say to them? Most of us would never say "yes, you're right, you probably deserved it." We would recognize the cruelty immediately.
 
 Extend yourself the same recognition. Their rejection is their story — about their fears, their conditioning, their limitations. It is not yours.`,
-        reflectionPrompt: 'What have you told yourself about why you were rejected? Write those thoughts down — then write back to them as if you were writing to a friend who believed them.',
+        reflectionPrompt:
+          "What have you told yourself about why you were rejected? Write those thoughts down — then write back to them as if you were writing to a friend who believed them.",
         readTime: 4,
       },
       {
-        id: 'prog-001-l4',
-        programId: 'prog-001',
+        id: "prog-001-l4",
+        programId: "prog-001",
         order: 4,
-        title: 'Finding Safety Within Yourself',
+        title: "Finding Safety Within Yourself",
         body: `When external safety — the home, the family, the belonging you were supposed to have — is taken away or was never fully there, you are left needing to build something internal.
 
 Internal safety doesn't mean pretending everything is fine. It means developing a stable inner ground that holds you even when the external world is unstable.
@@ -89,14 +93,15 @@ Some of what builds internal safety:
 **Your chosen people.** Even one person who sees you and stays is transformative. Internal safety and connection reinforce each other.
 
 None of this is built in a day. It is built in small moments of choosing yourself — again and again and again.`,
-        reflectionPrompt: 'What does feeling safe feel like in your body? Where do you feel it? What situations or people give you even a small version of that feeling?',
+        reflectionPrompt:
+          "What does feeling safe feel like in your body? Where do you feel it? What situations or people give you even a small version of that feeling?",
         readTime: 4,
       },
       {
-        id: 'prog-001-l5',
-        programId: 'prog-001',
+        id: "prog-001-l5",
+        programId: "prog-001",
         order: 5,
-        title: 'Building Toward Belonging',
+        title: "Building Toward Belonging",
         body: `Belonging is not something that happens to you — it is something you build. And after rejection, building it requires a kind of courage that most people never have to develop.
 
 Chosen family is not a consolation prize. For many people who have experienced parental rejection, the relationships they build intentionally become the deepest and most sustaining of their lives — precisely because they were chosen, not assumed.
@@ -114,24 +119,26 @@ Building belonging also means being willing to be seen — gradually, carefully,
 Each time that happens, the wound heals a little. Each time someone stays, you learn a little more that you are someone worth staying for.
 
 You are. And belonging — the real kind — is waiting for you on the other side of the reaching.`,
-        reflectionPrompt: 'Who in your life has stayed? Who has shown up for you? Write about a moment of unexpected belonging — even a small one.',
+        reflectionPrompt:
+          "Who in your life has stayed? Who has shown up for you? Write about a moment of unexpected belonging — even a small one.",
         readTime: 4,
       },
     ],
   },
 
   {
-    id: 'prog-002',
-    title: 'Rebuilding Self-Worth',
-    description: 'Reclaim the sense of value that rejection tried to take — one small act at a time.',
-    color: '#B8A8E3',
-    icon: 'star-outline',
+    id: "prog-002",
+    title: "Rebuilding Self-Worth",
+    description:
+      "Reclaim the sense of value that rejection tried to take — one small act at a time.",
+    color: "#B8A8E3",
+    icon: "star-outline",
     lessons: [
       {
-        id: 'prog-002-l1',
-        programId: 'prog-002',
+        id: "prog-002-l1",
+        programId: "prog-002",
         order: 1,
-        title: 'Where Self-Worth Actually Comes From',
+        title: "Where Self-Worth Actually Comes From",
         body: `Most of us were taught — explicitly or implicitly — that self-worth is earned. You earn it by being good enough, smart enough, successful enough, conforming enough. When you stop conforming, the worth gets revoked.
 
 This is a lie. And it is the root of most self-worth struggles.
@@ -143,14 +150,15 @@ The distinction matters. If self-worth is earned, you spend your whole life perf
 Rebuilding self-worth after rejection is largely this: unlearning. Identifying the lies — "I am only valuable if they approve of me," "My worth depends on who loves me" — and replacing them, slowly, with something truer.
 
 This doesn't happen through positive affirmations alone. It happens through experience — through showing up for yourself, setting limits, making choices that honor who you are, and watching yourself survive when others don't approve.`,
-        reflectionPrompt: 'Where did you first learn that your worth was conditional? What was the message, and who delivered it?',
+        reflectionPrompt:
+          "Where did you first learn that your worth was conditional? What was the message, and who delivered it?",
         readTime: 3,
       },
       {
-        id: 'prog-002-l2',
-        programId: 'prog-002',
+        id: "prog-002-l2",
+        programId: "prog-002",
         order: 2,
-        title: 'Recognizing the Inner Critic',
+        title: "Recognizing the Inner Critic",
         body: `The inner critic is the voice in your head that says you're not enough. It sounds like your own voice, which makes it hard to question. But it was built from other people's voices — absorbed over years before you had the tools to filter them.
 
 For people who experienced rejection from family, religion, or community, the inner critic is often particularly vicious. It has had years of material to work with.
@@ -167,14 +175,15 @@ The first step with the inner critic is not to silence it — that rarely works.
 Then, question the evidence. Would you say this to a friend? Is this based in fact or in fear? What is this voice trying to protect me from?
 
 The inner critic usually developed as protection — from further rejection, from disappointment, from vulnerability. Thanking it for its intention while disagreeing with its methods can be surprisingly powerful.`,
-        reflectionPrompt: 'What does your inner critic say most often? Write out the script — then write a compassionate response to each line.',
+        reflectionPrompt:
+          "What does your inner critic say most often? Write out the script — then write a compassionate response to each line.",
         readTime: 3,
       },
       {
-        id: 'prog-002-l3',
-        programId: 'prog-002',
+        id: "prog-002-l3",
+        programId: "prog-002",
         order: 3,
-        title: 'The Body and Self-Worth',
+        title: "The Body and Self-Worth",
         body: `Self-worth is not just a thought. It lives in the body.
 
 After rejection, many people develop an uncomfortable relationship with their body. They shrink — physically making themselves smaller. They avoid eye contact. Their voice drops when they speak about themselves. They apologize before they take up space.
@@ -192,14 +201,15 @@ Some practices that help:
 **Gentle movement.** Exercise that is about feeling good rather than looking good. Dance. Walking. Swimming. The point is inhabiting your body pleasurably.
 
 **Rest without guilt.** Believing that you deserve rest, food, warmth, pleasure — without earning it first. This is a form of self-worth in action.`,
-        reflectionPrompt: 'How do you carry yourself? Do you make yourself small in certain situations? Pick one context and imagine moving through it as if you already knew you belonged there.',
+        reflectionPrompt:
+          "How do you carry yourself? Do you make yourself small in certain situations? Pick one context and imagine moving through it as if you already knew you belonged there.",
         readTime: 3,
       },
       {
-        id: 'prog-002-l4',
-        programId: 'prog-002',
+        id: "prog-002-l4",
+        programId: "prog-002",
         order: 4,
-        title: 'Reclaiming Your Story',
+        title: "Reclaiming Your Story",
         body: `One of the things rejection does is steal your narrative. Suddenly you are "the rejected one," "the one who caused a rift," "the problem." Your entire identity gets filtered through someone else's reaction to you.
 
 Reclaiming your story means writing yourself back into it as the protagonist — not the villain, not the problem, not the source of everyone else's pain.
@@ -211,14 +221,15 @@ What is a truer story? One that includes your perspective, your pain, your survi
 Your story is not finished. Every day you survive, make choices, connect with people, and show up for yourself, you add to it. The ending is being written right now.
 
 What do you want your story to be about? Not what you want to have avoided — but what you want to have moved toward.`,
-        reflectionPrompt: 'Write two versions of your story: the one you were given, and the one you would write for yourself. What is different? What is true in yours that was missing from theirs?',
+        reflectionPrompt:
+          "Write two versions of your story: the one you were given, and the one you would write for yourself. What is different? What is true in yours that was missing from theirs?",
         readTime: 4,
       },
       {
-        id: 'prog-002-l5',
-        programId: 'prog-002',
+        id: "prog-002-l5",
+        programId: "prog-002",
         order: 5,
-        title: 'Small Acts of Self-Respect',
+        title: "Small Acts of Self-Respect",
         body: `Self-worth is rebuilt through action, not insight alone. Understanding why you don't feel worthy doesn't automatically create the feeling. What creates the feeling is acting as if you are worthy — and watching yourself survive, and even thrive.
 
 Small acts of self-respect are how this happens. They are not grand gestures. They are daily, unremarkable choices that, repeated over time, reshape how you see yourself.
@@ -235,24 +246,26 @@ Some examples:
 Notice that many of these feel uncomfortable at first — because they conflict with the learned belief that your needs are less important than everyone else's. That discomfort is not a sign you're doing it wrong. It's a sign you're changing.
 
 Every small act of self-respect is a vote for the version of yourself who believes they are worth it. Cast the vote as often as you can.`,
-        reflectionPrompt: 'What is one small act of self-respect you could take today — something small enough that you could actually do it? Write it down, and then do it.',
+        reflectionPrompt:
+          "What is one small act of self-respect you could take today — something small enough that you could actually do it? Write it down, and then do it.",
         readTime: 3,
       },
     ],
   },
 
   {
-    id: 'prog-003',
-    title: 'Learning to Trust',
-    description: 'After betrayal, trust feels dangerous. This program helps you build it carefully, starting with yourself.',
-    color: '#7BC9A7',
-    icon: 'shield-half-outline',
+    id: "prog-003",
+    title: "Learning to Trust",
+    description:
+      "After betrayal, trust feels dangerous. This program helps you build it carefully, starting with yourself.",
+    color: "#7BC9A7",
+    icon: "shield-half-outline",
     lessons: [
       {
-        id: 'prog-003-l1',
-        programId: 'prog-003',
+        id: "prog-003-l1",
+        programId: "prog-003",
         order: 1,
-        title: 'Why Trust Is Hard After Rejection',
+        title: "Why Trust Is Hard After Rejection",
         body: `Trust, once broken in a foundational way, does not simply reset. The nervous system updates its threat model based on experience. If the people who were supposed to be safest turned out not to be, the sensible conclusion — from the body's perspective — is that no one is safe.
 
 This is not a flaw. It is a very reasonable response to an unreasonable experience. Your caution, your hypervigilance, your impulse to protect yourself before others can hurt you — these were adaptive. They may have kept you safe.
@@ -262,14 +275,15 @@ But adaptive responses become problems when the threat is gone and the response 
 Recognizing this pattern is the first step. Not to overcome it immediately — that would be too fast and would likely fail. But to understand it, to have some compassion for it, and to begin to notice when it's operating.
 
 The question this program explores is not "how do I stop protecting myself?" It is: "how do I build enough safety, slowly, that I can choose when to let the protection down — and with whom?"`,
-        reflectionPrompt: 'When did you last feel truly safe with another person? What made that possible? What would need to be true for you to feel that way more often?',
+        reflectionPrompt:
+          "When did you last feel truly safe with another person? What made that possible? What would need to be true for you to feel that way more often?",
         readTime: 3,
       },
       {
-        id: 'prog-003-l2',
-        programId: 'prog-003',
+        id: "prog-003-l2",
+        programId: "prog-003",
         order: 2,
-        title: 'The Difference Between Caution and Isolation',
+        title: "The Difference Between Caution and Isolation",
         body: `Caution and isolation can look the same from the outside, and they can even feel the same from the inside — particularly early in recovery. Both involve keeping people at a distance. But they are very different, and the distinction matters.
 
 Caution is a tool. It is the practice of gathering information about a person before extending trust. Observing how they treat others. Noticing whether they do what they say. Paying attention to how you feel in their company. Caution is selective — it is lower with some people than others, based on evidence.
@@ -279,14 +293,15 @@ Isolation is a shield that protects against all pain by preventing all connectio
 You can tell the difference by noticing what is actually happening. Caution says: "I am paying attention before I open up." Isolation says: "I will never open up, because it is not safe." Caution is active and discriminating. Isolation is fixed and total.
 
 If you find yourself in isolation, the goal is not to open up immediately — that would likely backfire. It is to move gradually toward caution. To start building the muscle of discrimination — learning to tell safe from unsafe, rather than treating all connection as equivalent threat.`,
-        reflectionPrompt: 'Are you more in caution mode or isolation mode right now? What would one small step toward selective openness look like?',
+        reflectionPrompt:
+          "Are you more in caution mode or isolation mode right now? What would one small step toward selective openness look like?",
         readTime: 3,
       },
       {
-        id: 'prog-003-l3',
-        programId: 'prog-003',
+        id: "prog-003-l3",
+        programId: "prog-003",
         order: 3,
-        title: 'Starting With Self-Trust',
+        title: "Starting With Self-Trust",
         body: `The most neglected form of trust — and often the most important to rebuild first — is trust in yourself.
 
 For people who have been rejected, gaslit, or repeatedly told that their perceptions are wrong, self-trust is often the first casualty. You stop trusting your instincts. You second-guess your emotions. You wonder if your experience is real or if you are "too sensitive."
@@ -302,14 +317,15 @@ Rebuilding self-trust starts with small experiments:
 **Following through on commitments to yourself.** This is perhaps the most direct path. Every time you do what you said you would — for yourself — you give yourself evidence that you are reliable. That you can be trusted.
 
 Self-trust is the foundation. The trust you build with others will be much more stable when it is rooted in a prior trust in your own perceptions.`,
-        reflectionPrompt: 'When did you last override your instincts and regret it? What was the signal you ignored? What might you do differently now?',
+        reflectionPrompt:
+          "When did you last override your instincts and regret it? What was the signal you ignored? What might you do differently now?",
         readTime: 3,
       },
       {
-        id: 'prog-003-l4',
-        programId: 'prog-003',
+        id: "prog-003-l4",
+        programId: "prog-003",
         order: 4,
-        title: 'Gradual Openness',
+        title: "Gradual Openness",
         body: `Trust is not given all at once. It is built through repeated, small experiences of safety. The way to rebuild it is through gradual openness — sharing a little, seeing how it lands, sharing a little more.
 
 This is not a strategy of manipulation. It is the natural, healthy way human trust develops. The issue for many people who have experienced significant betrayal is that the process got short-circuited — either they gave too much trust too fast and were hurt, or they shut down entirely.
@@ -321,14 +337,15 @@ When someone passes those small tests — not perfectly, but generally — you c
 You don't have to tell anyone everything. You are allowed to have layers. Intimacy is not the same as full transparency — it is the feeling of being genuinely seen by someone who cares about what they see.
 
 That kind of intimacy is possible for you. It requires patience with the process, and some willingness to be disappointed along the way, knowing that the next person might be different.`,
-        reflectionPrompt: 'Is there someone in your life you have been keeping at arm\'s length? What would it look like to take one small step toward openness with them — sharing one true thing?',
+        reflectionPrompt:
+          "Is there someone in your life you have been keeping at arm's length? What would it look like to take one small step toward openness with them — sharing one true thing?",
         readTime: 3,
       },
       {
-        id: 'prog-003-l5',
-        programId: 'prog-003',
+        id: "prog-003-l5",
+        programId: "prog-003",
         order: 5,
-        title: 'Recognizing Trustworthy People',
+        title: "Recognizing Trustworthy People",
         body: `One of the practical skills in learning to trust is developing a clearer sense of what trustworthy people actually look like — because distorted relationship patterns can make it hard to tell.
 
 Some markers of trustworthy people:
@@ -346,24 +363,26 @@ Some markers of trustworthy people:
 No one will check every box all the time. But when someone consistently meets most of these markers, and particularly when they repair when they fail them, that is data worth trusting.
 
 You get to choose who gets your trust. That is not just a coping skill — it is a right.`,
-        reflectionPrompt: 'Think of the most trustworthy person in your life right now. What specifically makes them trustworthy? How did you come to know it?',
+        reflectionPrompt:
+          "Think of the most trustworthy person in your life right now. What specifically makes them trustworthy? How did you come to know it?",
         readTime: 4,
       },
     ],
   },
 
   {
-    id: 'prog-004',
-    title: 'Reducing Shame',
-    description: 'Shame is the wound beneath the wound. This program helps you name it, face it, and begin to release it.',
-    color: '#E8844E',
-    icon: 'flame-outline',
+    id: "prog-004",
+    title: "Reducing Shame",
+    description:
+      "Shame is the wound beneath the wound. This program helps you name it, face it, and begin to release it.",
+    color: "#E8844E",
+    icon: "flame-outline",
     lessons: [
       {
-        id: 'prog-004-l1',
-        programId: 'prog-004',
+        id: "prog-004-l1",
+        programId: "prog-004",
         order: 1,
-        title: 'What Shame Is and Where It Lives',
+        title: "What Shame Is and Where It Lives",
         body: `Shame is not an emotion you chose. It was installed — in childhood, by family, by religion, by culture — before you had the capacity to question it.
 
 Shame is the belief that you are fundamentally flawed. Not that you did something wrong (that's guilt), but that you are something wrong. It lives in the body as a kind of contraction — the urge to hide, to disappear, to be smaller.
@@ -375,14 +394,15 @@ Shame thrives in the dark. Its survival depends on secrecy and silence. This is 
 This doesn't have to happen all at once. It can start small — acknowledging shame to yourself, then to a journal, then to one person. The light does not have to flood in all at once. But it needs to start entering.
 
 You are not your shame. You were never your shame. Shame is what someone put on you — not what you are.`,
-        reflectionPrompt: 'Where do you feel shame most strongly? Not what you did — but what you are or have been that you have been ashamed of. Name it here, in your private space.',
+        reflectionPrompt:
+          "Where do you feel shame most strongly? Not what you did — but what you are or have been that you have been ashamed of. Name it here, in your private space.",
         readTime: 4,
       },
       {
-        id: 'prog-004-l2',
-        programId: 'prog-004',
+        id: "prog-004-l2",
+        programId: "prog-004",
         order: 2,
-        title: 'Where Your Shame Came From',
+        title: "Where Your Shame Came From",
         body: `Shame doesn't appear out of nowhere. It has a history. And tracing that history — even partially — can loosen its grip.
 
 Think back to the earliest message you received that something about you was wrong. Not a general sense of shame — a specific moment, or a recurring pattern. A parent's expression. A comment at church. A punishment. A silence that communicated disapproval without words.
@@ -394,14 +414,15 @@ The point of this exercise is not to assign blame (though it may involve some ju
 Ask yourself: what would someone have had to believe about the world, about identity, about God or family or community, to pass this shame to a child? Usually the answer reveals a person themselves in pain — carrying forward wounds they never addressed.
 
 This doesn't excuse what was done. But it helps explain it as something that happened to you, from the outside, rather than something that grew from within you. That is a meaningful distinction.`,
-        reflectionPrompt: 'When and from whom did you first receive the message that something about you was shameful? What were the specific words or actions? How old were you?',
+        reflectionPrompt:
+          "When and from whom did you first receive the message that something about you was shameful? What were the specific words or actions? How old were you?",
         readTime: 3,
       },
       {
-        id: 'prog-004-l3',
-        programId: 'prog-004',
+        id: "prog-004-l3",
+        programId: "prog-004",
         order: 3,
-        title: 'The Antidote to Shame',
+        title: "The Antidote to Shame",
         body: `Researcher Brené Brown, after years of studying shame, arrived at a deceptively simple finding: shame cannot survive being spoken and met with empathy.
 
 This is the antidote. Not positive thinking. Not trying harder. Not achieving enough to override the voice that says you're not enough. Connection. Specifically: telling the truth about the shame, to someone who responds with compassion rather than judgment.
@@ -413,14 +434,15 @@ The process works because being witnessed — being truly seen in the most vulne
 Start small. You don't have to tell the deepest thing to the first person you trust. You can test the waters with something that carries some shame but not your entire core. Notice whether they respond with compassion. If they do, you have new data.
 
 You can also start with this journal — naming the shame here, in writing, as the first act of bringing it into the light. That counts. Every time you acknowledge shame instead of burying it, you take a small amount of its power away.`,
-        reflectionPrompt: 'What is one shame you have never spoken out loud? Write it here. You don\'t have to share this — but see how it feels to have named it at all.',
+        reflectionPrompt:
+          "What is one shame you have never spoken out loud? Write it here. You don't have to share this — but see how it feels to have named it at all.",
         readTime: 3,
       },
       {
-        id: 'prog-004-l4',
-        programId: 'prog-004',
+        id: "prog-004-l4",
+        programId: "prog-004",
         order: 4,
-        title: 'Compassion as a Practice',
+        title: "Compassion as a Practice",
         body: `Self-compassion is not self-indulgence. It is the practice of treating yourself with the same care you would extend to someone you love.
 
 Kristin Neff, who has studied self-compassion for decades, identifies three components:
@@ -434,14 +456,15 @@ Kristin Neff, who has studied self-compassion for decades, identifies three comp
 Many people raised in shame-heavy environments have deeply distorted self-compassion levels — they extend enormous compassion to others and almost none to themselves. The goal is not to become less compassionate toward others. It is to include yourself in the circle of those who deserve care.
 
 One exercise: when you catch yourself in harsh self-judgment, ask: "What would I say to a dear friend in this situation?" Then say that to yourself.`,
-        reflectionPrompt: 'Write yourself a letter of compassion — as if you were your own best friend writing to you about the hardest thing you\'re carrying right now.',
+        reflectionPrompt:
+          "Write yourself a letter of compassion — as if you were your own best friend writing to you about the hardest thing you're carrying right now.",
         readTime: 4,
       },
       {
-        id: 'prog-004-l5',
-        programId: 'prog-004',
+        id: "prog-004-l5",
+        programId: "prog-004",
         order: 5,
-        title: 'Living Beyond Shame',
+        title: "Living Beyond Shame",
         body: `Reducing shame is not a one-time achievement. It is a practice — of continued witnessing, continued compassion, continued choice to show up rather than hide.
 
 But there are markers of progress. You may notice:
@@ -457,24 +480,26 @@ Living beyond shame doesn't mean the voice disappears. It means the voice loses 
 It also means reclaiming things shame made you hide. The way you laugh too loud. The music you love. The way you talk. The opinions you hold. The identity you carry. These are not flaws to be managed. They are parts of a whole person — you — who deserves to take up space in the world.
 
 The world is better with you in it. Not despite who you are. Because of it.`,
-        reflectionPrompt: 'What parts of yourself have you been hiding because of shame? What would it feel like to let one of those parts be a little more visible?',
+        reflectionPrompt:
+          "What parts of yourself have you been hiding because of shame? What would it feel like to let one of those parts be a little more visible?",
         readTime: 3,
       },
     ],
   },
 
   {
-    id: 'prog-005',
-    title: 'Creating Boundaries',
-    description: 'Boundaries are how you protect your energy and show up fully. This program makes them practical.',
-    color: '#5B8DEF',
-    icon: 'shield-outline',
+    id: "prog-005",
+    title: "Creating Boundaries",
+    description:
+      "Boundaries are how you protect your energy and show up fully. This program makes them practical.",
+    color: "#5B8DEF",
+    icon: "shield-outline",
     lessons: [
       {
-        id: 'prog-005-l1',
-        programId: 'prog-005',
+        id: "prog-005-l1",
+        programId: "prog-005",
         order: 1,
-        title: 'Why Boundaries Feel Wrong',
+        title: "Why Boundaries Feel Wrong",
         body: `If you grew up in a household where your needs were minimized, your identity was conditional, or love was tied to compliance, the concept of setting limits probably triggers discomfort — or something closer to fear.
 
 This is not irrational. In those environments, asserting your own needs or preferences may have had real consequences: withdrawal of affection, punishment, conflict, rejection. Your nervous system learned that having limits was dangerous.
@@ -486,14 +511,15 @@ Understanding where this resistance comes from is the first step in working with
 Another source of the resistance is learned belief: that your needs matter less than others'. That putting yourself first is selfish. That a good person sacrifices without complaint. These beliefs often come from family or religion, and they are reinforced by cultures that devalue the needs of marginalized people.
 
 Naming these beliefs — and recognizing that they are not facts but messages you absorbed — is where the work begins.`,
-        reflectionPrompt: 'What was the message about limits in your family or community growing up? What happened when someone (including you) tried to say no?',
+        reflectionPrompt:
+          "What was the message about limits in your family or community growing up? What happened when someone (including you) tried to say no?",
         readTime: 4,
       },
       {
-        id: 'prog-005-l2',
-        programId: 'prog-005',
+        id: "prog-005-l2",
+        programId: "prog-005",
         order: 2,
-        title: 'What Limits Actually Are',
+        title: "What Limits Actually Are",
         body: `A limit is not a wall. It is not about keeping people out or punishing them for getting too close. It is not about control.
 
 A limit is a statement about you — about what you are willing to do, what you need to be present in a relationship, what you will and won't accept. It is information, not a weapon.
@@ -509,14 +535,15 @@ This distinction matters because many people confuse limits with attempts to con
 Limits can also be internal — not everything has to be expressed. An internal limit is: "I choose not to engage with this topic with this person, because it hurts me." You don't have to announce it. Just act on it.
 
 The most powerful limits are the ones you keep — not the ones you announce loudly and then don't follow through on.`,
-        reflectionPrompt: 'What is one area of your life where you consistently override your own needs in favor of others\' comfort? What would a limit look like there?',
+        reflectionPrompt:
+          "What is one area of your life where you consistently override your own needs in favor of others' comfort? What would a limit look like there?",
         readTime: 3,
       },
       {
-        id: 'prog-005-l3',
-        programId: 'prog-005',
+        id: "prog-005-l3",
+        programId: "prog-005",
         order: 3,
-        title: 'Starting With Small Limits',
+        title: "Starting With Small Limits",
         body: `You don't start a new exercise program by running a marathon. You start with a walk. The same is true for setting limits.
 
 Many people try to start with the biggest, most loaded relationship — the parent, the partner — and when it goes badly, conclude that limits don't work for them. But that is like failing to lift 200 pounds and concluding you are not strong enough to carry anything.
@@ -533,14 +560,15 @@ Notice how it feels. The discomfort is real — the old alarm system fires. But 
 Most of the time, the answer is no. And each time you experience that, you are building new data: "I can say no and survive." Over time, this evidence accumulates, and the alarm becomes a little quieter in lower-stakes contexts.
 
 Then, gradually, you can work toward the harder ones.`,
-        reflectionPrompt: 'What is one small, low-stakes limit you could set this week? Write out the specific words you would use — practice saying it here first.',
+        reflectionPrompt:
+          "What is one small, low-stakes limit you could set this week? Write out the specific words you would use — practice saying it here first.",
         readTime: 3,
       },
       {
-        id: 'prog-005-l4',
-        programId: 'prog-005',
+        id: "prog-005-l4",
+        programId: "prog-005",
         order: 4,
-        title: 'Holding a Limit When It\'s Challenged',
+        title: "Holding a Limit When It's Challenged",
         body: `Setting a limit is the easy part. Holding it when it's pushed back against — that's where most people struggle.
 
 Pushback on limits is normal. People who are used to you having no limits will often react when you establish one. They may express hurt ("I can't believe you feel that way"), guilt ("after everything I've done for you"), anger, manipulation, or simply not taking you seriously.
@@ -558,14 +586,15 @@ Some practical approaches to holding your ground:
 **Follow through.** If you said you would leave if something continued, leave. A limit you don't enforce teaches people that your limits are not real.
 
 You will not be perfect at this. No one is. But every time you hold a limit under pressure, you are building the muscle and proving to yourself that it is possible.`,
-        reflectionPrompt: 'Think of a time you tried to hold a limit and it was challenged. What happened? What would you do differently now?',
+        reflectionPrompt:
+          "Think of a time you tried to hold a limit and it was challenged. What happened? What would you do differently now?",
         readTime: 4,
       },
       {
-        id: 'prog-005-l5',
-        programId: 'prog-005',
+        id: "prog-005-l5",
+        programId: "prog-005",
         order: 5,
-        title: 'Limits as Self-Respect',
+        title: "Limits as Self-Respect",
         body: `At its deepest level, setting limits is not about conflict or control or saying no. It is about saying yes.
 
 Yes to yourself. Yes to your energy, your peace, your time, your needs. Yes to the relationships that sustain you instead of drain you. Yes to the version of your life that is actually livable.
@@ -579,7 +608,131 @@ But self-respect is not earned. It is practiced. And limits are how the practice
 Over time, as you set more limits and hold them, something shifts. You stop spending energy managing the discomfort of having no limits. You have more of yourself available — for the people you choose, the work you value, the life you want to build.
 
 Limits are not walls between you and the world. They are the conditions under which you can show up fully — present, whole, and real. That is what the people who love you actually want from you, even if they don't always know it yet.`,
-        reflectionPrompt: 'What kind of relationships, situations, and life would be possible if you consistently honored your own limits? Write about the version of your life on the other side of this work.',
+        reflectionPrompt:
+          "What kind of relationships, situations, and life would be possible if you consistently honored your own limits? Write about the version of your life on the other side of this work.",
+        readTime: 4,
+      },
+    ],
+  },
+
+  {
+    id: "prog-006",
+    title: "Intimacy After Trauma",
+    description:
+      "When past wounds make closeness feel dangerous — a guide to building real partnership without losing yourself.",
+    color: "#4A90A4",
+    icon: "heart-outline",
+    lessons: [
+      {
+        id: "prog-006-l1",
+        programId: "prog-006",
+        order: 1,
+        title: "Why Closeness Feels Dangerous",
+        body: `For many gay men who grew up in rejecting environments — families that couldn't affirm you, communities that told you love was conditional, religion that said you were broken — intimacy got tangled up with danger before you ever had a real relationship.
+
+The nervous system is not poetic. It learned: "the people closest to you are the ones who hurt you." And then it applied that lesson everywhere.
+
+So when someone now gets genuinely close — when they start to really know you, when the relationship deepens past casual — something in you braces. Maybe you get the urge to pull back. Maybe you pick a fight over nothing. Maybe you convince yourself they'll leave eventually anyway, so why invest. Maybe you leave first.
+
+This is not a character flaw. It is a protection system that was once useful and is now misfiring.
+
+The trauma that shapes intimacy avoidance in gay men is often layered: not just relational trauma from specific people, but the ambient, chronic trauma of growing up in a culture that didn't have a place for you. Years of being told your love is wrong. Years of watching your kind of relationship be invisible or mocked. That teaches your body something about what partnership means.
+
+Understanding where the fear comes from does not make it disappear. But it does make it less identity-defining. The fear is not you. It is a response you developed. Responses can change.`,
+        reflectionPrompt:
+          "When someone gets close to you, what is the first thing that starts to feel unsafe? What do you find yourself doing or thinking when a relationship starts to deepen?",
+        readTime: 4,
+      },
+      {
+        id: "prog-006-l2",
+        programId: "prog-006",
+        order: 2,
+        title: "The Attachment Patterns Rejection Creates",
+        body: `Attachment theory, at its core, describes the strategies we develop in early relationships to stay connected to the people we need. When those early relationships were consistent and safe, secure attachment develops naturally. When they were unpredictable, conditional, or rejecting, other strategies emerge.
+
+For many gay men, two patterns are particularly common:
+
+**Anxious attachment** — the relationship feels like it requires constant tending. You scan for signs that the other person is pulling away. You overfunction, over-communicate, over-accommodate. You are terrified of conflict because conflict feels like the beginning of the end. Love feels like something that can be lost at any moment if you are not vigilant enough.
+
+**Avoidant attachment** — closeness triggers a reflexive need for distance. When someone needs more from you, it feels like demand, even if it isn't. You value self-sufficiency highly. Commitment feels like a trap. Vulnerability is the one thing you are best at not doing. And you have a way of exiting relationships — physically or emotionally — before they get too real.
+
+Many people oscillate between these, or carry both depending on the relationship.
+
+Here is what matters: these are not personality types. They are learned patterns. Patterns that made sense in the environments that created them. And patterns that can be updated — slowly, with the right experiences — when a relationship offers something different.
+
+The first step is simply recognizing which pattern is running, and when. You can't update something you haven't noticed.`,
+        reflectionPrompt:
+          "Which pattern resonates more with you — anxious (scanning, clinging, afraid of conflict) or avoidant (pulling back when things get real, needing space when someone needs more)? Or both? Write about when you notice it most clearly.",
+        readTime: 4,
+      },
+      {
+        id: "prog-006-l3",
+        programId: "prog-006",
+        order: 3,
+        title: "Conflict Without Losing Yourself",
+        body: `Compromise is not the same thing as self-erasure. But for people who grew up learning that love required them to make themselves smaller, the two feel identical.
+
+The dynamic often looks like this: a conflict arises. Your nervous system reads "conflict" and immediately maps it onto every time conflict in your family meant rejection, withdrawal of love, or punishment. Your body floods with urgency. The priority shifts from "what do I actually think and need here?" to "how do I end this before it ends everything?"
+
+So you concede. Or you blow up to preempt the abandonment. Or you go silent and compliant in ways that feel safe but build resentment over time.
+
+None of these are what you actually want. What most people want in conflict is to be heard and to reach something that works — without one person disappearing in the process.
+
+Some things that help:
+
+**Slow down.** Conflict urgency is the trauma response talking. A real partner can handle you taking a breath and saying "I need a moment to think about this."
+
+**Name your actual position.** Not what will keep the peace — what you actually think, need, or feel. This is a skill, and it gets easier with practice.
+
+**Disagree about the thing, not about the relationship.** "I don't want to do that" is different from "this relationship is failing." Keeping these separate is both possible and necessary.
+
+**Repair matters more than perfection.** You will mishandle conflict sometimes. So will they. The measure of a healthy relationship is not conflict-free — it is whether you can find your way back.`,
+        reflectionPrompt:
+          "What do you typically do when conflict arises in a close relationship? What are you actually afraid will happen? What would it look like to stay present — and stay yourself — through a disagreement?",
+        readTime: 5,
+      },
+      {
+        id: "prog-006-l4",
+        programId: "prog-006",
+        order: 4,
+        title: "Letting Someone Actually See You",
+        body: `There is a version of intimacy that feels intimate but is actually managed. You share things — stories, humor, even some pain — but always through a filter. The filter decides what is safe to show. The really uncomfortable truths, the fears you've never said out loud, the parts of yourself you're still not sure about — those stay behind the glass.
+
+This managed intimacy can sustain a relationship for a while. But it has a ceiling. And at some point, you realize you are in a relationship with someone who loves the version of you they've been allowed to see — not the whole thing.
+
+Real partnership requires being seen. Actually seen. Not just the edited version.
+
+This doesn't happen all at once, and it shouldn't. Trust is built over time through experience. But there is a moment in every deepening relationship where you have to choose: do I let this person in, or do I stay behind the glass?
+
+The thing that makes this possible is safety — not perfect safety (that doesn't exist), but enough of it. Enough evidence that this person can handle what you bring. Enough history of them staying when you were imperfect. Enough of their own vulnerability shared back.
+
+When you do open — when you share something true and uncomfortable and the other person responds with care rather than withdrawal — something heals. Not all at once. But a little. And each of those moments compounds.
+
+You deserve a relationship where you are known and still loved. That starts with the willingness to be known.`,
+        reflectionPrompt:
+          "What is something true about you — a fear, a wound, a want — that you have never let a partner fully see? What would it mean to let someone know that part of you?",
+        readTime: 4,
+      },
+      {
+        id: "prog-006-l5",
+        programId: "prog-006",
+        order: 5,
+        title: "Building Partnership on Your Own Terms",
+        body: `There is no single template for what a committed relationship should look like. The scripts you were given — from family, from mainstream culture, from the parts of queer culture that replicated heteronormative models without questioning them — are not the only options.
+
+Gay men building committed partnerships often have a unique freedom: the absence of inherited scripts forces you to decide together what your relationship actually is. What commitment means to you both. How you handle family of origin. What home looks like. What fidelity means. What independence looks like inside togetherness.
+
+This is both harder and better than following a template.
+
+What makes a partnership real is not its legal form or its resemblance to any particular model. It is the ongoing choice — made again and again — to show up for someone and to ask them to show up for you. To repair when things break. To grow alongside someone rather than just next to them.
+
+Commitment, when it was modeled on rejection and conditional love, feels like a trap: agree to all of this, and then watch them leave when you're no longer good enough. But commitment built on a different foundation — on actual knowledge of each other, on chosen loyalty, on the experience of surviving hard things together — feels entirely different.
+
+You are allowed to want this. You are allowed to build it slowly, with someone you've actually earned the trust to be with. You are allowed to have the kind of partnership that holds you rather than diminishes you.
+
+That is not too much to want. It is exactly the right thing to want.`,
+        reflectionPrompt:
+          "What would a partnership built on your own terms look like? Not what you think you should want — what you actually want. Write about the relationship that would feel like freedom, not a cage.",
         readTime: 4,
       },
     ],

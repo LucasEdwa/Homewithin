@@ -1,4 +1,6 @@
--- HomeWithin — Sprint 5: Support Circles (Beta)
+-- HomeWithin — Create circles and circle_members tables
+-- circles: small moderated support groups (4–8 members) with category and rules.
+-- circle_members: membership join table with role (member/moderator) and RLS policies.
 
 -- ─── Circles ─────────────────────────────────────────────────────────────────
 

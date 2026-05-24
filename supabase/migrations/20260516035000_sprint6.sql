@@ -1,6 +1,6 @@
--- Sprint 6: Healing Programs & AI Companion
--- Programs and lessons are defined in constants/programs.ts (client-side).
--- This migration stores user progress and optional server-side lesson metadata.
+-- HomeWithin — Create user_progress table
+-- Tracks per-user lesson completion across all healing programs.
+-- Program/lesson content is seeded via `npm run seed:programs` (see scripts/seed-programs.ts).
 
 -- ─── user_progress ────────────────────────────────────────────────────────────
 create table if not exists user_progress (
