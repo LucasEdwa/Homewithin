@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/// <reference types="node" />
 /**
  * Seed all programs and lessons into Supabase.
  *
@@ -22,7 +23,7 @@ try {
   const envPath = resolve(process.cwd(), ".env");
   readFileSync(envPath, "utf8")
     .split("\n")
-    .forEach((line) => {
+    .forEach((line: string) => {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith("#")) return;
       const eqIdx = trimmed.indexOf("=");
