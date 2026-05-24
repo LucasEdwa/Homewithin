@@ -8,6 +8,7 @@ const SAFETY_PLAN_KEY = "hw_safety_plan";
 const PIN_KEY = "hw_pin";
 const DISGUISE_ENABLED_KEY = "hw_disguise_enabled";
 const DISGUISE_STYLE_KEY = "hw_disguise_style";
+const AI_CONSENT_KEY = "hw_ai_consent";
 
 export type { DisguiseStyle };
 
@@ -58,14 +59,20 @@ export async function getSafetyPlan(): Promise<string[]> {
 }
 
 export async function setPin(pin: string) {
-  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    pin,
+  );
   await SecureStore.setItemAsync(PIN_KEY, hash);
 }
 
 export async function verifyPin(pin: string): Promise<boolean> {
   const stored = await SecureStore.getItemAsync(PIN_KEY);
   if (!stored) return false;
-  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    pin,
+  );
   return stored === hash;
 }
 
@@ -110,8 +117,18 @@ export async function deleteSensitiveData() {
     SecureStore.deleteItemAsync(SESSION_KEY),
     SecureStore.deleteItemAsync(JOURNAL_IDS_KEY),
     SecureStore.deleteItemAsync(CHECKIN_DATES_KEY),
+    SecureStore.deleteItemAsync(AI_CONSENT_KEY),
     ...journalIds.map((id) => SecureStore.deleteItemAsync(journalKey(id))),
   ]);
+}
+
+export async function hasAIConsent(): Promise<boolean> {
+  const value = await SecureStore.getItemAsync(AI_CONSENT_KEY);
+  return value === "true";
+}
+
+export async function grantAIConsent(): Promise<void> {
+  await SecureStore.setItemAsync(AI_CONSENT_KEY, "true");
 }
 
 // ─── Check-ins ────────────────────────────────────────────────

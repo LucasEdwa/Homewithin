@@ -1,6 +1,6 @@
 # Privacy Policy — HomeWithin
 
-**Last updated: 20 May 2026**
+**Last updated: 24 May 2026**
 
 HomeWithin ("we", "our", or "the app") is a mobile application designed to provide a safe, private support space for LGBTQ+ people in Sweden. We are deeply committed to protecting your privacy, particularly given the sensitive nature of the people who use this app.
 
@@ -21,7 +21,9 @@ If you have any questions about this policy or your data, contact us at the emai
 ## 2. What Data We Collect
 
 ### 2.1 Account & Profile Data
+
 When you create a profile you may optionally provide:
+
 - A nickname (not your real name)
 - Age range (e.g. "18–24")
 - Language preference
@@ -32,34 +34,55 @@ When you create a profile you may optionally provide:
 All profile fields are **optional**. You can use the app anonymously without providing any identifying information.
 
 ### 2.2 Journal Entries
+
 Journal entries you write are stored **locally on your device** using encrypted secure storage. Entries you choose to sync are also stored on our servers (see Section 4). Hidden entries are protected behind a PIN that only you know.
 
 ### 2.3 Connect & Chat Messages
+
 If you use the Connect feature to match with other users, the following is stored on our servers:
+
 - Your profile (as described in 2.1)
 - Match records (who connected with whom, status, intention)
 - Chat messages between matched users
 
 ### 2.4 Location Data
+
 Location is only accessed when you use the **Local Resources** or **Events** features to find LGBTQ+ resources near you. We do not store your location on our servers. It is used only in the moment to filter results and is never shared with third parties.
 
 ### 2.5 Push Notification Token
+
 If you enable notifications, your device's push notification token is stored on our servers to deliver chat message alerts. You can disable notifications at any time in your device settings.
 
 ### 2.6 Technical Data
+
 When you use the app, our backend (Supabase) may log standard technical information such as timestamps of requests. We do not use any analytics SDKs, advertising SDKs, or tracking tools.
+
+### 2.7 AI Companion Data
+
+If you choose to use the AI Companion feature and grant consent, the following data is sent to a third-party AI service (see Section 9):
+
+- Your nickname and country (if set in your profile)
+- Your selected support needs
+- Your current safety level (green / yellow / red)
+- Mood scores and trends derived from your check-ins
+- Short snippets (up to 150 characters) and emotion tags from your journal entries
+- Your program progress and connection count
+- The messages you type in the AI Companion chat
+
+**This data is only sent after you explicitly agree to the data-sharing disclosure shown before your first use of the feature.** You can withdraw at any time by not using the AI Companion. Locally stored chat history can be deleted using the trash icon in the chat screen.
 
 ---
 
 ## 3. Why We Collect This Data
 
-| Data | Purpose | Legal Basis |
-|---|---|---|
-| Profile data | Show you to potential peer matches | Consent (you choose what to share) |
-| Journal entries | Private journaling feature | Consent |
-| Match & chat data | Enable peer support connections | Contract (providing the service) |
-| Location | Show local resources near you | Consent (requested each time) |
-| Push token | Deliver chat notifications | Consent (you enable notifications) |
+| Data              | Purpose                               | Legal Basis                                        |
+| ----------------- | ------------------------------------- | -------------------------------------------------- |
+| Profile data      | Show you to potential peer matches    | Consent (you choose what to share)                 |
+| Journal entries   | Private journaling feature            | Consent                                            |
+| Match & chat data | Enable peer support connections       | Contract (providing the service)                   |
+| Location          | Show local resources near you         | Consent (requested each time)                      |
+| Push token        | Deliver chat notifications            | Consent (you enable notifications)                 |
+| AI Companion data | Personalise AI conversation responses | Consent (explicit in-app consent before first use) |
 
 We do **not** use your data for advertising, profiling, or sale to third parties.
 
@@ -122,11 +145,14 @@ HomeWithin is not intended for children under the age of 13. We do not knowingly
 
 We use the following third-party services:
 
-| Service | Purpose | Privacy Policy |
-|---|---|---|
-| Supabase | Backend database & authentication | supabase.com/privacy |
-| Expo (by Expo Inc.) | App framework & push notifications | expo.dev/privacy |
-| Apple (iOS) | App delivery & push notification infrastructure | apple.com/legal/privacy |
+| Service             | Purpose                                         | Privacy Policy          |
+| ------------------- | ----------------------------------------------- | ----------------------- |
+| Supabase            | Backend database & authentication               | supabase.com/privacy    |
+| Second Horizon      | AI Companion conversation processing            | app.second-horizon.com  |
+| Expo (by Expo Inc.) | App framework & push notifications              | expo.dev/privacy        |
+| Apple (iOS)         | App delivery & push notification infrastructure | apple.com/legal/privacy |
+
+**AI Companion (Second Horizon):** When you use the AI Companion feature and have given consent, your messages and personalisation context are sent to Second Horizon (app.second-horizon.com), which processes them using AI language model technology to generate responses. Data is transmitted over HTTPS. Second Horizon does not use your data to train AI models. This data sharing only occurs after you explicitly agree to a disclosure shown before first use.
 
 We do not use Google Analytics, Facebook SDK, or any advertising network.
 

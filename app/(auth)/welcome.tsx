@@ -161,13 +161,19 @@ export default function WelcomeScreen() {
               : <Text style={styles.guestLink}>Continue as guest — no account needed</Text>
             }
           </TouchableOpacity>
+          <Text style={styles.legalLine}>
+            By continuing, you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Terms of Use</Text>
+            {' '}and{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Privacy Policy</Text>.
+          </Text>
         </View>
       </View>
     </SafeAreaView>
   );
 }
 
-const ICON_SIZE = 460;
+const ICON_SIZE = 400;
 const RING_SIZE = ICON_SIZE -20; 
 
 const styles = StyleSheet.create({
@@ -218,5 +224,16 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textDecorationLine: 'underline',
     marginTop: Spacing.xs,
+  },
+  legalLine: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: Spacing.xs,
+  },
+  legalLink: {
+    color: Colors.textSecondary,
+    textDecorationLine: 'underline',
   },
 });

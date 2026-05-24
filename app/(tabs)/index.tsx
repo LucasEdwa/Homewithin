@@ -5,6 +5,7 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { useCheckIns } from '@/hooks/useCheckIns';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
 import {
@@ -66,9 +67,30 @@ export default function HomeScreen() {
         {/* ── Header ──────────────────────────────────────── */}
         <View style={styles.header}>
           <Text style={styles.dayLabel}>{dayLabel}</Text>
-          <Text style={styles.greeting}>
-            {greeting},{'\n'}{name}
-          </Text>
+          <Text style={styles.greetingTop}>{greeting},</Text>
+          <View style={styles.greetingRow}>
+            <Text style={styles.greetingName}>{name}</Text>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/profile')}
+              activeOpacity={0.8}
+              accessibilityLabel="Go to profile"
+            >
+              {profile?.avatarUrl ? (
+                <Image
+                  source={{ uri: profile.avatarUrl }}
+                  style={styles.avatarImg}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarInitial}>
+                    {profile?.nickname?.[0]?.toUpperCase() ?? '?'}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
           {safetyLevel && (
             <View style={[styles.safetyPill, { borderColor: SAFETY_COLORS[safetyLevel] + '60' }]}>
               <View style={[styles.safetyDot, { backgroundColor: SAFETY_COLORS[safetyLevel] }]} />
@@ -275,7 +297,7 @@ const styles = StyleSheet.create({
   // ── Header ────────────────────────────────────────────────
   header: {
     paddingBottom: Spacing.sm,
-    gap: 6,
+    gap: 4,
   },
   dayLabel: {
     fontSize: 12,
@@ -284,11 +306,40 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  greeting: {
+  greetingTop: {
     fontSize: 32,
     fontWeight: '700',
     color: Colors.textPrimary,
     lineHeight: 40,
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  greetingName: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    lineHeight: 40,
+  },
+  avatarImg: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+  },
+  avatarFallback: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: Colors.softGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   safetyPill: {
     flexDirection: 'row',

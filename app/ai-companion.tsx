@@ -1,37 +1,38 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { Card } from '@/components/ui/Card';
+import { Colors } from '@/constants/Colors';
+import { Radius, Spacing } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
+import { getAllProgramsWithProgress } from '@/services/content/programs';
+import { getSupportPeople } from '@/services/social/chosenFamily';
+import { getMyMatches } from '@/services/social/matching';
+import { getCheckIns, getJournalEntries, grantAIConsent, hasAIConsent } from '@/services/storage';
+import type { AIContext, UserContext } from '@/services/wellness/ai';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
+    AI_DISCLAIMER,
+    checkRateLimit,
+    clearHistory,
+    getHistory,
+    sendAIMessage
+} from '@/services/wellness/ai';
+import type { AIMessage } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors } from '@/constants/Colors';
-import { Spacing, Radius } from '@/constants/Spacing';
-import { Card } from '@/components/ui/Card';
-import { EmergencyButton } from '@/components/safety/EmergencyButton';
-import { useSession } from '@/context/SessionContext';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  sendAIMessage,
-  getHistory,
-  clearHistory,
-  checkRateLimit,
-  buildSystemPrompt,
-  AI_DISCLAIMER,
-} from '@/services/wellness/ai';
-import type { AIContext, UserContext } from '@/services/wellness/ai';
-import { getCheckIns, getJournalEntries } from '@/services/storage';
-import { getAllProgramsWithProgress } from '@/services/content/programs';
-import { getMyMatches } from '@/services/social/matching';
-import { getSupportPeople } from '@/services/social/chosenFamily';
-import type { AIMessage } from '@/types';
+    ActivityIndicator,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const DEFAULT_STARTERS = [
   "I've been feeling really alone lately.",
@@ -81,10 +82,16 @@ export default function AICompanionScreen() {
   const [error, setError] = useState<string | null>(null);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const [starters, setStarters] = useState<string[]>(DEFAULT_STARTERS);
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
     (async () => {
+      const consented = await hasAIConsent();
+      if (!consented) {
+        setShowConsentModal(true);
+      }
+
       const [history, { remaining: rem }] = await Promise.all([getHistory(), checkRateLimit()]);
       setMessages(history);
       setRemaining(rem);
@@ -227,10 +234,58 @@ export default function AICompanionScreen() {
     setError(null);
   }
 
+  async function handleGrantConsent() {
+    await grantAIConsent();
+    setShowConsentModal(false);
+  }
+
+  function handleDenyConsent() {
+    router.back();
+  }
+
   const showStarters = messages.length === 0 && !loading;
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* AI data-sharing consent modal */}
+      <Modal
+        visible={showConsentModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleDenyConsent}
+      >
+        <View style={styles.consentOverlay}>
+          <View style={styles.consentCard}>
+            <View style={styles.consentHeader}>
+              <Ionicons name="sparkles" size={22} color={Colors.mutedLavender} />
+              <Text style={styles.consentTitle}>AI Companion — Data Sharing</Text>
+            </View>
+            <ScrollView style={styles.consentScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.consentBody}>
+                To personalise your conversation, the AI Companion sends certain information about you to a third-party AI service.
+              </Text>
+              <Text style={styles.consentSectionLabel}>What is shared</Text>
+              <Text style={styles.consentBody}>
+                {'• Your nickname and country (if set)\n• Your support needs and current safety level\n• Mood scores and trends from your check-ins\n• Short snippets and emotion tags from your journal entries\n• Your program progress and connection count\n• The messages you type in this chat'}
+              </Text>
+              <Text style={styles.consentSectionLabel}>Who receives it</Text>
+              <Text style={styles.consentBody}>
+                Your data is sent to <Text style={styles.consentBold}>Second Horizon</Text> (app.second-horizon.com), an AI conversation service. Second Horizon processes messages using AI language model technology to generate responses. Data is transmitted over HTTPS and is not used to train AI models.
+              </Text>
+              <Text style={styles.consentSectionLabel}>Your choices</Text>
+              <Text style={styles.consentBody}>
+                You can withdraw consent at any time by simply not using the AI Companion feature. Clearing your conversation also removes locally stored chat history. See our Privacy Policy for full details.
+              </Text>
+            </ScrollView>
+            <TouchableOpacity style={styles.consentAgreeBtn} onPress={handleGrantConsent}>
+              <Text style={styles.consentAgreeBtnText}>I Agree — Continue</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.consentDenyBtn} onPress={handleDenyConsent}>
+              <Text style={styles.consentDenyBtnText}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       {/* Nav */}
       <View style={styles.nav}>
         <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
@@ -361,6 +416,58 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.warmWhite },
   flex: { flex: 1, backgroundColor: Colors.warmWhite },
   flatList: { flex: 1, backgroundColor: Colors.warmWhite },
+  // ── Consent modal ──────────────────────────────────────────────────────────
+  consentOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  consentCard: {
+    backgroundColor: Colors.warmWhite,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    width: '100%',
+    maxHeight: '85%',
+  },
+  consentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  consentTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  consentScroll: { maxHeight: 320, marginBottom: Spacing.md },
+  consentSectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginTop: Spacing.md,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  consentBody: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
+  consentBold: { fontWeight: '700', color: Colors.textPrimary },
+  consentAgreeBtn: {
+    backgroundColor: Colors.safeBlue,
+    borderRadius: Radius.md,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  consentAgreeBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
+  consentDenyBtn: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  consentDenyBtnText: { color: Colors.textMuted, fontSize: 14 },
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
