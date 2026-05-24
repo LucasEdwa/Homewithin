@@ -25,7 +25,6 @@ export function RangeSlider({
   color = Colors.safeBlue,
 }: RangeSliderProps) {
   const steps = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-  const pct = (value - min) / (max - min);
 
   return (
     <View style={styles.container} accessibilityLabel={label}>

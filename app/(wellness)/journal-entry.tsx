@@ -70,6 +70,7 @@ export default function JournalEntryScreen() {
     if (id) {
       setShowList(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadEntries() {

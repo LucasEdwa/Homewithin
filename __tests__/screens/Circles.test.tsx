@@ -13,10 +13,12 @@ jest.mock('@/services/social/circles', () => ({
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
   useFocusEffect: (cb: () => void | (() => void)) => {
-    const React = require('react');
-    React.useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useEffect } = require('react');
+    useEffect(() => {
       const cleanup = cb();
       return typeof cleanup === 'function' ? cleanup : undefined;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   },
 }));

@@ -94,8 +94,6 @@ function MoodLineChart({ data }: { data: { date: string; value: number | null }[
     });
   }
 
-  const todayPoint = points[n - 1];
-
   const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (

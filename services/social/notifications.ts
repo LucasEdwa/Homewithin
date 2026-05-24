@@ -11,6 +11,7 @@ let Notif: NotifModule | null = null;
 
 if (!isExpoGo && Platform.OS !== "web") {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     Notif = require("expo-notifications") as NotifModule;
     Notif.setNotificationHandler({
       handleNotification: async () => ({

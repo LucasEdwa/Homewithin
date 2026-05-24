@@ -57,6 +57,7 @@ export default function WelcomeScreen() {
     );
     Animated.parallel(animations).start();
     return () => animations.forEach((a) => a.stop());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleStartAnonymously() {

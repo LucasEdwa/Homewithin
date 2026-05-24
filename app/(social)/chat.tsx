@@ -46,6 +46,7 @@ export default function ChatScreen() {
     if (!matchId) return;
     setActiveMatch(matchId);
     return () => setActiveMatch(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
   // Scroll to end when messages load or a new one arrives.

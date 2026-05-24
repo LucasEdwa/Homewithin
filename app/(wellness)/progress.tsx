@@ -36,6 +36,7 @@ export default function ProgressScreen() {
         useNativeDriver: true,
       }).start();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, snapshot]);
 
   return (

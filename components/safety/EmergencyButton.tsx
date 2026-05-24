@@ -35,6 +35,7 @@ export function EmergencyButton() {
     a1.start();
     a2.start();
     return () => { a1.stop(); a2.stop(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function ringStyle(anim: Animated.Value) {

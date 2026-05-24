@@ -34,6 +34,7 @@ export default function SplashScreen() {
     );
     Animated.parallel(animations).start();
     return () => animations.forEach((a) => a.stop());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 3-second minimum display.

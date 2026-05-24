@@ -40,7 +40,7 @@ function LockGate({ children }: { children: React.ReactNode }) {
   // Register for push notifications once the user has a profile.
   useEffect(() => {
     if (profile) registerForPushNotifications();
-  }, [!!profile]);
+  }, [profile]);
 
   // Navigate to the right chat when the user taps a push notification.
   useEffect(() => {

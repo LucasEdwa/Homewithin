@@ -54,6 +54,7 @@ export default function HomeScreen() {
         duration: 500,
         useNativeDriver: true,
       }).start();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
   );
 

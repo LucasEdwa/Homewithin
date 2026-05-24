@@ -1,7 +1,7 @@
-import { useSession } from '@/context/SessionContext';
-import { getProgressSnapshot } from '@/services/wellness/progressStats';
-import type { ProgressSnapshot } from '@/types';
-import { useEffect, useState } from 'react';
+import { useSession } from "@/context/SessionContext";
+import { getProgressSnapshot } from "@/services/wellness/progressStats";
+import type { ProgressSnapshot } from "@/types";
+import { useEffect, useState } from "react";
 
 export function useProgress() {
   const { profile } = useSession();
@@ -15,6 +15,7 @@ export function useProgress() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { snapshot, loading };

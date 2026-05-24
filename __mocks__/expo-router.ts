@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export const router = {
   push: jest.fn(),
@@ -20,5 +20,6 @@ export const useFocusEffect = (callback: () => void | (() => void)) => {
   React.useEffect(() => {
     const cleanup = callback();
     return cleanup ?? undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 };

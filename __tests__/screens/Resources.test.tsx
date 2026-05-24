@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
 
 import ResourcesScreen from '@/app/(tabs)/resources';
 import * as resourcesService from '@/services/content/resources';
@@ -12,10 +13,12 @@ jest.mock('@/services/content/resources', () => ({
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn() },
   useFocusEffect: (cb: () => void) => {
-    const React = require('react');
-    React.useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useEffect } = require('react');
+    useEffect(() => {
       const cleanup = cb();
       return cleanup ?? undefined;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   },
 }));
@@ -104,7 +107,6 @@ describe('ResourcesScreen', () => {
   });
 
   it('navigates to article on card press', async () => {
-    const { router } = require('expo-router');
     render(<ResourcesScreen />);
     await waitFor(() => screen.getByTestId('article-fr-001'));
     fireEvent.press(screen.getByTestId('article-fr-001'));

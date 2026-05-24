@@ -32,7 +32,7 @@ interface ActionCardProps {
 }
 
 export default function EmergencyScreen() {
-  const { profile, nearbyState, nearbyResources } = useSession();
+  const { nearbyState, nearbyResources } = useSession();
   const [safetyPlan, setSafetyPlan] = useState<string[]>([]);
   const [showPlan, setShowPlan] = useState(false);
 

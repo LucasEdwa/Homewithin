@@ -28,10 +28,12 @@ jest.mock('@/services/user/account', () => ({
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useFocusEffect: (cb: () => void) => {
-    const React = require('react');
-    React.useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useEffect } = require('react');
+    useEffect(() => {
       const cleanup = cb();
       return cleanup ?? undefined;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   },
 }));

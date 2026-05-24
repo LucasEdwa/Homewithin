@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MoodLevel, MOOD_LABELS, MOOD_ICONS, MOOD_COLORS } from '@/types';
-import { Spacing, Radius } from '@/constants/Spacing';
+import { Spacing } from '@/constants/Spacing';
 import { Colors } from '@/constants/Colors';
 
 interface MoodPickerProps {

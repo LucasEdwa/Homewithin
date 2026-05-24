@@ -3,7 +3,7 @@ import React from 'react';
 
 import ChatScreen from '@/app/(social)/chat';
 import * as chatService from '@/services/social/chat';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 jest.mock('@/services/social/chat', () => ({
   getMessages: jest.fn(),
@@ -145,7 +145,6 @@ describe('ChatScreen', () => {
   });
 
   it('navigates back on back press', async () => {
-    const { router } = require('expo-router');
     render(<ChatScreen />);
     await waitFor(() => screen.getByLabelText('Back'));
     fireEvent.press(screen.getByLabelText('Back'));

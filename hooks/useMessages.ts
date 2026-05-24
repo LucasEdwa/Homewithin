@@ -1,8 +1,8 @@
-import { useUnread } from '@/context/UnreadContext';
-import { getMessages, subscribeToMessages } from '@/services/social/chat';
-import type { Message } from '@/types';
-import { useEffect, useState } from 'react';
-import { AppState } from 'react-native';
+import { useUnread } from "@/context/UnreadContext";
+import { getMessages, subscribeToMessages } from "@/services/social/chat";
+import type { Message } from "@/types";
+import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 
 export function useMessages(matchId: string | undefined) {
   const { markRead } = useUnread();
@@ -27,14 +27,15 @@ export function useMessages(matchId: string | undefined) {
     });
 
     // Refetch on foreground — covers WebSocket gaps when the app was backgrounded.
-    const appStateSub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') loadMessages();
+    const appStateSub = AppState.addEventListener("change", (state) => {
+      if (state === "active") loadMessages();
     });
 
     return () => {
       unsub();
       appStateSub.remove();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
   return { messages, setMessages };

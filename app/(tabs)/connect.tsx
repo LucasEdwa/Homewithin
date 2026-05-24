@@ -37,11 +37,8 @@ export default function ConnectScreen() {
   const [intention, setIntention] = useState<IntentionId | null>(null);
   const [candidates, setCandidates] = useState<PeerProfile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [browsing, setBrowsing] = useState(false);
-
   async function handleSelectIntention(id: IntentionId) {
     setIntention(id);
-    setBrowsing(true);
     setLoading(true);
     const results = await findMatches(id);
     setCandidates(results);
@@ -116,7 +113,6 @@ export default function ConnectScreen() {
     setView('intentions');
     setIntention(null);
     setCandidates([]);
-    setBrowsing(false);
   }
 
   const currentPeer = candidates[0];

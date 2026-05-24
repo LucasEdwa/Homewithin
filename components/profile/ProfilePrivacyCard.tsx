@@ -29,7 +29,7 @@ export function ProfilePrivacyCard() {
     await setProfile(optimistic);
     try {
       await syncProfile(optimistic);
-    } catch (e: any) {
+    } catch {
       await setProfile({ ...profile, hideFromSearch: profile.hideFromSearch });
       Alert.alert('Could not update', 'Please check your connection and try again.');
     } finally {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
 
 import ProgramsScreen from '@/app/(content)/programs';
 import ProgramScreen from '@/app/(content)/program';
@@ -16,10 +17,12 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   useLocalSearchParams: () => ({ id: 'prog-001' }),
   useFocusEffect: (cb: () => void) => {
-    const React = require('react');
-    React.useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useEffect } = require('react');
+    useEffect(() => {
       const cleanup = cb();
       return cleanup ?? undefined;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   },
 }));
@@ -105,7 +108,6 @@ describe('ProgramsScreen', () => {
   });
 
   it('navigates to program on card press', async () => {
-    const { router } = require('expo-router');
     mockGetAll.mockResolvedValue([
       { ...SAMPLE_PROGRAM, completed: 0, total: 2 },
     ]);

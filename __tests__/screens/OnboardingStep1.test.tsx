@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import OnboardingStep1 from '@/app/onboarding/step1';
 import { renderWithSession } from '../helpers/renderWithSession';

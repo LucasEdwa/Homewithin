@@ -13,11 +13,6 @@ jest.mock('@/services/content/localResources', () => ({
 const mockRequestLocation = localResourcesService.requestLocationPermission as jest.Mock;
 const mockGetResources = localResourcesService.getResources as jest.Mock;
 
-const SAMPLE_RESOURCES = [
-  { id: 'r1', name: 'RFSL Stockholm', type: 'lgbtq_center', description: 'LGBTQ+ center', country: 'Stockholm', website: 'https://rfsl.se' },
-  { id: 'r2', name: 'Shelterhuset', type: 'shelter', description: 'Emergency shelter', country: 'Stockholm', phone: '08 000 000' },
-];
-
 const mockProfile = {
   nickname: 'River',
   pronouns: 'they/them',

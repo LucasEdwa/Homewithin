@@ -1,8 +1,6 @@
 import React from 'react';
 import { Alert, Share } from 'react-native';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { router } from 'expo-router';
-
 import JournalEntryScreen from '@/app/(wellness)/journal-entry';
 import * as storage from '@/services/storage';
 

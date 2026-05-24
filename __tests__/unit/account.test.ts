@@ -35,7 +35,6 @@ jest.mock("@/services/storage", () => ({
   deleteSensitiveData: jest.fn().mockResolvedValue(undefined),
 }));
 
-const setItem = SecureStore.setItemAsync as jest.Mock;
 const deleteItem = SecureStore.deleteItemAsync as jest.Mock;
 
 describe("deleteAccount", () => {

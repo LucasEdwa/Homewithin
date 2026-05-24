@@ -1,14 +1,14 @@
-import { useSession } from '@/context/SessionContext';
-import { useUnread } from '@/context/UnreadContext';
+import { useSession } from "@/context/SessionContext";
+import { useUnread } from "@/context/UnreadContext";
 import {
   getIncomingLikes,
   getMyMatches,
   getPendingOutgoing,
   syncProfile,
-} from '@/services/social/matching';
-import type { Match } from '@/types';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+} from "@/services/social/matching";
+import type { Match } from "@/types";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 
 export function useMatches() {
   const { profile } = useSession();
@@ -35,7 +35,8 @@ export function useMatches() {
         if (profile) await syncProfile(profile);
         await refreshMatchLists();
       })();
-    }, [profile])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profile]),
   );
 
   return { myMatches, pendingOutgoing, incomingLikes, refreshMatchLists };

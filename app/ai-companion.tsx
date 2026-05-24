@@ -186,6 +186,7 @@ export default function AICompanionScreen() {
       // Personalized starters based on context
       setStarters(buildPersonalisedStarters(ctx));
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const aiContext: AIContext = {

@@ -39,6 +39,7 @@ export function ArcGauge({ value, max, label, icon, color = Colors.white }: ArcG
       useNativeDriver: false,
     }).start();
     return () => animValue.removeListener(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress, containerW]);
 
   const onLayout = (e: LayoutChangeEvent) => setContainerW(e.nativeEvent.layout.width);
