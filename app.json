@@ -13,8 +13,13 @@
       "bundleIdentifier": "com.homewithin.app",
       "buildNumber": "10",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Homewithin uses your location to show LGBTQ+ resources near you.",
-        "NSPhotoLibraryUsageDescription": "HomeWithin uses your photo library so you can choose a profile photo. For example, you can select a selfie or any image to use as your avatar. Your photo is only uploaded when you choose it and is not shared with anyone except as your visible profile picture.",
+        "NSCameraUsageDescription": "HomeWithin uses your camera so you can take a new profile photo. For example, you can snap a selfie directly in the app and set it as your avatar. The photo is only uploaded when you tap Save.",
+        "NSFaceIDUsageDescription": "HomeWithin uses Face ID to unlock the app when a PIN is enabled, so only you can access your private journal, check-ins, and messages.",
+        "NSLocationWhenInUseUsageDescription": "HomeWithin uses your location to show LGBTQ+ support centers, shelters, and therapists near you in Sweden. Your location is never stored or shared.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "HomeWithin uses your location to show LGBTQ+ support centers, shelters, and therapists near you in Sweden. Your location is never stored or shared.",
+        "NSLocationAlwaysUsageDescription": "HomeWithin uses your location to show LGBTQ+ support centers, shelters, and therapists near you in Sweden. Your location is never stored or shared.",
+        "NSMicrophoneUsageDescription": "HomeWithin may request microphone access if you choose to record a voice note within the app. Audio is only captured when you actively start a recording and is stored privately on your device.",
+        "NSPhotoLibraryUsageDescription": "HomeWithin uses your photo library so you can set a profile picture. For example, you can select a selfie or any image from your library to use as your avatar. Your photo is only uploaded when you tap Save, and it is only visible to other users as your profile picture.",
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": ["remote-notification"]
       }
