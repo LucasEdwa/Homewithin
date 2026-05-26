@@ -91,8 +91,6 @@ function ProfessionalCard({ professional }: { professional: ProfessionalProfile 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function SupportScreen() {
-  if (!PROFESSIONAL_SUPPORT_BETA_ENABLED) return <ComingSoon />;
-
   const [filter, setFilter] = useState<Filter>(ALL);
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +98,7 @@ export default function SupportScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!PROFESSIONAL_SUPPORT_BETA_ENABLED) return;
       let active = true;
       setLoading(true);
       setError(null);
@@ -110,6 +109,8 @@ export default function SupportScreen() {
       return () => { active = false; };
     }, [filter])
   );
+
+  if (!PROFESSIONAL_SUPPORT_BETA_ENABLED) return <ComingSoon />;
 
   return (
     <SafeAreaView style={styles.safe}>

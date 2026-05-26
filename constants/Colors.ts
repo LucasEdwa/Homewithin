@@ -32,6 +32,9 @@ export const Colors = {
   // ── Pure values ───────────────────────────────────────────
   white: "#FFFFFF",
   black: "#000000",
+
+  background: "#0F0D0C",
+  cardBackground: "#1C1816",
 } as const;
 
 // Adaptive light/dark colors used by Expo scaffold components

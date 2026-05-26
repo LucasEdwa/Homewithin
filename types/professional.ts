@@ -13,7 +13,13 @@ export type Specialty =
   | "internalized_shame"
   | "religious_trauma"
   | "relationships"
-  | "general";
+  | "general"
+  | "therapist"
+  | "coach"
+  | "social_worker"
+  | "counselor"
+  | "psychiatrist"
+  | "mentor";
 
 export const SPECIALTY_LABELS: Record<Specialty, string> = {
   family_rejection: "Family Rejection",
@@ -25,6 +31,12 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = {
   religious_trauma: "Religious Trauma",
   relationships: "Relationships",
   general: "General Support",
+  therapist: "Therapist",
+  coach: "Coach",
+  social_worker: "Social Worker",
+  counselor: "Counselor",
+  psychiatrist: "Psychiatrist",
+  mentor: "Mentor",
 };
 
 // ─── Professional Profile ────────────────────────────────────────────────────

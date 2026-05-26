@@ -84,6 +84,8 @@ export default function RootLayout() {
             <Stack.Screen name="ai-companion" />
             <Stack.Screen name="(content)/local-resources" />
             <Stack.Screen name="(content)/events" />
+            <Stack.Screen name="(professional)/profile" />
+            <Stack.Screen name="(professional)/register" />
             <Stack.Screen name="(wellness)/progress" />
             <Stack.Screen name="blocked-users" />
             <Stack.Screen name="terms" options={{ presentation: 'modal' }} />

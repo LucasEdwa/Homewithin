@@ -2,7 +2,7 @@
 // Update these before flipping the beta flag to true.
 
 /** Set to true to unlock the Professional Support tab for all users. */
-export const PROFESSIONAL_SUPPORT_BETA_ENABLED = false;
+export const PROFESSIONAL_SUPPORT_BETA_ENABLED = true;
 
 /** ISO 4217 currency code used for all session payments. */
 export const PLATFORM_CURRENCY = "sek" as const;
