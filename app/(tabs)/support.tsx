@@ -23,12 +23,12 @@ import {
 const ALL = 'all' as const;
 type Filter = Specialty | typeof ALL;
 
+// Only show professional-role specialties in the filter bar, not topic areas.
+const ROLE_SPECIALTIES: Specialty[] = ['therapist', 'counselor', 'coach', 'social_worker', 'psychiatrist', 'mentor'];
+
 const FILTERS: { key: Filter; label: string }[] = [
   { key: ALL, label: 'All' },
-  ...Object.entries(SPECIALTY_LABELS).map(([key, label]) => ({
-    key: key as Specialty,
-    label,
-  })),
+  ...ROLE_SPECIALTIES.map((key) => ({ key, label: SPECIALTY_LABELS[key] })),
 ];
 
 // ─── Coming Soon ─────────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ function ProfessionalCard({ professional }: { professional: ProfessionalProfile 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => router.push(`/(professional)/profile?id=${professional.id}` as never)}
+      onPress={() => router.push({ pathname: '/(professional)/profile', params: { id: professional.id } })}
       activeOpacity={0.75}
     >
       <View style={styles.cardAvatar}>
@@ -93,8 +93,13 @@ function ProfessionalCard({ professional }: { professional: ProfessionalProfile 
 export default function SupportScreen() {
   const [filter, setFilter] = useState<Filter>(ALL);
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(PROFESSIONAL_SUPPORT_BETA_ENABLED);
   const [error, setError] = useState<string | null>(null);
+
+  const renderItem = useCallback(
+    ({ item }: { item: ProfessionalProfile }) => <ProfessionalCard professional={item} />,
+    []
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -148,7 +153,7 @@ export default function SupportScreen() {
         <FlatList
           data={professionals}
           keyExtractor={(p) => p.id}
-          renderItem={({ item }) => <ProfessionalCard professional={item} />}
+          renderItem={renderItem}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No professionals found for this filter.</Text>
