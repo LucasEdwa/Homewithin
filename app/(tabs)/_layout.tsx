@@ -1,5 +1,5 @@
-import { useUnread } from '@/context/UnreadContext';
 import { Colors } from '@/constants/Colors';
+import { useUnread } from '@/context/UnreadContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
@@ -56,6 +56,13 @@ export default function TabLayout() {
         options={{
           title: 'Resources',
           tabBarIcon: ({ color }) => <TabIcon name="library-outline" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="support"
+        options={{
+          title: 'Support',
+          tabBarIcon: ({ color }) => <TabIcon name="medal-outline" color={color} />,
         }}
       />
       <Tabs.Screen

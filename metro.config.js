@@ -30,4 +30,8 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
+// Exclude the Next.js professional portal from the React Native bundle.
+// It has its own package.json and is deployed separately to Vercel.
+config.resolver.blockList = /professional-portal\/.*/;
+
 module.exports = config;

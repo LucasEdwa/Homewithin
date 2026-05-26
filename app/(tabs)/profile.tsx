@@ -39,6 +39,11 @@ export default function ProfileScreen() {
         <ProfileDangerZone />
         <ProfilePrivacyNote />
         <SettingRow
+          label="Become a Professional"
+          value=""
+          onPress={() => router.push('/(professional)/register' as never)}
+        />
+        <SettingRow
           label="Terms of Use"
           value=""
           onPress={() => router.push('/terms')}

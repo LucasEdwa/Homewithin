@@ -52,6 +52,18 @@ export const supabase: SupabaseClient | null =
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
+/**
+ * Returns the Supabase client, throwing if env vars are not configured.
+ * Use this in services that require a live database connection.
+ */
+export function getClient(): SupabaseClient {
+  if (!supabase)
+    throw new Error(
+      "Supabase is not configured. Check your environment variables.",
+    );
+  return supabase;
+}
+
 export async function currentUserId(): Promise<string | null> {
   if (!supabase) return null;
   const {

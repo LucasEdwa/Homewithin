@@ -7,24 +7,24 @@
 
 ## Sprint 1 — Foundation
 
-- [ ] Install `react-native-webview` dependency
-- [ ] Install `@stripe/stripe-react-native` dependency
-- [ ] Create `constants/ProfessionalSupport.ts` with all feature constants
-- [ ] Create `types/professional.ts` with all new types
-- [ ] Write `supabase/migrations/YYYYMMDD_professional_support.sql` (all tables + RLS)
-- [ ] Scaffold `services/professional/` with stub exports
-- [ ] Scaffold `professional-portal/` Next.js 15 project with Supabase SSR auth
-- [ ] Run migration in dev — verify tables + RLS
+- [x] Install `react-native-webview` dependency
+- [x] Install `@stripe/stripe-react-native` dependency
+- [x] Create `constants/ProfessionalSupport.ts` with all feature constants
+- [x] Create `types/professional.ts` with all new types
+- [x] Write `supabase/migrations/YYYYMMDD_professional_support.sql` (all tables + RLS)
+- [x] Scaffold `services/professional/` with stub exports
+- [x] Scaffold `professional-portal/` Next.js 15 project with Supabase SSR auth
+- [x] Run migration in dev — verify tables + RLS
 
 ---
 
 ## Sprint 2 — Professional Profiles & Directory
 
-- [ ] Implement `services/professional/directory.ts`
-- [ ] Add "Support" tab to `app/(tabs)/_layout.tsx`
-- [ ] Create `app/(tabs)/support.tsx` with beta gate + directory list + specialty filters
-- [ ] Create `app/(professional)/profile.tsx` — professional detail screen
-- [ ] Add "Become a Professional" self-registration entry in Profile tab
+- [x] Implement `services/professional/directory.ts`
+- [x] Add "Support" tab to `app/(tabs)/_layout.tsx`
+- [x] Create `app/(tabs)/support.tsx` with beta gate + directory list + specialty filters
+- [x] Create `app/(professional)/profile.tsx` — professional detail screen
+- [x] Add "Become a Professional" self-registration entry in Profile tab
 
 ---
 

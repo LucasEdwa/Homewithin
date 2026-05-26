@@ -1,0 +1,5 @@
+# The professional portal is a separate Next.js app deployed to Vercel.
+
+# EAS Build only needs the React Native source.
+
+professional-portal/

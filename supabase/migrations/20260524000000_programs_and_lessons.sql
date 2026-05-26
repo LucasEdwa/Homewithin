@@ -14,6 +14,7 @@ create table if not exists programs (
 
 alter table programs enable row level security;
 
+drop policy if exists "Programs are publicly readable" on programs;
 create policy "Programs are publicly readable"
   on programs for select
   using (true);
@@ -31,6 +32,7 @@ create table if not exists lessons (
 
 alter table lessons enable row level security;
 
+drop policy if exists "Lessons are publicly readable" on lessons;
 create policy "Lessons are publicly readable"
   on lessons for select
   using (true);

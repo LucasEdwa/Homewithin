@@ -1,20 +1,21 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  preset: 'jest-expo',
+  preset: "jest-expo",
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
+    "^@/(.*)$": "<rootDir>/$1",
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  testMatch: ['**/__tests__/**/*.test.{ts,tsx}'],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  testMatch: ["**/__tests__/**/*.test.{ts,tsx}"],
+  testPathIgnorePatterns: ["<rootDir>/professional-portal/"],
   collectCoverageFrom: [
-    'services/**/*.ts',
-    'constants/**/*.ts',
-    'context/**/*.tsx',
-    'components/**/*.tsx',
-    'app/**/*.tsx',
-    '!**/_layout.tsx',
+    "services/**/*.ts",
+    "constants/**/*.ts",
+    "context/**/*.tsx",
+    "components/**/*.tsx",
+    "app/**/*.tsx",
+    "!**/_layout.tsx",
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@supabase)',
+    "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@supabase)",
   ],
 };

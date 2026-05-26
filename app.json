@@ -73,6 +73,12 @@
         {
           "locationWhenInUsePermission": "Homewithin uses your location to show LGBTQ+ resources near you."
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.app.homewithin"
+        }
       ]
     ],
     "experiments": {
