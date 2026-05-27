@@ -88,7 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let profile = session as UserProfile | null;
       if (supabase) {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('auth init timeout')), 8000)
+          );
+          const { data: { user } } = await Promise.race([
+            supabase.auth.getUser(),
+            timeout,
+          ]);
           if (user) {
             const { data: row, error } = await supabase
               .from('user_profiles')
@@ -134,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           } else {
-            console.warn('Profile hydrate: no authenticated Supabase user');
+            console.log('Profile hydrate: no authenticated Supabase user (guest session)');
           }
         } catch (e: any) {
           console.warn('Profile hydrate from Supabase failed:', e?.message);
