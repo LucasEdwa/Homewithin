@@ -30,10 +30,10 @@
 
 ## Sprint 3 — Availability & Booking Flow
 
-- [ ] Implement `services/professional/availability.ts`
-- [ ] Create `app/(professional)/book.tsx` — weekly slot grid picker
-- [ ] Create `app/(professional)/checkout-summary.tsx` — pre-payment summary
-- [ ] DB-level uniqueness check to prevent double-booking same slot
+- [x] Implement `services/professional/availability.ts`
+- [x] Create `app/(professional)/book.tsx` — weekly slot grid picker
+- [x] Create `app/(professional)/checkout-summary.tsx` — pre-payment summary
+- [x] DB-level uniqueness check to prevent double-booking same slot
 
 ---
 
