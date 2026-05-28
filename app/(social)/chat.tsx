@@ -26,12 +26,51 @@ import {
 
 const CRISIS_HOTLINE = 'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Line: text HOME to 741741';
 
+const EXPIRY_OPTIONS: { label: string; hours: number | null }[] = [
+  { label: 'Off',      hours: null },
+  { label: '1 hour',   hours: 1   },
+  { label: '6 hours',  hours: 6   },
+  { label: '24 hours', hours: 24  },
+  { label: '7 days',   hours: 168 },
+];
+
+type ListItem =
+  | { type: 'message';    data: Message }
+  | { type: 'dateHeader'; label: string;  key: string };
+
+function formatDateLabel(date: Date): string {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString([], {
+    day: 'numeric',
+    month: 'short',
+    year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+  });
+}
+
+function buildListItems(messages: Message[]): ListItem[] {
+  const items: ListItem[] = [];
+  let lastDateStr = '';
+  for (const msg of messages) {
+    const dateStr = new Date(msg.createdAt).toDateString();
+    if (dateStr !== lastDateStr) {
+      lastDateStr = dateStr;
+      items.push({ type: 'dateHeader', label: formatDateLabel(new Date(msg.createdAt)), key: `dh-${dateStr}` });
+    }
+    items.push({ type: 'message', data: msg });
+  }
+  return items;
+}
+
 export default function ChatScreen() {
   const { matchId, nickname, avatarUrl } = useLocalSearchParams<{ matchId: string; nickname: string; avatarUrl?: string }>();
   const { setActiveMatch } = useUnread();
   const { messages, setMessages } = useMessages(matchId);
   const [input, setInput] = useState('');
-  const [disappearing, setDisappearing] = useState(false);
+  const [expiryHours, setExpiryHours] = useState<number | null>(null);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -62,11 +101,26 @@ export default function ChatScreen() {
 
     if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
 
-    const msg = await sendMessage(matchId, body, disappearing);
+    const msg = await sendMessage(matchId, body, expiryHours);
     if (msg) {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
     }
     setSending(false);
+  }
+
+  function handlePickExpiry() {
+    const labels = [...EXPIRY_OPTIONS.map((o) => o.label), 'Cancel'];
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: labels, cancelButtonIndex: labels.length - 1, title: 'Auto-delete messages after…' },
+        (idx) => { if (idx < EXPIRY_OPTIONS.length) setExpiryHours(EXPIRY_OPTIONS[idx].hours); }
+      );
+    } else {
+      Alert.alert('Auto-delete after…', undefined, [
+        ...EXPIRY_OPTIONS.map((o) => ({ text: o.label, onPress: () => setExpiryHours(o.hours) })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ]);
+    }
   }
 
   function handleOptions() {
@@ -194,35 +248,46 @@ export default function ChatScreen() {
       >
         <FlatList
           ref={listRef}
-          data={messages.filter((m) => !isExpired(m))}
-          keyExtractor={(m) => m.id}
+          data={buildListItems(messages.filter((m) => !isExpired(m)))}
+          keyExtractor={(item) => item.type === 'message' ? item.data.id : item.key}
           style={styles.flatList}
           contentContainerStyle={styles.messageList}
-          renderItem={({ item }) => (
-            <MessageBubble
-              message={item}
-              isMe={item.senderId === myUserId}
-              disappearing={!!item.expiresAt}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (item.type === 'dateHeader') {
+              return (
+                <View style={styles.dateHeader}>
+                  <Text style={styles.dateHeaderText}>{item.label}</Text>
+                </View>
+              );
+            }
+            return (
+              <MessageBubble
+                message={item.data}
+                isMe={item.data.senderId === myUserId}
+                disappearing={!!item.data.expiresAt}
+              />
+            );
+          }}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No messages yet. Say hello!</Text>
           }
         />
 
-        {/* Disappearing toggle */}
+        {/* Auto-delete duration picker */}
         <TouchableOpacity
-          style={[styles.disappearToggle, disappearing && styles.disappearToggleActive]}
-          onPress={() => setDisappearing((d) => !d)}
-          accessibilityLabel={disappearing ? 'Disappearing messages on (24h)' : 'Disappearing messages off'}
+          style={[styles.disappearToggle, expiryHours != null && styles.disappearToggleActive]}
+          onPress={handlePickExpiry}
+          accessibilityLabel={expiryHours != null ? `Auto-delete: ${EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.label ?? 'on'}` : 'Auto-delete messages off'}
         >
           <Ionicons
-            name={disappearing ? 'timer' : 'timer-outline'}
+            name={expiryHours != null ? 'timer' : 'timer-outline'}
             size={15}
-            color={disappearing ? Colors.safeBlue : Colors.textMuted}
+            color={expiryHours != null ? Colors.safeBlue : Colors.textMuted}
           />
-          <Text style={[styles.disappearText, disappearing && styles.disappearTextActive]}>
-            {disappearing ? '24h · on' : '24h off'}
+          <Text style={[styles.disappearText, expiryHours != null && styles.disappearTextActive]}>
+            {expiryHours != null
+              ? `${EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.label ?? ''} · on`
+              : 'Auto-delete off'}
           </Text>
         </TouchableOpacity>
 
@@ -348,6 +413,20 @@ const styles = StyleSheet.create({
   bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   bubbleTime: { fontSize: 10, color: Colors.textMuted },
   bubbleTimeMe: { color: Colors.textMuted },
+  dateHeader: {
+    alignItems: 'center' as const,
+    marginVertical: Spacing.sm,
+  },
+  dateHeaderText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: '600' as const,
+    backgroundColor: Colors.softGray,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    overflow: 'hidden' as const,
+  },
   disappearToggle: {
     flexDirection: 'row',
     alignItems: 'center',

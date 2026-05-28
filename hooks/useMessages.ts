@@ -31,9 +31,16 @@ export function useMessages(matchId: string | undefined) {
       if (state === "active") loadMessages();
     });
 
+    // Purge expired messages from state every 60 s so they disappear in real-time.
+    const purgeInterval = setInterval(() => {
+      const now = new Date();
+      setMessages((prev) => prev.filter((m) => !m.expiresAt || new Date(m.expiresAt) > now));
+    }, 60_000);
+
     return () => {
       unsub();
       appStateSub.remove();
+      clearInterval(purgeInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);

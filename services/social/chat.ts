@@ -45,7 +45,7 @@ function rowToMessage(row: MessageRow): Message {
 export async function sendMessage(
   matchId: string,
   body: string,
-  disappearing: boolean,
+  expiryHours: number | null,
 ): Promise<Message | null> {
   if (!supabase) return null;
   const {
@@ -53,8 +53,8 @@ export async function sendMessage(
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   if (!user) return null;
 
-  const expiresAt = disappearing
-    ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+  const expiresAt = expiryHours != null
+    ? new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString()
     : null;
 
   const { data, error } = await supabase

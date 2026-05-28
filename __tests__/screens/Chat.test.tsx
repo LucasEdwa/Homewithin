@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
+import { ActionSheetIOS } from 'react-native';
 
 import ChatScreen from '@/app/(social)/chat';
 import * as chatService from '@/services/social/chat';
@@ -114,7 +115,7 @@ describe('ChatScreen', () => {
     fireEvent.changeText(screen.getByTestId('message-input'), 'Hello!');
     fireEvent.press(screen.getByTestId('send-btn'));
     await waitFor(() =>
-      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Hello!', false)
+      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Hello!', null)
     );
   });
 
@@ -128,14 +129,17 @@ describe('ChatScreen', () => {
   });
 
   it('sends with disappearing mode when toggle is on', async () => {
+    const spy = jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+      .mockImplementation((_opts: any, callback: (idx: number) => void) => callback(3)); // '24 hours'
     render(<ChatScreen />);
-    await waitFor(() => screen.getByLabelText('Disappearing messages off'));
-    fireEvent.press(screen.getByLabelText('Disappearing messages off'));
+    await waitFor(() => screen.getByLabelText('Auto-delete messages off'));
+    fireEvent.press(screen.getByLabelText('Auto-delete messages off'));
     fireEvent.changeText(screen.getByTestId('message-input'), 'Private');
     fireEvent.press(screen.getByTestId('send-btn'));
     await waitFor(() =>
-      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Private', true)
+      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Private', 24)
     );
+    spy.mockRestore();
   });
 
   it('shows empty state when no messages', async () => {
