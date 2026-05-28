@@ -8,6 +8,7 @@ import { useLocalSearchParams } from 'expo-router';
 
 jest.mock('@/services/social/circles', () => ({
   getCircleMessages: jest.fn(),
+  getCircleMembers: jest.fn().mockResolvedValue([]),
   sendCircleMessage: jest.fn(),
   subscribeToCircleMessages: jest.fn(),
   leaveCircle: jest.fn(),

@@ -103,8 +103,16 @@ export interface CircleMessage {
   circleId: string;
   senderId: string;
   senderNickname?: string;
+  senderAvatarUrl?: string;
   body: string;
   createdAt: string;
+}
+
+export interface CircleMember {
+  userId: string;
+  nickname: string;
+  avatarUrl?: string;
+  isMe?: boolean;
 }
 
 export type SupportRole =

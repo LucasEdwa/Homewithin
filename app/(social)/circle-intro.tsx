@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     fontSize: 15, color: Colors.textSecondary, lineHeight: 22,
     textAlign: 'center',
   },
-  rulesCard: { backgroundColor: Colors.white, gap: Spacing.xs, borderRadius: Radius.lg },
+  rulesCard: { backgroundColor: Colors.softGray, gap: Spacing.xs, borderRadius: Radius.lg },
   rulesHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.xs },
   rulesTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   rule: { fontSize: 14, color: Colors.textPrimary, lineHeight: 22 },

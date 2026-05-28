@@ -1,15 +1,19 @@
-import type { Circle, CircleMessage } from "@/types";
+import type { Circle, CircleMessage, CircleMember } from "@/types";
 import { currentUserId, supabase } from "../supabase";
+
+type MemberInfo = { nickname: string; avatarUrl?: string };
 
 function rowToMessage(
   row: any,
-  nicknameMap?: Map<string, string>,
+  memberMap?: Map<string, MemberInfo>,
 ): CircleMessage {
+  const info = memberMap?.get(row.sender_id);
   return {
     id: row.id,
     circleId: row.circle_id,
     senderId: row.sender_id,
-    senderNickname: nicknameMap?.get(row.sender_id),
+    senderNickname: info?.nickname,
+    senderAvatarUrl: info?.avatarUrl,
     body: row.body,
     createdAt: row.created_at,
   };
@@ -163,21 +167,40 @@ export async function markCircleIntroSeen(circleId: string): Promise<void> {
     .eq("user_id", uid);
 }
 
-async function fetchMemberNicknames(
+async function fetchMemberMap(
   circleId: string,
-): Promise<Map<string, string>> {
+): Promise<Map<string, MemberInfo>> {
   if (!supabase) return new Map();
-  const { data: members } = await supabase
-    .from("circle_members")
-    .select("user_id")
-    .eq("circle_id", circleId);
-  const ids = (members ?? []).map((m: any) => m.user_id);
-  if (ids.length === 0) return new Map();
-  const { data: profiles } = await supabase
-    .from("user_profiles")
-    .select("user_id, nickname")
-    .in("user_id", ids);
-  return new Map((profiles ?? []).map((p: any) => [p.user_id, p.nickname]));
+  // circle_members SELECT RLS is locked to auth.uid() = user_id (to prevent
+  // recursion), so querying it directly would only return the current user's
+  // row. The SECURITY DEFINER RPC bypasses that safely while still requiring
+  // the caller to be a member of the circle.
+  const { data: profiles, error } = await supabase.rpc(
+    "get_circle_member_profiles",
+    { p_circle_id: circleId },
+  );
+  if (error) {
+    console.error("fetchMemberMap rpc failed:", error.message);
+    return new Map();
+  }
+  return new Map(
+    (profiles ?? []).map((p: any) => [
+      p.user_id,
+      { nickname: p.nickname ?? "Unknown", avatarUrl: p.avatar_url ?? undefined },
+    ]),
+  );
+}
+
+export async function getCircleMembers(circleId: string): Promise<CircleMember[]> {
+  if (!supabase) return [];
+  const uid = await currentUserId();
+  const map = await fetchMemberMap(circleId);
+  return Array.from(map.entries()).map(([userId, info]) => ({
+    userId,
+    nickname: info.nickname,
+    avatarUrl: info.avatarUrl,
+    isMe: userId === uid,
+  }));
 }
 
 export async function getCircleMessages(
@@ -194,7 +217,7 @@ export async function getCircleMessages(
     console.error("Get circle messages failed:", error.message);
     return [];
   }
-  const nicknames = await fetchMemberNicknames(circleId);
+  const nicknames = await fetchMemberMap(circleId);
   return (data ?? []).map((row: any) => rowToMessage(row, nicknames));
 }
 

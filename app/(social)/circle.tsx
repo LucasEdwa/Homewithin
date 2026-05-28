@@ -2,6 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { containsCrisisKeywords } from '@/services/social/chat';
 import {
+    getCircleMembers,
     getCircleMessages,
     leaveCircle,
     reportInCircle,
@@ -9,8 +10,9 @@ import {
     subscribeToCircleMessages,
 } from '@/services/social/circles';
 import { supabase } from '@/services/supabase';
-import type { CircleMessage } from '@/types';
+import type { CircleMember, CircleMessage } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -30,6 +32,42 @@ import {
 const CRISIS_HOTLINE =
   'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Line: text HOME to 741741';
 
+type ListItem =
+  | { type: 'message'; data: CircleMessage }
+  | { type: 'date'; label: string; key: string };
+
+function dayKey(date: Date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function formatDayLabel(date: Date): string {
+  const now = new Date();
+  const todayKey = dayKey(now);
+  const msgKey = dayKey(date);
+  const diffMs =
+    new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
+    new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const diffDays = Math.round(diffMs / 86_400_000);
+  if (msgKey === todayKey) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function buildListItems(messages: CircleMessage[]): ListItem[] {
+  const items: ListItem[] = [];
+  let lastKey = '';
+  for (const msg of messages) {
+    const date = new Date(msg.createdAt);
+    const key = dayKey(date);
+    if (key !== lastKey) {
+      items.push({ type: 'date', label: formatDayLabel(date), key: `date-${key}` });
+      lastKey = key;
+    }
+    items.push({ type: 'message', data: msg });
+  }
+  return items;
+}
+
 export default function CircleChatScreen() {
   const { circleId, name } = useLocalSearchParams<{ circleId: string; name: string }>();
   const [messages, setMessages] = useState<CircleMessage[]>([]);
@@ -37,6 +75,9 @@ export default function CircleChatScreen() {
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [members, setMembers] = useState<CircleMember[]>([]);
+  const [showMembers, setShowMembers] = useState(false);
+  const membersMapRef = useRef<Map<string, { nickname: string; avatarUrl?: string }>>(new Map());
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -49,11 +90,21 @@ export default function CircleChatScreen() {
       setMessages(msgs);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
     });
+    getCircleMembers(circleId).then((m) => {
+      setMembers(m);
+      membersMapRef.current = new Map(
+        m.map((mb) => [mb.userId, { nickname: mb.nickname, avatarUrl: mb.avatarUrl }]),
+      );
+    });
 
     const unsub = subscribeToCircleMessages(circleId, (msg) => {
+      const info = membersMapRef.current.get(msg.senderId);
+      const annotated: CircleMessage = info
+        ? { ...msg, senderNickname: info.nickname, senderAvatarUrl: info.avatarUrl }
+        : msg;
       setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
+        if (prev.some((m) => m.id === annotated.id)) return prev;
+        return [...prev, annotated];
       });
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     });
@@ -149,19 +200,29 @@ export default function CircleChatScreen() {
   }
 
   return (
+    <View style={styles.safeWrapper}>
     <SafeAreaView style={styles.safe}>
       <View style={styles.nav}>
         <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <View style={styles.navCenter}>
+        <TouchableOpacity
+          style={styles.navCenter}
+          onPress={() => setShowMembers(true)}
+          accessibilityLabel="View circle members"
+        >
           <View style={styles.navAvatar}>
             <Ionicons name="people" size={18} color={Colors.white} />
           </View>
-          <Text style={styles.navName} numberOfLines={1}>
-            {name ?? 'Circle'}
-          </Text>
-        </View>
+          <View style={{ alignItems: 'flex-start' }}>
+            <Text style={styles.navName} numberOfLines={1}>
+              {name ?? 'Circle'}
+            </Text>
+            {members.length > 0 && (
+              <Text style={styles.navMemberCount}>{members.length} members</Text>
+            )}
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity onPress={handleOptions} style={styles.navBtn} accessibilityLabel="Circle options">
           <Ionicons name="ellipsis-vertical" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -191,16 +252,19 @@ export default function CircleChatScreen() {
       >
         <FlatList
           ref={listRef}
-          data={messages}
-          keyExtractor={(m) => m.id}
+          data={buildListItems(messages)}
+          keyExtractor={(item) => item.type === 'date' ? item.key : item.data.id}
           contentContainerStyle={styles.messageList}
-          renderItem={({ item }) => (
-            <MessageBubble
-              message={item}
-              isMe={item.senderId === myUserId}
-              onLongPress={() => promptReportMessage(item)}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (item.type === 'date') return <DateSeparator label={item.label} />;
+            return (
+              <MessageBubble
+                message={item.data}
+                isMe={item.data.senderId === myUserId}
+                onLongPress={() => promptReportMessage(item.data)}
+              />
+            );
+          }}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No messages yet. Be the first to share.</Text>
           }
@@ -231,7 +295,99 @@ export default function CircleChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {showMembers && (
+        <View style={styles.membersOverlay}>
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            onPress={() => setShowMembers(false)}
+            activeOpacity={1}
+            accessibilityLabel="Close members"
+          />
+          <View style={styles.membersSheet}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Members</Text>
+              <View style={styles.memberCountBadge}>
+                <Text style={styles.memberCountText}>{members.length}</Text>
+              </View>
+            </View>
+            <FlatList
+              data={[...members].sort((a) => (a.isMe ? -1 : 1))}
+              keyExtractor={(m) => m.userId}
+              contentContainerStyle={styles.memberList}
+              renderItem={({ item }) => (
+                <View style={styles.memberRow}>
+                  <MemberAvatar nickname={item.nickname} avatarUrl={item.avatarUrl} size={44} />
+                  <Text style={styles.memberName} numberOfLines={1}>
+                    {item.nickname}
+                  </Text>
+                  {item.isMe && (
+                    <View style={styles.youBadge}>
+                      <Text style={styles.youBadgeText}>you</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
+    </View>
+  );
+}
+
+function DateSeparator({ label }: { label: string }) {
+  return (
+    <View style={styles.dateSepRow}>
+      <View style={styles.dateSepLine} />
+      <Text style={styles.dateSepText}>{label}</Text>
+      <View style={styles.dateSepLine} />
+    </View>
+  );
+}
+
+function MemberAvatar({
+  nickname,
+  avatarUrl,
+  size = 32,
+  style,
+}: {
+  nickname: string;
+  avatarUrl?: string;
+  size?: number;
+  style?: object;
+}) {
+  return (
+    <View
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: Colors.mutedLavender + '40',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        },
+        style,
+      ]}
+    >
+      {avatarUrl ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={{ width: size, height: size }}
+          contentFit="cover"
+        />
+      ) : (
+        <Text
+          style={{ fontSize: size * 0.42, fontWeight: '700', color: Colors.mutedLavender }}
+        >
+          {(nickname?.[0] ?? '?').toUpperCase()}
+        </Text>
+      )}
+    </View>
   );
 }
 
@@ -251,6 +407,14 @@ function MessageBubble({
   const name = message.senderNickname ?? 'Someone';
   return (
     <View style={[styles.bubbleRow, isMe && styles.bubbleRowMe]}>
+      {!isMe && (
+        <MemberAvatar
+          nickname={name}
+          avatarUrl={message.senderAvatarUrl}
+          size={28}
+          style={styles.bubbleAvatar}
+        />
+      )}
       <TouchableOpacity
         onLongPress={onLongPress}
         activeOpacity={0.85}
@@ -266,7 +430,8 @@ function MessageBubble({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.warmWhite },
+  safeWrapper: { flex: 1, backgroundColor: Colors.warmWhite },
+  safe: { flex: 1 },
   flex: { flex: 1 },
   nav: {
     flexDirection: 'row',
@@ -285,6 +450,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   navName: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, maxWidth: 200 },
+  navMemberCount: { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
   safetyBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: Colors.softGreen + '18',
@@ -299,9 +465,19 @@ const styles = StyleSheet.create({
   },
   crisisText: { flex: 1, fontSize: 12, color: Colors.alertRed, lineHeight: 18 },
   messageList: { padding: Spacing.md, gap: Spacing.sm, flexGrow: 1 },
+  dateSepRow: {
+    flexDirection: 'row', alignItems: 'center',
+    marginVertical: Spacing.md, gap: Spacing.sm,
+  },
+  dateSepLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dateSepText: {
+    fontSize: 11, color: Colors.textMuted,
+    fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5,
+  },
   emptyText: { textAlign: 'center', color: Colors.textMuted, marginTop: Spacing.xl * 2, fontSize: 14 },
-  bubbleRow: { flexDirection: 'row', justifyContent: 'flex-start' },
+  bubbleRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-end' },
   bubbleRowMe: { justifyContent: 'flex-end' },
+  bubbleAvatar: { marginRight: 6, marginBottom: 2 },
   bubble: {
     maxWidth: '78%',
     borderRadius: Radius.lg,
@@ -320,7 +496,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm,
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
     borderTopWidth: 1, borderTopColor: Colors.border,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.warmWhite,
   },
   input: {
     flex: 1, fontSize: 15, color: Colors.textPrimary,
@@ -335,4 +511,68 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { backgroundColor: Colors.border },
+  // ── Members bottom sheet ──────────────────────────────────
+  membersOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.62)',
+    zIndex: 999,
+  },
+  membersSheet: {
+    backgroundColor: Colors.softGray,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+    maxHeight: '78%',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignSelf: 'center',
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
+  memberCountBadge: {
+    backgroundColor: Colors.mutedLavender + '30',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+  },
+  memberCountText: { fontSize: 13, fontWeight: '700', color: Colors.mutedLavender },
+  memberList: { padding: Spacing.md, gap: Spacing.sm },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  memberName: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontWeight: '600' },
+  youBadge: {
+    backgroundColor: Colors.mutedLavender + '25',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+  },
+  youBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.mutedLavender },
 });

@@ -29,7 +29,7 @@ beforeEach(() => {
 describe('WelcomeScreen', () => {
   it('renders the tagline', () => {
     render(<WelcomeScreen />);
-    expect(screen.getByText('You are safe here.')).toBeTruthy();
+    expect(screen.getByText(/A safe space for LGBTQ\+ people/)).toBeTruthy();
   });
 
   it('renders Start anonymously CTA', () => {
