@@ -1,205 +1,43 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { useUnread } from '@/context/UnreadContext';
-import { useMessages } from '@/hooks/useMessages';
-import { containsCrisisKeywords, sendMessage } from '@/services/social/chat';
-import { blockUser, getMatchPeerId, reportMessage } from '@/services/social/matching';
-import { supabase } from '@/services/supabase';
+import { useCountdown } from '@/hooks/useCountdown';
+import { EXPIRY_OPTIONS, useChatScreen } from '@/hooks/useChatScreen';
 import type { Message } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
+import React from 'react';
 import {
-    ActionSheetIOS,
-    Alert,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const CRISIS_HOTLINE = 'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Line: text HOME to 741741';
 
-const EXPIRY_OPTIONS: { label: string; hours: number | null }[] = [
-  { label: 'Off',      hours: null },
-  { label: '1 hour',   hours: 1   },
-  { label: '6 hours',  hours: 6   },
-  { label: '24 hours', hours: 24  },
-  { label: '7 days',   hours: 168 },
-];
-
-type ListItem =
-  | { type: 'message';    data: Message }
-  | { type: 'dateHeader'; label: string;  key: string };
-
-function formatDateLabel(date: Date): string {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return date.toLocaleDateString([], {
-    day: 'numeric',
-    month: 'short',
-    year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
-  });
-}
-
-function buildListItems(messages: Message[]): ListItem[] {
-  const items: ListItem[] = [];
-  let lastDateStr = '';
-  for (const msg of messages) {
-    const dateStr = new Date(msg.createdAt).toDateString();
-    if (dateStr !== lastDateStr) {
-      lastDateStr = dateStr;
-      items.push({ type: 'dateHeader', label: formatDateLabel(new Date(msg.createdAt)), key: `dh-${dateStr}` });
-    }
-    items.push({ type: 'message', data: msg });
-  }
-  return items;
-}
-
 export default function ChatScreen() {
-  const { matchId, nickname, avatarUrl } = useLocalSearchParams<{ matchId: string; nickname: string; avatarUrl?: string }>();
-  const { setActiveMatch } = useUnread();
-  const { messages, setMessages } = useMessages(matchId);
-  const [input, setInput] = useState('');
-  const [expiryHours, setExpiryHours] = useState<number | null>(null);
-  const [showCrisisBanner, setShowCrisisBanner] = useState(false);
-  const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const listRef = useRef<FlatList>(null);
-
-  useEffect(() => {
-    supabase?.auth.getUser().then(({ data: { user } }) => setMyUserId(user?.id ?? null));
-  }, []);
-
-  // Tell UnreadContext this chat is active so incoming messages don't increment the badge.
-  useEffect(() => {
-    if (!matchId) return;
-    setActiveMatch(matchId);
-    return () => setActiveMatch(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
-
-  // Scroll to end when messages load or a new one arrives.
-  useEffect(() => {
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: messages.length > 0 }), 50);
-  }, [messages.length]);
-
-  async function handleSend() {
-    if (!input.trim() || !matchId) return;
-    const body = input.trim();
-    setInput('');
-    setSending(true);
-
-    if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
-
-    const msg = await sendMessage(matchId, body, expiryHours);
-    if (msg) {
-      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-    }
-    setSending(false);
-  }
-
-  function handlePickExpiry() {
-    const labels = [...EXPIRY_OPTIONS.map((o) => o.label), 'Cancel'];
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: labels, cancelButtonIndex: labels.length - 1, title: 'Auto-delete messages after…' },
-        (idx) => { if (idx < EXPIRY_OPTIONS.length) setExpiryHours(EXPIRY_OPTIONS[idx].hours); }
-      );
-    } else {
-      Alert.alert('Auto-delete after…', undefined, [
-        ...EXPIRY_OPTIONS.map((o) => ({ text: o.label, onPress: () => setExpiryHours(o.hours) })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ]);
-    }
-  }
-
-  function handleOptions() {
-    const options = ['Block & report user', 'Report a message', 'Cancel'];
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex: 0, cancelButtonIndex: 2 },
-        (idx) => {
-          if (idx === 0) confirmBlock();
-          if (idx === 1) promptReportMessage();
-        }
-      );
-    } else {
-      Alert.alert('Options', undefined, [
-        { text: 'Block & report user', style: 'destructive', onPress: confirmBlock },
-        { text: 'Report a message', onPress: promptReportMessage },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
-  }
-
-  function confirmBlock() {
-    Alert.alert(
-      'Block this person?',
-      'They won\'t be able to contact you. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Block',
-          style: 'destructive',
-          onPress: async () => {
-            if (!matchId) {
-              Alert.alert('Block failed', 'Missing match info. Please try again.');
-              return;
-            }
-
-            // Prefer the match row (works even if they never sent a message);
-            // fall back to messages if for some reason the lookup fails.
-            let targetId = await getMatchPeerId(matchId);
-            if (!targetId) {
-              const theirMsg = messages.find((m) => m.senderId !== myUserId);
-              targetId = theirMsg?.senderId ?? null;
-            }
-
-            if (!targetId) {
-              Alert.alert('Block failed', 'Could not identify the other user.');
-              return;
-            }
-
-            const ok = await blockUser(targetId, matchId);
-            if (!ok) {
-              Alert.alert('Block failed', 'Please check your connection and try again.');
-              return;
-            }
-            router.back();
-          },
-        },
-      ]
-    );
-  }
-
-  function promptReportMessage() {
-    Alert.prompt(
-      'Report a message',
-      'Briefly describe the issue (e.g. harassment, threats):',
-      async (reason) => {
-        if (!reason?.trim()) return;
-        const lastTheirMsg = [...messages].reverse().find((m) => m.senderId !== myUserId);
-        if (lastTheirMsg) {
-          await reportMessage(lastTheirMsg.id, lastTheirMsg.senderId, reason.trim());
-          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
-        }
-      },
-      'plain-text'
-    );
-  }
-
-  const isExpired = (msg: Message) =>
-    !!msg.expiresAt && new Date(msg.expiresAt) < new Date();
+  const {
+    nickname,
+    avatarUrl,
+    myUserId,
+    listRef,
+    listItems,
+    input,
+    setInput,
+    expiryHours,
+    sending,
+    showCrisisBanner,
+    setShowCrisisBanner,
+    handleSend,
+    handlePickExpiry,
+    handleOptions,
+  } = useChatScreen();
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -248,7 +86,7 @@ export default function ChatScreen() {
       >
         <FlatList
           ref={listRef}
-          data={buildListItems(messages.filter((m) => !isExpired(m)))}
+          data={listItems}
           keyExtractor={(item) => item.type === 'message' ? item.data.id : item.key}
           style={styles.flatList}
           contentContainerStyle={styles.messageList}
@@ -331,6 +169,7 @@ function MessageBubble({
   disappearing: boolean;
 }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const countdown = useCountdown(disappearing ? message.expiresAt : undefined);
   return (
     <View style={[styles.bubbleRow, isMe && styles.bubbleRowMe]}>
       <View style={[styles.bubbleCol, isMe && styles.bubbleColMe]}>
@@ -338,8 +177,11 @@ function MessageBubble({
           <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
         </View>
         <View style={styles.bubbleMeta}>
-          {disappearing && (
-            <Ionicons name="timer-outline" size={11} color={Colors.textMuted} />
+          {disappearing && countdown != null && (
+            <View style={styles.countdownPill}>
+              <Ionicons name="timer-outline" size={11} color={Colors.safetyYellow} />
+              <Text style={styles.countdownText}>{countdown}</Text>
+            </View>
           )}
           <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>{time}</Text>
         </View>
@@ -410,7 +252,13 @@ const styles = StyleSheet.create({
   bubbleThem: { backgroundColor: Colors.softGray, borderBottomLeftRadius: 4 },
   bubbleText: { fontSize: 15, color: Colors.textPrimary, lineHeight: 21 },
   bubbleTextMe: { color: Colors.textPrimary },
-  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  countdownPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: Colors.safetyYellow + '22',
+    borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1,
+  },
+  countdownText: { fontSize: 10, fontWeight: '700', color: Colors.safetyYellow },
   bubbleTime: { fontSize: 10, color: Colors.textMuted },
   bubbleTimeMe: { color: Colors.textMuted },
   dateHeader: {
