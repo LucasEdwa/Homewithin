@@ -80,14 +80,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function init() {
-      const [complete, session] = await Promise.all([
-        isOnboardingComplete(),
-        getSession(),
-      ]);
+      // Outer try/catch ensures loading is always cleared even if SecureStore
+      // throws on fresh install or an unusual keychain state.
+      let complete = false;
+      let profile: UserProfile | null = null;
+      try {
+        const [c, session] = await Promise.all([
+          isOnboardingComplete(),
+          getSession(),
+        ]);
+        complete = c;
+        profile = session as UserProfile | null;
+      } catch (e: any) {
+        console.warn('Auth init storage read failed:', e?.message);
+        // Fall through with defaults; loading will still be cleared below.
+      }
 
-      let profile = session as UserProfile | null;
       if (supabase) {
         try {
+          // Single timeout covers getUser() AND all subsequent profile queries.
+          // Reusing the same Promise means the 8-second budget is shared across
+          // the entire Supabase block, not reset per call.
           const timeout = new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('auth init timeout')), 8000)
           );
@@ -96,11 +109,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             timeout,
           ]);
           if (user) {
-            const { data: row, error } = await supabase
-              .from('user_profiles')
-              .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
-              .eq('user_id', user.id)
-              .maybeSingle();
+            const { data: row, error } = await Promise.race([
+              supabase
+                .from('user_profiles')
+                .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
+                .eq('user_id', user.id)
+                .maybeSingle(),
+              timeout,
+            ]);
             if (error) {
               console.warn('Profile hydrate select error:', error.message);
             }
@@ -119,11 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 needs: [],
                 intentions: [],
               };
-              const { error: insertErr } = await supabase
-                .from('user_profiles')
-                .insert(defaultRow);
-              if (insertErr) {
-                console.warn('Profile auto-create failed:', insertErr.message);
+              const insertResult = await Promise.race([
+                supabase.from('user_profiles').insert(defaultRow),
+                timeout,
+              ]);
+              if (insertResult.error) {
+                console.warn('Profile auto-create failed:', insertResult.error.message);
               } else {
                 profile = {
                   nickname: defaultRow.nickname,

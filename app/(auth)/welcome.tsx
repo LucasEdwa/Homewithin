@@ -13,10 +13,12 @@ import {
   ActivityIndicator,
   Animated,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  useWindowDimensions,
 } from 'react-native';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -37,6 +39,10 @@ const GUEST_NAMES = ['Sage', 'River', 'Quinn', 'Wren', 'Sky', 'Ash', 'Reed', 'No
 export default function WelcomeScreen() {
   const { setProfile, completeOnboarding } = useSession();
   const [guestLoading, setGuestLoading] = useState(false);
+  const { height: screenHeight } = useWindowDimensions();
+  // Icon takes ~28% of screen height — readable on all iPhones, fits with buttons visible.
+  const ICON_SIZE = Math.min(Math.round(screenHeight * 0.28), 240);
+  const RING_SIZE = ICON_SIZE + 20;
   const rings = useRef(
     Array.from({ length: RING_COUNT }, () => new Animated.Value(0))
   ).current;
@@ -103,27 +109,32 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Logo with radiating rings */}
         <View style={styles.logoArea}>
-          <View style={styles.ringContainer}>
+          <View style={[styles.ringContainer, { width: RING_SIZE, height: RING_SIZE }]}>
             {rings.map((anim, i) => {
               const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] });
               const opacity = anim.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.35, 0] });
               return (
                 <Animated.View
                   key={i}
-                  style={[styles.ring, { transform: [{ scale }], opacity }]}
+                  style={[styles.ring, { width: RING_SIZE, height: RING_SIZE, borderRadius: RING_SIZE / 2 }, { transform: [{ scale }], opacity }]}
                 />
               );
             })}
             <Image
-              source={require('../../assets/images/homeIcon.png')}
-              style={styles.appIcon}
+              source={require('../../assets/images/image.png')}
+              style={[styles.appIcon, { width: ICON_SIZE, height: ICON_SIZE }]}
               contentFit="contain"
             />
           </View>
-          <Text style={styles.tagline}>You are safe here.</Text>
+          <Text style={styles.tagline}>A safe space for LGBTQ+ people{"\n"}— when home isn't always safe.</Text>
         </View>
 
         {/* Pillars */}
@@ -169,43 +180,35 @@ export default function WelcomeScreen() {
             <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Privacy Policy</Text>.
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const ICON_SIZE = 400;
-const RING_SIZE = ICON_SIZE -20; 
+// ICON_SIZE and RING_SIZE are computed inside the component via useWindowDimensions.
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.warmWhite },
+  safe: { flex: 1, backgroundColor: '#0b0b0b' },
+  scroll: { flex: 1 },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
     justifyContent: 'space-between',
     paddingTop: Spacing.xxl,
     paddingBottom: Spacing.xl,
   },
-  logoArea: { alignItems: 'center', gap: Spacing.lg, marginTop: Spacing.xl },
+  logoArea: { alignItems: 'center', gap: Spacing.xs, marginTop: Spacing.md },
   ringContainer: {
-    width: RING_SIZE,
-    height: RING_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ring: {
     position: 'absolute',
-    width: RING_SIZE ,
-    height: RING_SIZE,
-    borderRadius: RING_SIZE / 2,
     borderWidth: 2,
     borderColor: Colors.safeBlue,
   },
   appIcon: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-      borderRadius: 40,
-      objectFit: 'cover',
+    borderRadius: 0,
   },
   tagline: { fontSize: 18, color: Colors.textSecondary, fontStyle: 'italic' },
   pillars: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: Spacing.xl },

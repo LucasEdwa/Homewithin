@@ -39,19 +39,26 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function init() {
-      const [pinExists, disguiseOn, disguiseStyle] = await Promise.all([
-        storageHasPin(),
-        storageGetDisguiseEnabled(),
-        storageGetDisguiseStyle(),
-      ]);
-      setState(s => ({
-        ...s,
-        pinEnabled: pinExists,
-        locked: pinExists,
-        disguiseEnabled: disguiseOn,
-        disguiseStyle,
-        securityLoading: false,
-      }));
+      try {
+        const [pinExists, disguiseOn, disguiseStyle] = await Promise.all([
+          storageHasPin(),
+          storageGetDisguiseEnabled(),
+          storageGetDisguiseStyle(),
+        ]);
+        setState(s => ({
+          ...s,
+          pinEnabled: pinExists,
+          locked: pinExists,
+          disguiseEnabled: disguiseOn,
+          disguiseStyle,
+          securityLoading: false,
+        }));
+      } catch (e: any) {
+        // SecureStore can fail on fresh install or unusual keychain states.
+        // Always clear securityLoading so the splash screen can navigate.
+        console.warn('Security init failed:', e?.message);
+        setState(s => ({ ...s, securityLoading: false }));
+      }
     }
     init();
   }, []);

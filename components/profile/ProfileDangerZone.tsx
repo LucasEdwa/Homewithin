@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
+import { clearSession } from '@/services/storage';
 import { signOut } from '@/services/supabase';
 import { deleteAccount } from '@/services/user/account';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,7 @@ export function ProfileDangerZone() {
           style: 'destructive',
           onPress: async () => {
             await signOut().catch(() => {});
+            await clearSession().catch(() => {});
             reset();
             router.replace('/welcome');
           },

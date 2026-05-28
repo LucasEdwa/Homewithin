@@ -29,6 +29,13 @@ export async function isOnboardingComplete(): Promise<boolean> {
   return value === "true";
 }
 
+export async function clearSession(): Promise<void> {
+  await Promise.all([
+    SecureStore.deleteItemAsync(SESSION_KEY),
+    SecureStore.deleteItemAsync(ONBOARDING_KEY),
+  ]).catch(() => {});
+}
+
 export async function saveSession(data: object) {
   // Strip large fields before storing — SecureStore has a 2 KB limit.
   // needs/intentions/avatarUrl are re-fetched from Supabase on the next authenticated launch.
