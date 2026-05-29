@@ -77,9 +77,11 @@ describe('AICompanionScreen', () => {
   it('hides starters when history exists', async () => {
     mockGetHistory.mockResolvedValue([USER_MSG, AI_MSG]);
     render(<AICompanionScreen />);
+    // Wait for messages to load first (positive assertion stabilises timing)
     await waitFor(() => {
-      expect(screen.queryByText("What's on your mind?")).toBeNull();
+      expect(screen.getByText('I hear you.')).toBeTruthy();
     });
+    expect(screen.queryByText("What's on your mind?")).toBeNull();
   });
 
   it('renders existing messages', async () => {

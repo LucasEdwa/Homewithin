@@ -31,6 +31,14 @@ jest.mock('react-native/Libraries/Linking/Linking', () => ({
   openURL: jest.fn(),
 }));
 
+jest.mock('@/services/social/matching', () => ({
+  getMyMatches: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('@/services/social/circles', () => ({
+  listCircles: jest.fn().mockResolvedValue([]),
+}));
+
 const mockGetPeople = cfService.getSupportPeople as jest.Mock;
 const mockAdd = cfService.addSupportPerson as jest.Mock;
 const mockUpdate = cfService.updateSupportPerson as jest.Mock;
