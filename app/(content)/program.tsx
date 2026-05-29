@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/Colors';
@@ -17,7 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { getProgramById, getCompletedLessonIds, markLessonComplete } from '@/services/content/programs';
 import type { Program, Lesson } from '@/types';
-
+import { MarkdownBody } from '@/components/ui/MarkdownBody';
 export default function ProgramScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [program, setProgram] = useState<Program | null>(null);
@@ -117,7 +118,7 @@ export default function ProgramScreen() {
 
               {expanded && (
                 <View style={styles.lessonBody}>
-                  <Text style={styles.lessonText}>{lesson.body}</Text>
+                  <MarkdownBody body={lesson.body} fontSize={15} />
 
                   <Card style={[styles.reflectionCard, { borderLeftColor: program.color }]}>
                     <Text style={[styles.reflectionLabel, { color: program.color }]}>Reflection</Text>

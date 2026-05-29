@@ -11,9 +11,12 @@ create table if not exists resource_categories (
 
 alter table resource_categories enable row level security;
 
-create policy "Resource categories are publicly readable"
-  on resource_categories for select
-  using (true);
+do $$ begin
+  create policy "Resource categories are publicly readable"
+    on resource_categories for select
+    using (true);
+exception when duplicate_object then null;
+end $$;
 
 -- ─── Seed all categories ──────────────────────────────────────────────────────
 

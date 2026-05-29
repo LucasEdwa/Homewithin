@@ -17,6 +17,7 @@ import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { getResourceById, toggleBookmark, isBookmarked } from '@/services/content/resources';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
 import type { Resource } from '@/types';
+import { MarkdownBody } from '@/components/ui/MarkdownBody';
 
 export default function ArticleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -109,7 +110,7 @@ export default function ArticleScreen() {
 
         <View style={styles.divider} />
 
-        <Text style={styles.body}>{article.body}</Text>
+        <MarkdownBody body={article.body} fontSize={16} />
 
         <View style={styles.footer}>
           <TouchableOpacity
@@ -162,6 +163,8 @@ const styles = StyleSheet.create({
   summary: { fontSize: 16, color: Colors.textSecondary, lineHeight: 24, fontStyle: 'italic' },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: Spacing.xs },
   body: { fontSize: 16, color: Colors.textPrimary, lineHeight: 26 },
+  bodyHeading: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, lineHeight: 26, marginTop: 20, marginBottom: 2 },
+  bodyBold: { fontWeight: '700', color: Colors.textPrimary },
   footer: { marginTop: Spacing.md, alignItems: 'center' },
   bookmarkBtn: {
     flexDirection: 'row',
