@@ -179,11 +179,14 @@ describe('JournalEntryScreen — write mode', () => {
   });
 
   it('toggles "Hide behind PIN" correctly', async () => {
+    mockHasPin.mockResolvedValue(true); // PIN already set — toggle works directly
     await openWriteMode();
     await waitFor(() => screen.getByLabelText('Hide this entry behind PIN'));
     fireEvent.press(screen.getByLabelText('Hide this entry behind PIN'));
     const toggle = screen.getByLabelText('Hide this entry behind PIN');
-    expect(toggle.props.accessibilityState).toEqual({ checked: true });
+    await waitFor(() =>
+      expect(toggle.props.accessibilityState).toEqual({ checked: true })
+    );
   });
 
   it('goes back to list after saving', async () => {

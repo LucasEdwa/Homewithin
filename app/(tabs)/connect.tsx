@@ -1,25 +1,18 @@
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { ConnectionsSection } from '@/components/social/ConnectionsSection';
+import { IncomingLikesSection } from '@/components/social/IncomingLikesSection';
+import { MatchCard } from '@/components/social/MatchCard';
+import { PendingSection } from '@/components/social/PendingSection';
 import { Card } from '@/components/ui/Card';
-import { Image } from 'expo-image';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { useUnread } from '@/context/UnreadContext';
-import { useMatches } from '@/hooks/useMatches';
-import {
-  acceptIncomingLike,
-  connectMatch,
-  declineIncomingLike,
-  findMatches,
-  passMatch,
-} from '@/services/social/matching';
-import type { IntentionId, Match, PeerProfile } from '@/types';
+import { useConnectScreen } from '@/hooks/useConnectScreen';
 import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
-  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -28,102 +21,32 @@ import {
   View,
 } from 'react-native';
 
-type View_ = 'intentions' | 'browsing' | 'empty';
-
 export default function ConnectScreen() {
-  const { unreadByMatch } = useUnread();
-  const { myMatches, pendingOutgoing, incomingLikes, refreshMatchLists } = useMatches();
-  const [view, setView] = useState<View_>('intentions');
-  const [intention, setIntention] = useState<IntentionId | null>(null);
-  const [candidates, setCandidates] = useState<PeerProfile[]>([]);
-  const [loading, setLoading] = useState(false);
-  async function handleSelectIntention(id: IntentionId) {
-    setIntention(id);
-    setLoading(true);
-    const results = await findMatches(id);
-    setCandidates(results);
-    setLoading(false);
-    setView(results.length > 0 ? 'browsing' : 'empty');
-  }
-
-  async function handleConnect() {
-    if (!intention || candidates.length === 0) return;
-    const [peer, ...rest] = candidates;
-    const { matchId, mutual } = await connectMatch(peer.userId, intention);
-
-    if (mutual && matchId) {
-      await refreshMatchLists();
-      Alert.alert(
-        "It's a match! 🎉",
-        `You and ${peer.nickname} both want to connect. Say hi!`,
-        [
-          {
-            text: 'Open chat',
-            onPress: () => router.push({ pathname: '/chat', params: { matchId, nickname: peer.nickname, avatarUrl: peer.avatarUrl ?? '' } }),
-          },
-          { text: 'Later' },
-        ]
-      );
-    } else {
-      await refreshMatchLists();
-    }
-
-    if (rest.length > 0) {
-      setCandidates(rest);
-    } else {
-      setView('empty');
-    }
-  }
-
-  async function handleAcceptLike(match: Match) {
-    const ok = await acceptIncomingLike(match.id);
-    if (ok) {
-      await refreshMatchLists();
-      Alert.alert(
-        "It's a match! 🎉",
-        `You and ${match.peer?.nickname ?? 'someone'} are now connected.`,
-        [
-          {
-            text: 'Open chat',
-            onPress: () => router.push({ pathname: '/chat', params: { matchId: match.id, nickname: match.peer?.nickname ?? 'Someone', avatarUrl: match.peer?.avatarUrl ?? '' } }),
-          },
-          { text: 'Later' },
-        ]
-      );
-    }
-  }
-
-  async function handleDeclineLike(match: Match) {
-    await declineIncomingLike(match.id);
-    await refreshMatchLists();
-  }
-
-  async function handlePass() {
-    if (!intention || candidates.length === 0) return;
-    const [peer, ...rest] = candidates;
-    await passMatch(peer.userId, intention);
-    if (rest.length > 0) {
-      setCandidates(rest);
-    } else {
-      setView('empty');
-    }
-  }
-
-  function handleBackToIntentions() {
-    setView('intentions');
-    setIntention(null);
-    setCandidates([]);
-  }
-
-  const currentPeer = candidates[0];
-  const intentionObj = INTENTIONS.find((i) => i.id === intention);
+  const {
+    view,
+    loading,
+    currentPeer,
+    candidatesCount,
+    intentionObj,
+    myMatches,
+    pendingOutgoing,
+    incomingLikes,
+    unreadByMatch,
+    handleSelectIntention,
+    handleConnect,
+    handleAcceptLike,
+    handleDeclineLike,
+    handleCancelPending,
+    handleUnmatch,
+    handlePass,
+    handleBackToIntentions,
+  } = useConnectScreen();
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Connect</Text>
 
-        {/* Intentions panel */}
         {view === 'intentions' && (
           <>
             <Text style={styles.subtitle}>Who would help most today?</Text>
@@ -148,29 +71,32 @@ export default function ConnectScreen() {
           </>
         )}
 
-        {/* Match browsing */}
         {(view === 'browsing' || view === 'empty') && (
           <View style={styles.browseHeader}>
-            <TouchableOpacity onPress={handleBackToIntentions} style={styles.backBtn} accessibilityLabel="Change intention">
+            <TouchableOpacity
+              onPress={handleBackToIntentions}
+              style={styles.backBtn}
+              accessibilityLabel="Change intention"
+            >
               <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
             </TouchableOpacity>
             {intentionObj && (
               <View style={[styles.intentionBadge, { backgroundColor: intentionObj.color + '22' }]}>
                 <Ionicons name={intentionObj.icon as any} size={14} color={intentionObj.color} />
-                <Text style={[styles.intentionBadgeText, { color: intentionObj.color }]}>{intentionObj.label}</Text>
+                <Text style={[styles.intentionBadgeText, { color: intentionObj.color }]}>
+                  {intentionObj.label}
+                </Text>
               </View>
             )}
           </View>
         )}
 
-        {loading && (
-          <ActivityIndicator color={Colors.safeBlue} style={styles.loader} />
-        )}
+        {loading && <ActivityIndicator color={Colors.safeBlue} style={styles.loader} />}
 
         {view === 'browsing' && !loading && currentPeer && (
           <MatchCard
             peer={currentPeer}
-            remaining={candidates.length}
+            remaining={candidatesCount}
             onConnect={handleConnect}
             onPass={handlePass}
           />
@@ -187,104 +113,18 @@ export default function ConnectScreen() {
           </View>
         )}
 
-        {/* Incoming likes — people waiting for your response */}
-        {incomingLikes.length > 0 && (
-          <View style={styles.connectionsSection}>
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionTitle}>People who liked you</Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{incomingLikes.length}</Text>
-              </View>
-            </View>
-            {incomingLikes.map((match) => (
-              <View key={match.id} style={styles.connectionRow} testID={`incoming-${match.id}`}>
-                <View style={[styles.avatar, { backgroundColor: Colors.mutedLavender }]}>
-                  <Text style={styles.avatarText}>{(match.peer?.nickname?.[0] ?? '?').toUpperCase()}</Text>
-                </View>
-                <View style={styles.connectionInfo}>
-                  <Text style={styles.connectionName}>{match.peer?.nickname ?? 'Someone'}</Text>
-                  {match.peer?.country ? (
-                    <Text style={styles.connectionMeta}>{match.peer.country}</Text>
-                  ) : null}
-                </View>
-                <TouchableOpacity
-                  style={styles.declineBtn}
-                  onPress={() => handleDeclineLike(match)}
-                  accessibilityLabel="Decline"
-                  testID={`decline-${match.id}`}
-                >
-                  <Ionicons name="close" size={18} color={Colors.textMuted} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.acceptBtn}
-                  onPress={() => handleAcceptLike(match)}
-                  accessibilityLabel="Accept"
-                  testID={`accept-${match.id}`}
-                >
-                  <Ionicons name="heart" size={16} color={Colors.white} />
-                  <Text style={styles.acceptBtnText}>Connect</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
+        <IncomingLikesSection
+          matches={incomingLikes}
+          onAccept={handleAcceptLike}
+          onDecline={handleDeclineLike}
+        />
+        <ConnectionsSection
+          matches={myMatches}
+          unreadByMatch={unreadByMatch}
+          onUnmatch={handleUnmatch}
+        />
+        <PendingSection matches={pendingOutgoing} onCancel={handleCancelPending} />
 
-        {/* Mutual connections — chat enabled */}
-        {myMatches.length > 0 && (
-          <View style={styles.connectionsSection}>
-            <Text style={styles.sectionTitle}>Your connections</Text>
-            {myMatches.map((match) => {
-              const unread = unreadByMatch[match.id] ?? 0;
-              return (
-                <TouchableOpacity
-                  key={match.id}
-                  style={styles.connectionRow}
-                  onPress={() => router.push({ pathname: '/chat', params: { matchId: match.id, nickname: match.peer?.nickname ?? 'Someone', avatarUrl: match.peer?.avatarUrl ?? '' } })}
-                  accessibilityLabel={`Chat with ${match.peer?.nickname ?? 'Someone'}`}
-                  testID={`match-${match.id}`}
-                >
-                  <PeerAvatar avatarUrl={match.peer?.avatarUrl} nickname={match.peer?.nickname} />
-                  <View style={styles.connectionInfo}>
-                    <Text style={[styles.connectionName, unread > 0 && styles.connectionNameUnread]}>
-                      {match.peer?.nickname ?? 'Someone'}
-                    </Text>
-                    {match.peer?.country ? (
-                      <Text style={styles.connectionMeta}>{match.peer.country}</Text>
-                    ) : null}
-                  </View>
-                  {unread > 0 ? (
-                    <View style={styles.unreadBadge}>
-                      <Text style={styles.unreadBadgeText}>{unread > 99 ? '99+' : unread}</Text>
-                    </View>
-                  ) : (
-                    <Ionicons name="chatbubble-outline" size={18} color={Colors.safeBlue} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Pending outgoing likes — waiting for the other person */}
-        {pendingOutgoing.length > 0 && (
-          <View style={styles.connectionsSection}>
-            <Text style={styles.sectionTitle}>Waiting for response</Text>
-            {pendingOutgoing.map((match) => (
-              <View key={match.id} style={[styles.connectionRow, styles.pendingRow]} testID={`pending-${match.id}`}>
-                <View style={[styles.avatar, { backgroundColor: Colors.border }]}>
-                  <Text style={[styles.avatarText, { color: Colors.textMuted }]}>{(match.peer?.nickname?.[0] ?? '?').toUpperCase()}</Text>
-                </View>
-                <View style={styles.connectionInfo}>
-                  <Text style={styles.connectionName}>{match.peer?.nickname ?? 'Someone'}</Text>
-                  <Text style={styles.connectionMeta}>Waiting for them to connect back…</Text>
-                </View>
-                <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Support circles entry */}
         <TouchableOpacity
           style={styles.circlesEntry}
           onPress={() => router.push('/circles')}
@@ -297,12 +137,13 @@ export default function ConnectScreen() {
           </View>
           <View style={styles.circlesEntryText}>
             <Text style={styles.circlesEntryTitle}>Support circles</Text>
-            <Text style={styles.circlesEntrySub}>Small groups of 4–8 people. Safer than public feeds.</Text>
+            <Text style={styles.circlesEntrySub}>
+              Small groups of 4–8 people. Safer than public feeds.
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Safety note */}
         <Card style={styles.safetyNote}>
           <Ionicons name="shield-checkmark-outline" size={18} color={Colors.softGreen} />
           <Text style={styles.safetyText}>
@@ -312,102 +153,6 @@ export default function ConnectScreen() {
       </ScrollView>
       <EmergencyButton />
     </SafeAreaView>
-  );
-}
-
-function PeerAvatar({ avatarUrl, nickname, size = 44 }: { avatarUrl?: string; nickname?: string; size?: number }) {
-  const [failed, setFailed] = useState(false);
-  const radius = size / 2;
-  if (avatarUrl && !failed) {
-    return (
-      <Image
-        source={{ uri: avatarUrl }}
-        style={{ width: size, height: size, borderRadius: radius }}
-        contentFit="cover"
-        onError={() => setFailed(true)}
-      />
-    );
-  }
-  return (
-    <View style={[styles.avatar, { width: size, height: size, borderRadius: radius, backgroundColor: 'rgba(255,255,255,0.08)' }]}>
-      <Text style={[styles.avatarText, { fontSize: size * 0.38 }]}>{(nickname?.[0] ?? '?').toUpperCase()}</Text>
-    </View>
-  );
-}
-
-function MatchCard({
-  peer,
-  remaining,
-  onConnect,
-  onPass,
-}: {
-  peer: PeerProfile;
-  remaining: number;
-  onConnect: () => void;
-  onPass: () => void;
-}) {
-  return (
-    <View style={styles.matchCard}>
-      {/* Counter */}
-      <Text style={styles.remainingText}>
-        {remaining} {remaining === 1 ? 'person' : 'people'} nearby
-      </Text>
-
-      {/* Avatar */}
-      <View style={styles.matchAvatarWrap}>
-        <PeerAvatar avatarUrl={peer.avatarUrl} nickname={peer.nickname} size={120} />
-      </View>
-
-      {/* Name + meta */}
-      <Text style={styles.matchNickname}>{peer.nickname}</Text>
-
-      <View style={styles.matchMeta}>
-        {peer.ageRange ? (
-          <View style={styles.metaChip}>
-            <Ionicons name="person-outline" size={11} color={Colors.textMuted} />
-            <Text style={styles.metaChipText}>{peer.ageRange}</Text>
-          </View>
-        ) : null}
-        {peer.country ? (
-          <View style={styles.metaChip}>
-            <Ionicons name="location-outline" size={11} color={Colors.textMuted} />
-            <Text style={styles.metaChipText}>{peer.country}</Text>
-          </View>
-        ) : null}
-        {peer.language ? (
-          <View style={styles.metaChip}>
-            <Ionicons name="language-outline" size={11} color={Colors.textMuted} />
-            <Text style={styles.metaChipText}>{peer.language}</Text>
-          </View>
-        ) : null}
-      </View>
-
-      {peer.needs.length > 0 && (
-        <View style={styles.needsRow}>
-          {peer.needs.slice(0, 3).map((need) => (
-            <View key={need} style={styles.needChip}>
-              <Text style={styles.needChipText}>{need.replace(/_/g, ' ')}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* Divider */}
-      <View style={styles.matchDivider} />
-
-      {/* Actions */}
-      <View style={styles.matchActions}>
-        <TouchableOpacity style={styles.passBtn} onPress={onPass} accessibilityLabel="Pass" testID="pass-btn">
-          <Ionicons name="close" size={24} color={Colors.textSecondary} />
-          <Text style={styles.passBtnText}>Skip</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.connectBtn} onPress={onConnect} accessibilityLabel="Connect" testID="connect-btn">
-          <Ionicons name="heart" size={24} color={Colors.black} />
-          <Text style={styles.connectBtnText}>Connect</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
   );
 }
 
@@ -446,109 +191,11 @@ const styles = StyleSheet.create({
   },
   intentionBadgeText: { fontSize: 13, fontWeight: '600' },
   loader: { marginTop: Spacing.xl },
-  matchCard: {
-    backgroundColor: Colors.softGray,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
-  matchAvatarWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  matchNickname: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, marginTop: Spacing.xs },
-  matchMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, justifyContent: 'center' },
-  metaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
-  },
-  metaChipText: { fontSize: 12, color: Colors.textMuted },
-  needsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, justifyContent: 'center' },
-  needChip: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  needChipText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
-  remainingText: { fontSize: 11, color: Colors.textMuted, fontWeight: '500', letterSpacing: 0.3, alignSelf: 'flex-end' },
-  matchDivider: { width: '100%', height: 1, backgroundColor: Colors.border, marginTop: Spacing.xs },
-  matchActions: { flexDirection: 'row', gap: Spacing.xl, paddingVertical: Spacing.sm },
-  passBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.12)',
-    gap: 4,
-  },
-  passBtnText: { fontSize: 10, color: Colors.textMuted, fontWeight: '600', letterSpacing: 0.3 },
-  connectBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.white,
-    gap: 4,
-  },
-  connectBtnText: { fontSize: 10, color: Colors.black, fontWeight: '700', letterSpacing: 0.3 },
   emptyState: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xl },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
   emptyText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
   resetBtn: { marginTop: Spacing.sm },
   resetText: { fontSize: 14, color: Colors.safeBlue, fontWeight: '600', textDecorationLine: 'underline' },
-  connectionsSection: { gap: Spacing.sm },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-  connectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    backgroundColor: Colors.softGray,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.softGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontSize: 18, fontWeight: '700', color: Colors.white },
-  connectionInfo: { flex: 1 },
-  connectionName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  connectionMeta: { fontSize: 12, color: Colors.textMuted },
-  safetyNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    backgroundColor: Colors.softGreen + '12',
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.softGreen,
-  },
-  safetyText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
   circlesEntry: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -560,53 +207,24 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   circlesEntryIcon: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: Colors.mutedLavender + '22',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   circlesEntryText: { flex: 1 },
   circlesEntryTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   circlesEntrySub: { fontSize: 12, color: Colors.textMuted, marginTop: 2, lineHeight: 16 },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.mutedLavender,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-  },
-  badgeText: { fontSize: 11, fontWeight: '700', color: Colors.white },
-  declineBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.softGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  acceptBtn: {
+  safetyNote: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.safeBlue,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 7,
-    borderRadius: Radius.full,
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    backgroundColor: Colors.softGreen + '12',
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.softGreen,
   },
-  acceptBtnText: { fontSize: 12, fontWeight: '700', color: Colors.white },
-  pendingRow: { opacity: 0.7 },
-  avatarImage: { width: 42, height: 42, borderRadius: 21 },
-  connectionNameUnread: { fontWeight: '700', color: Colors.textPrimary },
-  unreadBadge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.safeBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-  },
-  unreadBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.white },
+  safetyText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
 });
+

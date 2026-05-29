@@ -314,6 +314,41 @@ export async function declineIncomingLike(matchId: string): Promise<void> {
   if (error) console.error("Decline like failed:", error.message);
 }
 
+// Cancel an outgoing pending request — only the requester can do this
+export async function cancelPendingMatch(matchId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const uid = await currentUserId();
+  if (!uid) return false;
+  const { error } = await supabase
+    .from("matches")
+    .delete()
+    .eq("id", matchId)
+    .eq("requester_id", uid)
+    .eq("status", "pending");
+  if (error) {
+    console.error("Cancel pending failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
+// Unmatch an accepted connection — either participant can do this
+export async function unmatch(matchId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const uid = await currentUserId();
+  if (!uid) return false;
+  const { error } = await supabase
+    .from("matches")
+    .delete()
+    .eq("id", matchId)
+    .or(`requester_id.eq.${uid},target_id.eq.${uid}`);
+  if (error) {
+    console.error("Unmatch failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
 export async function blockUser(
   targetId: string,
   matchId?: string,
