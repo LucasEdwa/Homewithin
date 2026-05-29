@@ -64,6 +64,8 @@ export default function JournalEntryScreen() {
   const [pinInput, setPinInput] = useState('');
   const [lockedEntryId, setLockedEntryId] = useState<string | null>(null);
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+  // 'open-entry' = unlock a list entry, 'lock-editor' = enable hidden on current draft
+  const [pinPurpose, setPinPurpose] = useState<'open-entry' | 'lock-editor' | null>(null);
 
   useEffect(() => {
     loadEntries();
@@ -129,8 +131,19 @@ export default function JournalEntryScreen() {
     }
 
     const preview = entry.body.slice(0, 200);
-    await loadEntries();
+    // Reload entries and apply ALL state changes in one synchronous block so
+    // React batches them into a single render. Splitting across awaits would
+    // let an interim render show the entry as unlocked.
+    const all = await getJournalEntries();
+    setEntries(all);
     setLoading(false);
+    if (entry.isHidden) {
+      setUnlockedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(entry.id);
+        return next;
+      });
+    }
     setShowList(true);
     setBody('');
     setEmotionTags([]);
@@ -173,11 +186,8 @@ export default function JournalEntryScreen() {
       return;
     }
     const pinSet = await hasPin();
-    if (!pinSet) {
-      setPinModal('set');
-    } else {
-      setPinModal('verify');
-    }
+    setPinPurpose('open-entry');
+    setPinModal(pinSet ? 'verify' : 'set');
     setLockedEntryId(entryId);
     setPinInput('');
   }
@@ -190,7 +200,11 @@ export default function JournalEntryScreen() {
       }
       await setPin(pinInput);
       setPinModal(null);
-      if (lockedEntryId) {
+      setPinPurpose(null);
+      if (pinPurpose === 'lock-editor') {
+        // User set a PIN while toggling the lock on a draft — activate hidden mode.
+        setIsHidden(true);
+      } else if (lockedEntryId) {
         setUnlockedIds((prev) => new Set([...prev, lockedEntryId]));
         openEntry(lockedEntryId);
       }
@@ -198,6 +212,7 @@ export default function JournalEntryScreen() {
       const ok = await verifyPin(pinInput);
       if (ok) {
         setPinModal(null);
+        setPinPurpose(null);
         if (lockedEntryId) {
           setUnlockedIds((prev) => new Set([...prev, lockedEntryId]));
           openEntry(lockedEntryId);
@@ -333,7 +348,19 @@ export default function JournalEntryScreen() {
 
             <TouchableOpacity
               style={styles.hiddenToggle}
-              onPress={() => setIsHidden((v) => !v)}
+              onPress={async () => {
+                if (!isHidden) {
+                  // Toggling ON — ensure a PIN exists first.
+                  const pinSet = await hasPin();
+                  if (!pinSet) {
+                    setPinPurpose('lock-editor');
+                    setPinModal('set');
+                    setPinInput('');
+                    return;
+                  }
+                }
+                setIsHidden((v) => !v);
+              }}
               accessibilityRole="checkbox"
               accessibilityLabel="Hide this entry behind PIN"
               accessibilityState={{ checked: isHidden }}
