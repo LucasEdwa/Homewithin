@@ -32,10 +32,10 @@ function LockGate({ children }: { children: React.ReactNode }) {
   const { locked, loading, profile } = useSession();
 
   useEffect(() => {
-    if (!loading && locked) {
+    if (!loading && locked && profile) {
       router.replace('/lock');
     }
-  }, [locked, loading]);
+  }, [locked, loading, profile]);
 
   // Register for push notifications once the user has a profile.
   useEffect(() => {

@@ -17,6 +17,8 @@ import { MoodChart } from '@/components/ui/MoodChart';
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { useCheckIns } from '@/hooks/useCheckIns';
 import { MOOD_LABELS, MOOD_ICONS, MOOD_COLORS, EMOTION_COLORS } from '@/types';
+import { usePinModal } from '@/hooks/usePinModal';
+import { PinModal } from '@/components/ui/PinModal';
 
 function formatDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', {
@@ -26,6 +28,10 @@ function formatDate(iso: string) {
 
 export default function JournalScreen() {
   const { todayCheckIn, recentCheckIns, recentEntries } = useCheckIns();
+
+  const { pinModal, pinInput, setPinInput, handleOpenHidden, handlePinSubmit, closePinModal } = usePinModal(
+    (entryId) => router.push({ pathname: '/journal-entry', params: { id: entryId, pinVerified: '1' } }),
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -128,12 +134,16 @@ export default function JournalScreen() {
               <TouchableOpacity
                 key={entry.id}
                 style={styles.entryRow}
-                onPress={() => router.push({ pathname: '/journal-entry', params: { id: entry.id } })}
+                onPress={() =>
+                  entry.isHidden
+                    ? handleOpenHidden(entry.id)
+                    : router.push({ pathname: '/journal-entry', params: { id: entry.id } })
+                }
                 activeOpacity={0.75}
               >
                 <View style={styles.entryRowLeft}>
                   <Text style={styles.entryRowDate}>{formatDate(entry.date)}</Text>
-                  {entry.emotionTags.length > 0 && (
+                  {entry.emotionTags.length > 0 && !entry.isHidden && (
                     <View style={styles.entryRowTags}>
                       {entry.emotionTags.slice(0, 2).map((t) => (
                         <View key={t} style={[styles.miniTag, { backgroundColor: EMOTION_COLORS[t] + '20' }]}>
@@ -153,6 +163,14 @@ export default function JournalScreen() {
         </View>
       </ScrollView>
 
+      <PinModal
+        visible={pinModal !== null}
+        mode={pinModal}
+        value={pinInput}
+        onChange={setPinInput}
+        onSubmit={handlePinSubmit}
+        onCancel={closePinModal}
+      />
       <EmergencyButton />
     </SafeAreaView>
   );

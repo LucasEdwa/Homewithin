@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   Alert,
   Share,
-  Modal,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -27,10 +26,9 @@ import {
   getJournalEntries,
   deleteJournalEntry,
   exportJournalAsText,
-  verifyPin,
-  hasPin,
-  setPin,
 } from '@/services/storage';
+import { usePinModal } from '@/hooks/usePinModal';
+import { PinModal } from '@/components/ui/PinModal';
 import type { JournalEntry, EmotionTag } from '@/types';
 import { EMOTION_TAGS, EMOTION_COLORS } from '@/types';
 
@@ -49,29 +47,30 @@ function formatDate(iso: string) {
 }
 
 export default function JournalEntryScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, pinVerified } = useLocalSearchParams<{ id?: string; pinVerified?: string }>();
 
   const [body, setBody] = useState('');
   const [emotionTags, setEmotionTags] = useState<EmotionTag[]>([]);
   const [isHidden, setIsHidden] = useState(false);
   const [loading, setLoading] = useState(false);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [showList, setShowList] = useState(!id);
+  const [showList, setShowList] = useState(true);
   const [editingId, setEditingId] = useState<string | undefined>(id);
-
-  // PIN modal state
-  const [pinModal, setPinModal] = useState<'verify' | 'set' | null>(null);
-  const [pinInput, setPinInput] = useState('');
-  const [lockedEntryId, setLockedEntryId] = useState<string | null>(null);
+  // Keep unlockedIds in component state (not the hook) so handleSave's setState
+  // calls are all direct component setters — guaranteed to batch in one render.
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
-  // 'open-entry' = unlock a list entry, 'lock-editor' = enable hidden on current draft
-  const [pinPurpose, setPinPurpose] = useState<'open-entry' | 'lock-editor' | null>(null);
+
+  // openEntry is a function declaration below — hoisted so it can be passed as callback
+  const { pinModal, pinInput, setPinInput, handleOpenHidden, openPinForLock, handlePinSubmit, closePinModal } = usePinModal(
+    (entryId) => {
+      setUnlockedIds((prev) => new Set([...prev, entryId]));
+      openEntry(entryId);
+    },
+    () => setIsHidden(true),
+  );
 
   useEffect(() => {
     loadEntries();
-    if (id) {
-      setShowList(false);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -81,10 +80,15 @@ export default function JournalEntryScreen() {
     if (id) {
       const existing = all.find((e) => e.id === id);
       if (existing) {
-        setBody(existing.body);
-        setEmotionTags(existing.emotionTags);
-        setIsHidden(existing.isHidden);
-        setShowList(false);
+        if (existing.isHidden && pinVerified !== '1') {
+          // PIN-protected — stay in list mode and prompt for PIN.
+          await handleOpenHidden(existing.id);
+        } else {
+          setBody(existing.body);
+          setEmotionTags(existing.emotionTags);
+          setIsHidden(existing.isHidden);
+          setShowList(false);
+        }
       }
     }
   }
@@ -180,50 +184,6 @@ export default function JournalEntryScreen() {
     await Share.share({ message: text, title: 'My Journal' });
   }
 
-  async function handleOpenHidden(entryId: string) {
-    if (unlockedIds.has(entryId)) {
-      openEntry(entryId);
-      return;
-    }
-    const pinSet = await hasPin();
-    setPinPurpose('open-entry');
-    setPinModal(pinSet ? 'verify' : 'set');
-    setLockedEntryId(entryId);
-    setPinInput('');
-  }
-
-  async function handlePinSubmit() {
-    if (pinModal === 'set') {
-      if (pinInput.length < 4) {
-        Alert.alert('Too short', 'PIN must be at least 4 digits.');
-        return;
-      }
-      await setPin(pinInput);
-      setPinModal(null);
-      setPinPurpose(null);
-      if (pinPurpose === 'lock-editor') {
-        // User set a PIN while toggling the lock on a draft — activate hidden mode.
-        setIsHidden(true);
-      } else if (lockedEntryId) {
-        setUnlockedIds((prev) => new Set([...prev, lockedEntryId]));
-        openEntry(lockedEntryId);
-      }
-    } else {
-      const ok = await verifyPin(pinInput);
-      if (ok) {
-        setPinModal(null);
-        setPinPurpose(null);
-        if (lockedEntryId) {
-          setUnlockedIds((prev) => new Set([...prev, lockedEntryId]));
-          openEntry(lockedEntryId);
-        }
-      } else {
-        Alert.alert('Wrong PIN', 'Please try again.');
-        setPinInput('');
-      }
-    }
-  }
-
   function openEntry(entryId: string) {
     const entry = entries.find((e) => e.id === entryId);
     if (!entry) return;
@@ -280,8 +240,10 @@ export default function JournalEntryScreen() {
                 key={entry.id}
                 style={styles.entryCard}
                 onPress={() => {
-                  if (entry.isHidden) handleOpenHidden(entry.id);
-                  else openEntry(entry.id);
+                  if (entry.isHidden) {
+                    if (unlockedIds.has(entry.id)) openEntry(entry.id);
+                    else handleOpenHidden(entry.id);
+                  } else openEntry(entry.id);
                 }}
                 activeOpacity={0.75}
                 accessibilityLabel={`Journal entry from ${entry.date}`}
@@ -351,13 +313,8 @@ export default function JournalEntryScreen() {
               onPress={async () => {
                 if (!isHidden) {
                   // Toggling ON — ensure a PIN exists first.
-                  const pinSet = await hasPin();
-                  if (!pinSet) {
-                    setPinPurpose('lock-editor');
-                    setPinModal('set');
-                    setPinInput('');
-                    return;
-                  }
+                  const modalShown = await openPinForLock();
+                  if (modalShown) return; // hook will call onLockSet → setIsHidden(true)
                 }
                 setIsHidden((v) => !v);
               }}
@@ -380,33 +337,14 @@ export default function JournalEntryScreen() {
         </KeyboardAvoidingView>
       )}
 
-      {/* PIN modal */}
-      <Modal visible={pinModal !== null} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <Card style={styles.pinCard}>
-            <Ionicons name="lock-closed" size={32} color={Colors.mutedLavender} />
-            <Text style={styles.pinTitle}>
-              {pinModal === 'set' ? 'Set a PIN for hidden entries' : 'Enter PIN to unlock'}
-            </Text>
-            <TextInput
-              style={styles.pinInput}
-              value={pinInput}
-              onChangeText={setPinInput}
-              placeholder="Enter PIN"
-              placeholderTextColor={Colors.textMuted}
-              secureTextEntry
-              keyboardType="number-pad"
-              maxLength={8}
-              autoFocus
-              accessibilityLabel="PIN input"
-            />
-            <View style={styles.pinButtons}>
-              <Button label="Cancel" variant="ghost" onPress={() => setPinModal(null)} style={{ flex: 1 }} />
-              <Button label="Confirm" onPress={handlePinSubmit} style={{ flex: 1 }} />
-            </View>
-          </Card>
-        </View>
-      </Modal>
+      <PinModal
+        visible={pinModal !== null}
+        mode={pinModal}
+        value={pinInput}
+        onChange={setPinInput}
+        onSubmit={handlePinSubmit}
+        onCancel={closePinModal}
+      />
 
       <EmergencyButton />
     </SafeAreaView>
@@ -459,25 +397,5 @@ const styles = StyleSheet.create({
   hiddenToggle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   hiddenLabel: { fontSize: 14, color: Colors.textMuted },
   cta: { marginTop: Spacing.sm },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.xl,
-  },
-  pinCard: { width: '100%', alignItems: 'center', gap: Spacing.md },
-  pinTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, textAlign: 'center' },
-  pinInput: {
-    width: '100%',
-    height: 52,
-    backgroundColor: Colors.softGray,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    fontSize: 24,
-    letterSpacing: 8,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  pinButtons: { flexDirection: 'row', gap: Spacing.md, width: '100%' },
+
 });

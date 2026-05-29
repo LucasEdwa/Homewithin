@@ -84,6 +84,8 @@ export default function AICompanionScreen() {
   const [starters, setStarters] = useState<string[]>(DEFAULT_STARTERS);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const listRef = useRef<FlatList>(null);
+  // Prevents auto-send from firing more than once per session.
+  const autoSentRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -188,6 +190,17 @@ export default function AICompanionScreen() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-send an insight request when navigating here from the journal.
+  useEffect(() => {
+    if (!params.journalPreview) return;
+    if (userContext === null) return;   // wait for context to be ready
+    if (showConsentModal) return;       // wait for consent
+    if (autoSentRef.current) return;   // only once
+    autoSentRef.current = true;
+    handleSend('I just wrote a journal entry. Can you give me an insight about it?');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userContext, showConsentModal]);
 
   const aiContext: AIContext = {
     moodScore: params.moodScore ? parseInt(params.moodScore, 10) : undefined,

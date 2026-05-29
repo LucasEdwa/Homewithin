@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
 export function ProfileDangerZone() {
-  const { profile, reset } = useSession();
+  const { profile, reset, unlock } = useSession();
   const [deleting, setDeleting] = useState(false);
 
   function handleSignOut() {
@@ -27,6 +27,7 @@ export function ProfileDangerZone() {
           onPress: async () => {
             await signOut().catch(() => {});
             await clearSession().catch(() => {});
+            unlock();
             reset();
             router.replace('/welcome');
           },
