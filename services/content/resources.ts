@@ -1,7 +1,34 @@
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from '../supabase';
 import { SEED_ARTICLES } from '@/data/articles';
+import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/types/content';
 import type { Resource, ResourceCategory } from '@/types';
+
+export interface ResourceCategoryMeta {
+  id: ResourceCategory;
+  label: string;
+  color: string;
+  sort_order: number;
+}
+
+export async function getResourceCategories(): Promise<ResourceCategoryMeta[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('resource_categories')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    if (!error && data && data.length > 0) {
+      return data as ResourceCategoryMeta[];
+    }
+  }
+  // Local fallback
+  return (Object.keys(CATEGORY_LABELS) as ResourceCategory[]).map((id, i) => ({
+    id,
+    label: CATEGORY_LABELS[id],
+    color: CATEGORY_COLORS[id],
+    sort_order: i + 1,
+  }));
+}
 
 const BOOKMARKS_KEY = 'hw_bookmarks';
 
