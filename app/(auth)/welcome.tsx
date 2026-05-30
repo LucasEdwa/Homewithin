@@ -39,6 +39,7 @@ const GUEST_NAMES = ['Sage', 'River', 'Quinn', 'Wren', 'Sky', 'Ash', 'Reed', 'No
 export default function WelcomeScreen() {
   const { setProfile, completeOnboarding } = useSession();
   const [guestLoading, setGuestLoading] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
   const { height: screenHeight } = useWindowDimensions();
   // Icon takes ~28% of screen height — readable on all iPhones, fits with buttons visible.
   const ICON_SIZE = Math.min(Math.round(screenHeight * 0.28), 240);
@@ -156,29 +157,43 @@ export default function WelcomeScreen() {
             onPress={handleStartAnonymously}
             variant="primary"
             style={styles.ctaBtn}
+            disabled={!termsAgreed}
           />
           <Button
             label="Sign in"
             onPress={() => router.push('/signin')}
             variant="secondary"
             style={styles.ctaBtn}
+            disabled={!termsAgreed}
           />
           <TouchableOpacity
             onPress={handleContinueAsGuest}
             accessibilityLabel="Continue as guest"
-            disabled={guestLoading}
+            disabled={guestLoading || !termsAgreed}
           >
             {guestLoading
               ? <ActivityIndicator size="small" color={Colors.textMuted} />
-              : <Text style={styles.guestLink}>Continue as guest — no account needed</Text>
+              : <Text style={[styles.guestLink, !termsAgreed && styles.guestLinkDisabled]}>Continue as guest — no account needed</Text>
             }
           </TouchableOpacity>
-          <Text style={styles.legalLine}>
-            By continuing, you agree to our{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Terms of Use</Text>
-            {' '}and{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Privacy Policy</Text>.
-          </Text>
+          <TouchableOpacity
+            onPress={() => setTermsAgreed((v) => !v)}
+            style={styles.checkboxRow}
+            activeOpacity={0.7}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: termsAgreed }}
+            accessibilityLabel="I agree to the Terms of Use and Privacy Policy"
+          >
+            <View style={[styles.checkbox, termsAgreed && styles.checkboxChecked]}>
+              {termsAgreed && <Ionicons name="checkmark" size={14} color={Colors.white} />}
+            </View>
+            <Text style={styles.checkboxLabel}>
+              I am 18 or older and agree to the{' '}
+              <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Terms of Use</Text>
+              {' '}and{' '}
+              <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Privacy Policy</Text>.
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -229,12 +244,36 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     marginTop: Spacing.xs,
   },
-  legalLine: {
+  guestLinkDisabled: {
+    opacity: 0.4,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: Colors.textMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.safeBlue,
+    borderColor: Colors.safeBlue,
+  },
+  checkboxLabel: {
+    flex: 1,
     fontSize: 12,
     color: Colors.textMuted,
-    textAlign: 'center',
     lineHeight: 18,
-    marginTop: Spacing.xs,
   },
   legalLink: {
     color: Colors.textSecondary,

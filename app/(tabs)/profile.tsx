@@ -11,7 +11,7 @@ import { getBookmarkedResources } from '@/services/content/resources';
 import type { Resource } from '@/types';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
@@ -47,6 +47,11 @@ export default function ProfileScreen() {
           label="Privacy Policy"
           value=""
           onPress={() => router.push('/terms')}
+        />
+        <SettingRow
+          label="Report a concern"
+          value=""
+          onPress={() => Linking.openURL('mailto:lucas.eduardo2070@gmail.com?subject=HomeWithin%20Report')}
         />
       </ScrollView>
       <EmergencyButton />

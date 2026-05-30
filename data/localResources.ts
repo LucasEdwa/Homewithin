@@ -494,7 +494,6 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     city: "Stockholm",
     state: "Stockholm",
     recurring: "Månadsvis",
-    link: "https://www.rfslstockholm.com",
   },
   {
     id: "mt-se-3",
@@ -504,7 +503,6 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     city: "Göteborg",
     state: "Västra Götaland",
     recurring: "Årligen — september",
-    link: "https://goteborgpride.se",
   },
   {
     id: "mt-se-4",
@@ -534,7 +532,6 @@ export const LOCAL_MEETUPS: LocalMeetup[] = [
     city: "Uppsala",
     state: "Uppsala",
     recurring: "Årligen — höst",
-    link: "https://uppsalapride.se",
   },
   {
     id: "mt-se-7",

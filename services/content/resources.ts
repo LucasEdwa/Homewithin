@@ -32,13 +32,27 @@ export async function getResourceCategories(): Promise<ResourceCategoryMeta[]> {
 
 const BOOKMARKS_KEY = 'hw_bookmarks';
 
+// Supabase returns snake_case columns; map them to the camelCase Resource type.
+function rowToResource(row: Record<string, unknown>): Resource {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    summary: row.summary as string,
+    body: row.body as string,
+    category: row.category as ResourceCategory,
+    language: row.language as string,
+    readTime: (row.read_time ?? row.readTime ?? 0) as number,
+    createdAt: (row.created_at ?? row.createdAt ?? '') as string,
+  };
+}
+
 export async function getResources(category?: ResourceCategory): Promise<Resource[]> {
   if (supabase) {
     let query = supabase.from('resources').select('*').order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
     const { data, error } = await query;
     if (!error && data && data.length > 0) {
-      return data as Resource[];
+      return data.map(rowToResource);
     }
   }
   const articles = category ? SEED_ARTICLES.filter((a) => a.category === category) : SEED_ARTICLES;
@@ -48,7 +62,7 @@ export async function getResources(category?: ResourceCategory): Promise<Resourc
 export async function getResourceById(id: string): Promise<Resource | null> {
   if (supabase) {
     const { data, error } = await supabase.from('resources').select('*').eq('id', id).single();
-    if (!error && data) return data as Resource;
+    if (!error && data) return rowToResource(data as Record<string, unknown>);
   }
   return SEED_ARTICLES.find((a) => a.id === id) ?? null;
 }

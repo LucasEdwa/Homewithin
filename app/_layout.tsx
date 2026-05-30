@@ -4,8 +4,13 @@ import { addNotificationResponseListener, registerForPushNotifications } from '@
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { LogBox, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+// Suppress spurious multi-touch tracking warnings from RN internals.
+// Fires when a touchmove arrives before a touchstart is recorded (e.g. iPad
+// multi-touch gestures crossing native/JS boundaries). Not a bug in app code.
+LogBox.ignoreLogs(['Cannot record touch move without a touch start.']);
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },

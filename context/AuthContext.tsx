@@ -1,4 +1,5 @@
 import {
+  clearSession,
   getSession,
   isOnboardingComplete,
   markOnboardingComplete,
@@ -63,15 +64,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         const uid = session.user.id;
-        const { data: row } = await client
-          .from('user_profiles')
-          .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
-          .eq('user_id', uid)
-          .maybeSingle();
-        if (row) {
-          const hydrated = buildHydratedProfile(row);
-          setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
-          await saveSession(hydrated).catch(() => {});
+        try {
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('onAuthStateChange profile timeout')), 8000)
+          );
+          const { data: row } = await Promise.race([
+            client
+              .from('user_profiles')
+              .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
+              .eq('user_id', uid)
+              .maybeSingle(),
+            timeout,
+          ]);
+          if (row) {
+            const hydrated = buildHydratedProfile(row);
+            setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
+            await saveSession(hydrated).catch(() => {});
+          }
+        } catch (e: any) {
+          console.warn('onAuthStateChange profile fetch failed:', e?.message);
         }
       }
     });
@@ -157,7 +168,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           } else {
-            console.log('Profile hydrate: no authenticated Supabase user (guest session)');
+            // No active Supabase session. If the cached profile belongs to a
+            // previously signed-in account (isAnonymous: false) it is stale —
+            // clear it so the PIN lock screen cannot appear on the login screen.
+            if (profile && !profile.isAnonymous) {
+              profile = null;
+              await clearSession().catch(() => {});
+            }
           }
         } catch (e: any) {
           console.warn('Profile hydrate from Supabase failed:', e?.message);
@@ -191,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function reset() {
     setState({ profile: null, onboardingComplete: false, loading: false });
+    clearSession().catch(() => {});
   }
 
   return (

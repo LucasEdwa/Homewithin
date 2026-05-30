@@ -61,8 +61,7 @@ export default function TermsOfUseScreen() {
         </Section>
 
         <Section title="2. Who Can Use HomeWithin">
-          <Para>You must be at least 13 years old to use HomeWithin. By using the app, you confirm that you meet this requirement.</Para>
-          <Para>If you are under 18, you are welcome — but please use the app safely and do not share personal information with strangers.</Para>
+          <Para>You must be at least 18 years old to use HomeWithin. By creating an account or using the app, you confirm that you are 18 or older.</Para>
         </Section>
 
         <Section title="3. Your Account">
@@ -79,6 +78,7 @@ export default function TermsOfUseScreen() {
           <Bullet>Connect with other users and exchange supportive messages</Bullet>
           <Bullet>Use the AI Companion for emotional support and reflection</Bullet>
 
+          <Para style={styles.spacedPara}>HomeWithin has a zero-tolerance policy for objectionable content and abusive users. There is no tolerance for: harassment, hate speech, threats, or any content that demeans, endangers, or harms others. Violations result in immediate and permanent removal.</Para>
           <Para style={styles.spacedPara}>You may not use HomeWithin to:</Para>
           <Bullet>Harass, threaten, or bully other users</Bullet>
           <Bullet>Share sexually explicit content or content that sexualises minors</Bullet>

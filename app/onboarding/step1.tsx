@@ -17,7 +17,7 @@ import {
     View,
 } from 'react-native';
 
-const AGE_RANGES = ['Under 18', '18–24', '25–34', '35–44', '45+'];
+const AGE_RANGES = ['18–24', '25–34', '35–44', '45+'];
 const LANGUAGES = ['English', 'Swedish', 'Portuguese', 'Spanish', 'French', 'German', 'Other'];
 const PRONOUNS = ['he/him', 'she/her', 'they/them', 'ze/zir', 'Prefer not to say'];
 

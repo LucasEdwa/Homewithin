@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.homewithin.app",
       "buildNumber": "10",
       "infoPlist": {
@@ -71,7 +71,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Homewithin uses your location to show LGBTQ+ resources near you."
+          "locationWhenInUsePermission": "HomeWithin uses your location to find LGBTQ+ support centers, shelters, and therapists near you in Sweden. For example, when you open the Resources screen, the app shows services within your area. Your location is never stored or shared with third parties."
         }
       ]
     ],
