@@ -1,6 +1,6 @@
 import { useUnread } from '@/context/UnreadContext';
 import { useMessages } from '@/hooks/useMessages';
-import { containsCrisisKeywords, deleteMessage, sendMessage } from '@/services/social/chat';
+import { containsCrisisKeywords, deleteMessage, sendMessage, applyExpiryToMatch } from '@/services/social/chat';
 import { filterContent } from '@/services/social/contentFilter';
 import { blockUser, getMatchPeerId, reportMessage } from '@/services/social/matching';
 import { supabase } from '@/services/supabase';
@@ -129,14 +129,37 @@ export function useChatScreen() {
 
   function handlePickExpiry() {
     const labels = [...EXPIRY_OPTIONS.map((o) => o.label), 'Cancel'];
+    const applySelection = async (option: typeof EXPIRY_OPTIONS[number]) => {
+      setExpiryHours(option.hours);
+      if (option.hours !== null && matchId) {
+        // Retroactively stamp own messages in DB.
+        applyExpiryToMatch(matchId, option.hours).catch(() => {});
+        // Apply the new expiry to all local messages so they disappear on time.
+        const expiresAt = new Date(
+          Date.now() + option.hours * 60 * 60 * 1000,
+        ).toISOString();
+        setMessages((prev) =>
+          prev
+            .map((m) => ({
+              ...m,
+              // Only shorten existing expiry, never extend it.
+              expiresAt:
+                !m.expiresAt || m.expiresAt > expiresAt
+                  ? expiresAt
+                  : m.expiresAt,
+            }))
+            .filter((m) => !isExpired(m)),
+        );
+      }
+    };
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options: labels, cancelButtonIndex: labels.length - 1, title: 'Auto-delete messages after…' },
-        (idx) => { if (idx < EXPIRY_OPTIONS.length) setExpiryHours(EXPIRY_OPTIONS[idx].hours); }
+        (idx) => { if (idx < EXPIRY_OPTIONS.length) applySelection(EXPIRY_OPTIONS[idx]); }
       );
     } else {
       Alert.alert('Auto-delete after…', undefined, [
-        ...EXPIRY_OPTIONS.map((o) => ({ text: o.label, onPress: () => setExpiryHours(o.hours) })),
+        ...EXPIRY_OPTIONS.map((o) => ({ text: o.label, onPress: () => applySelection(o) })),
         { text: 'Cancel', style: 'cancel' as const },
       ]);
     }
