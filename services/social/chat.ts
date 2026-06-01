@@ -136,9 +136,36 @@ export function subscribeToMessages(
 }
 
 /**
- * Delete one of the current user's own messages.
- * The RLS policy on the messages table must enforce `sender_id = auth.uid()`.
+ * Bulk-apply an expiry to all messages the current user sent in a match.
+ * Called when the user changes the auto-delete setting so existing messages
+ * also get the new expiry rather than only future ones.
  */
+export async function applyExpiryToMatch(
+  matchId: string,
+  expiryHours: number,
+): Promise<boolean> {
+  if (!supabase) return false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+  if (!user) return false;
+
+  const expiresAt = new Date(
+    Date.now() + expiryHours * 60 * 60 * 1000,
+  ).toISOString();
+
+  const { error } = await supabase
+    .from('messages')
+    .update({ expires_at: expiresAt })
+    .eq('match_id', matchId)
+    .eq('sender_id', user.id);
+
+  if (error) {
+    console.error('Apply expiry to match failed:', error.message);
+    return false;
+  }
+  return true;
+}
 export async function deleteMessage(messageId: string): Promise<boolean> {
   if (!supabase) return false;
   const {

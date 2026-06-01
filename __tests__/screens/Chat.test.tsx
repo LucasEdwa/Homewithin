@@ -12,6 +12,7 @@ jest.mock('@/services/social/chat', () => ({
   subscribeToMessages: jest.fn(),
   containsCrisisKeywords: jest.fn(),
   deleteMessage: jest.fn(),
+  applyExpiryToMatch: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/services/social/matching', () => ({

@@ -1,6 +1,6 @@
 # Privacy Policy — HomeWithin
 
-**Last updated: 30 May 2026**
+**Last updated: 1 June 2026**
 
 HomeWithin ("we", "our", or "the app") is a mobile application designed to provide a safe, private support space for LGBTQ+ people in Sweden. We are deeply committed to protecting your privacy, particularly given the sensitive nature of the people who use this app.
 
@@ -57,6 +57,19 @@ If you enable notifications, your device's push notification token is stored on 
 
 When you use the app, our backend (Supabase) may log standard technical information such as timestamps of requests. We do not use any analytics SDKs, advertising SDKs, or tracking tools.
 
+### 2.8 Moderation & Reports
+
+If you report another user or a message, the following is stored:
+
+- The ID of the reported user or message
+- The reason or category you selected
+- A timestamp
+- Your user ID (so we can follow up if needed and prevent abuse of the report system)
+
+Reports are reviewed by HomeWithin within 24 hours. They are never shared with the reported user. Report records are retained for 12 months and then permanently deleted.
+
+---
+
 ### 2.7 AI Companion Data
 
 If you choose to use the AI Companion feature and grant consent, the following data is sent to a third-party AI service (see Section 9):
@@ -83,6 +96,7 @@ If you choose to use the AI Companion feature and grant consent, the following d
 | Location          | Show local resources near you         | Consent (requested each time)                      |
 | Push token        | Deliver chat notifications            | Consent (you enable notifications)                 |
 | AI Companion data | Personalise AI conversation responses | Consent (explicit in-app consent before first use) |
+| Moderation reports | Review safety complaints and enforce community standards | Legitimate interest (safety of all users) |
 
 We do **not** use your data for advertising, profiling, or sale to third parties.
 
@@ -109,6 +123,7 @@ HomeWithin includes a "Disguise Mode" that makes the app appear as a calculator,
 
 - **Profile and match data:** Retained for as long as your account exists. Deleted when you delete your account.
 - **Chat messages:** Retained until you or the other user deletes the conversation or account.
+- **Moderation reports:** Retained for 12 months from submission, then permanently deleted.
 - **Journal entries:** Stored locally on your device. Server-synced entries are deleted when you delete your account.
 - **Location data:** Never stored — used only in real time.
 - **Push tokens:** Deleted when you sign out or delete your account.

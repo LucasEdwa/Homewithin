@@ -47,7 +47,7 @@ export default function TermsOfUseScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.updated}>Last updated: 24 May 2026</Text>
+        <Text style={styles.updated}>Last updated: 1 June 2026</Text>
 
         <Para>
           Welcome to HomeWithin. By using this app you agree to the terms below. Please read them carefully — they are written to be clear, not to trick you.
@@ -79,6 +79,13 @@ export default function TermsOfUseScreen() {
           <Bullet>Use the AI Companion for emotional support and reflection</Bullet>
 
           <Para style={styles.spacedPara}>HomeWithin has a zero-tolerance policy for objectionable content and abusive users. There is no tolerance for: harassment, hate speech, threats, or any content that demeans, endangers, or harms others. Violations result in immediate and permanent removal.</Para>
+          <Para style={styles.spacedPara}>To help keep the community safe, HomeWithin uses automated tools and user reporting:</Para>
+          <Bullet>Messages containing hate speech, slurs, or direct threats are automatically blocked before they are sent.</Bullet>
+          <Bullet>Messages with strong language trigger a warning — you may choose to edit or send the message.</Bullet>
+          <Bullet>You can delete any message you have sent by long-pressing it.</Bullet>
+          <Bullet>You can report any user from the Connect screen while browsing or from within any conversation.</Bullet>
+          <Bullet>You can block any user at any time from within a conversation.</Bullet>
+          <Bullet>Reports are reviewed by us within 24 hours. Confirmed violations result in removal.</Bullet>
           <Para style={styles.spacedPara}>You may not use HomeWithin to:</Para>
           <Bullet>Harass, threaten, or bully other users</Bullet>
           <Bullet>Share sexually explicit content or content that sexualises minors</Bullet>
