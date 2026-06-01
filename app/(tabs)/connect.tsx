@@ -40,6 +40,7 @@ export default function ConnectScreen() {
     handleUnmatch,
     handlePass,
     handleBackToIntentions,
+    handleReport,
   } = useConnectScreen();
 
   return (
@@ -99,6 +100,7 @@ export default function ConnectScreen() {
             remaining={candidatesCount}
             onConnect={handleConnect}
             onPass={handlePass}
+            onReport={handleReport}
           />
         )}
 

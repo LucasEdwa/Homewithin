@@ -1,6 +1,7 @@
 import { useUnread } from '@/context/UnreadContext';
 import { useMessages } from '@/hooks/useMessages';
-import { containsCrisisKeywords, sendMessage } from '@/services/social/chat';
+import { containsCrisisKeywords, deleteMessage, sendMessage } from '@/services/social/chat';
+import { filterContent } from '@/services/social/contentFilter';
 import { blockUser, getMatchPeerId, reportMessage } from '@/services/social/matching';
 import { supabase } from '@/services/supabase';
 import type { Message } from '@/types';
@@ -94,10 +95,32 @@ export function useChatScreen() {
   async function handleSend() {
     if (!input.trim() || !matchId) return;
     const body = input.trim();
+    const filterResult = filterContent(body);
+    if (!filterResult.ok) {
+      if (filterResult.ok === false) {
+        Alert.alert('Message blocked', filterResult.reason);
+        return;
+      }
+    }
+    if (filterResult.ok === 'warn') {
+      Alert.alert(
+        'Strong language',
+        filterResult.reason,
+        [
+          { text: 'Edit message', style: 'cancel' },
+          { text: 'Send anyway', onPress: () => doSend(body) },
+        ],
+      );
+      return;
+    }
+    doSend(body);
+  }
+
+  async function doSend(body: string) {
     setInput('');
     setSending(true);
     if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
-    const msg = await sendMessage(matchId, body, expiryHours);
+    const msg = await sendMessage(matchId!, body, expiryHours);
     if (msg) {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
     }
@@ -189,6 +212,28 @@ export function useChatScreen() {
     }
   }
 
+  function handleDeleteMessage(messageId: string) {
+    Alert.alert(
+      'Delete message?',
+      'This will remove the message for everyone in this chat.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await deleteMessage(messageId);
+            if (ok) {
+              setMessages((prev) => prev.filter((m) => m.id !== messageId));
+            } else {
+              Alert.alert('Delete failed', 'Please check your connection and try again.');
+            }
+          },
+        },
+      ]
+    );
+  }
+
   return {
     matchId,
     nickname,
@@ -205,5 +250,6 @@ export function useChatScreen() {
     handleSend,
     handlePickExpiry,
     handleOptions,
+    handleDeleteMessage,
   };
 }

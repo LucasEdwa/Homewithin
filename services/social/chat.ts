@@ -134,3 +134,27 @@ export function subscribeToMessages(
     supabase!.removeChannel(channel);
   };
 }
+
+/**
+ * Delete one of the current user's own messages.
+ * The RLS policy on the messages table must enforce `sender_id = auth.uid()`.
+ */
+export async function deleteMessage(messageId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+  if (!user) return false;
+
+  const { error } = await supabase
+    .from("messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("sender_id", user.id);
+
+  if (error) {
+    console.error("Delete message failed:", error.message);
+    return false;
+  }
+  return true;
+}

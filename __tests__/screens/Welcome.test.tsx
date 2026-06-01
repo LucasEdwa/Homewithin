@@ -57,16 +57,20 @@ describe('WelcomeScreen', () => {
 
   it('navigates to onboarding when Start anonymously is pressed', async () => {
     render(<WelcomeScreen />);
+    fireEvent.press(screen.getByLabelText('I agree to the Terms of Use and Privacy Policy'));
     fireEvent.press(screen.getByText('Start anonymously'));
     await waitFor(() => {
       expect(router.push).toHaveBeenCalledWith('/onboarding/step1');
     });
   });
 
-  it('navigates to sign-in when Sign in is pressed', () => {
+  it('navigates to sign-in when Sign in is pressed', async () => {
     render(<WelcomeScreen />);
+    fireEvent.press(screen.getByLabelText('I agree to the Terms of Use and Privacy Policy'));
     fireEvent.press(screen.getByText('Sign in'));
-    expect(router.push).toHaveBeenCalledWith('/signin');
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith('/signin');
+    });
   });
 });
 

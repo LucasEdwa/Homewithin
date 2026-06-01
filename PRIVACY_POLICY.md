@@ -1,6 +1,6 @@
 # Privacy Policy — HomeWithin
 
-**Last updated: 24 May 2026**
+**Last updated: 30 May 2026**
 
 HomeWithin ("we", "our", or "the app") is a mobile application designed to provide a safe, private support space for LGBTQ+ people in Sweden. We are deeply committed to protecting your privacy, particularly given the sensitive nature of the people who use this app.
 
@@ -25,7 +25,7 @@ If you have any questions about this policy or your data, contact us at the emai
 When you create a profile you may optionally provide:
 
 - A nickname (not your real name)
-- Age range (e.g. "18–24")
+- Age range (one of: 18–24, 25–34, 35–44, 45+)
 - Language preference
 - Country
 - Needs and intentions (e.g. looking for a mentor, first friend)
@@ -47,7 +47,7 @@ If you use the Connect feature to match with other users, the following is store
 
 ### 2.4 Location Data
 
-Location is only accessed when you use the **Local Resources** or **Events** features to find LGBTQ+ resources near you. We do not store your location on our servers. It is used only in the moment to filter results and is never shared with third parties.
+Location is only accessed when you use the **Local Resources** or **Events** features to find LGBTQ+ support centres, shelters, and therapists near you in Sweden. We do not store your location on our servers. It is used only in the moment to filter results and is never shared with third parties.
 
 ### 2.5 Push Notification Token
 
@@ -135,9 +135,9 @@ imy.se | imy@imy.se
 
 ---
 
-## 8. Children
+## 8. Age Requirement
 
-HomeWithin is not intended for children under the age of 13. We do not knowingly collect personal data from children under 13. If you believe a child has provided us with personal data, please contact us immediately and we will delete it.
+HomeWithin is intended for users who are **18 years of age or older**. You must confirm you are 18 or older before accessing the app. We do not knowingly collect personal data from anyone under the age of 18. If you believe a minor has provided us with personal data, please contact us immediately and we will delete it.
 
 ---
 

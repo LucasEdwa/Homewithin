@@ -7,6 +7,7 @@ import {
   declineIncomingLike,
   findMatches,
   passMatch,
+  reportUser,
   unmatch,
 } from '@/services/social/matching';
 import type { IntentionId, Match, PeerProfile } from '@/types';
@@ -145,6 +146,30 @@ export function useConnectScreen() {
     setCandidates([]);
   }
 
+  function handleReport() {
+    if (candidates.length === 0) return;
+    const peer = candidates[0];
+    Alert.alert(
+      `Report ${peer.nickname}?`,
+      'Briefly describe the issue (e.g. inappropriate profile, harassment):',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Report',
+          style: 'destructive',
+          onPress: async () => {
+            await reportUser(peer.userId, 'Reported from browse screen');
+            // Skip to the next candidate after reporting.
+            const rest = candidates.slice(1);
+            setCandidates(rest);
+            if (rest.length === 0) setView('empty');
+            Alert.alert('Reported', "Thank you. We'll review this shortly.");
+          },
+        },
+      ],
+    );
+  }
+
   return {
     view,
     loading,
@@ -163,5 +188,6 @@ export function useConnectScreen() {
     handleUnmatch,
     handlePass,
     handleBackToIntentions,
+    handleReport,
   };
 }

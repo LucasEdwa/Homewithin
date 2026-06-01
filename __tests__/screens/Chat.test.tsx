@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { ActionSheetIOS } from 'react-native';
+import { ActionSheetIOS, Alert } from 'react-native';
 
 import ChatScreen from '@/app/(social)/chat';
 import * as chatService from '@/services/social/chat';
@@ -11,6 +11,7 @@ jest.mock('@/services/social/chat', () => ({
   sendMessage: jest.fn(),
   subscribeToMessages: jest.fn(),
   containsCrisisKeywords: jest.fn(),
+  deleteMessage: jest.fn(),
 }));
 
 jest.mock('@/services/social/matching', () => ({
@@ -153,5 +154,37 @@ describe('ChatScreen', () => {
     await waitFor(() => screen.getByLabelText('Back'));
     fireEvent.press(screen.getByLabelText('Back'));
     expect(router.back).toHaveBeenCalled();
+  });
+
+  it('blocks a message containing objectionable content and does not call sendMessage', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<ChatScreen />);
+    await waitFor(() => screen.getByTestId('message-input'));
+    fireEvent.changeText(screen.getByTestId('message-input'), "i'll kill you");
+    fireEvent.press(screen.getByTestId('send-btn'));
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith('Message blocked', expect.stringMatching(/community guidelines/i))
+    );
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('own message bubble is accessible with delete label', async () => {
+    render(<ChatScreen />);
+    await waitFor(() => screen.getByText('Hello there!'));
+    const ownBubble = screen.getByLabelText('Your message, long press to delete');
+    expect(ownBubble).toBeTruthy();
+  });
+
+  it('long-pressing own message shows delete confirmation', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    (chatService.deleteMessage as jest.Mock).mockResolvedValue(true);
+    render(<ChatScreen />);
+    await waitFor(() => screen.getByLabelText('Your message, long press to delete'));
+    fireEvent(screen.getByLabelText('Your message, long press to delete'), 'longPress');
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith('Delete message?', expect.any(String), expect.any(Array))
+    );
+    alertSpy.mockRestore();
   });
 });

@@ -37,6 +37,7 @@ export default function ChatScreen() {
     handleSend,
     handlePickExpiry,
     handleOptions,
+    handleDeleteMessage,
   } = useChatScreen();
 
   return (
@@ -103,6 +104,11 @@ export default function ChatScreen() {
                 message={item.data}
                 isMe={item.data.senderId === myUserId}
                 disappearing={!!item.data.expiresAt}
+                onLongPress={
+                  item.data.senderId === myUserId
+                    ? () => handleDeleteMessage(item.data.id)
+                    : undefined
+                }
               />
             );
           }}
@@ -163,19 +169,28 @@ function MessageBubble({
   message,
   isMe,
   disappearing,
+  onLongPress,
 }: {
   message: Message;
   isMe: boolean;
   disappearing: boolean;
+  onLongPress?: () => void;
 }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const countdown = useCountdown(disappearing ? message.expiresAt : undefined);
   return (
     <View style={[styles.bubbleRow, isMe && styles.bubbleRowMe]}>
       <View style={[styles.bubbleCol, isMe && styles.bubbleColMe]}>
-        <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-          <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
-        </View>
+        <TouchableOpacity
+          onLongPress={onLongPress}
+          activeOpacity={onLongPress ? 0.75 : 1}
+          disabled={!onLongPress}
+          accessibilityLabel={isMe ? 'Your message, long press to delete' : 'Message'}
+        >
+          <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+            <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
+          </View>
+        </TouchableOpacity>
         <View style={styles.bubbleMeta}>
           {disappearing && countdown != null && (
             <View style={styles.countdownPill}>

@@ -267,6 +267,28 @@ export function subscribeToCircleMessages(
   };
 }
 
+/**
+ * Delete one of the current user's own circle messages.
+ * The RLS policy on circle_messages must enforce `sender_id = auth.uid()`.
+ */
+export async function deleteCircleMessage(messageId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const uid = await currentUserId();
+  if (!uid) return false;
+
+  const { error } = await supabase
+    .from("circle_messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("sender_id", uid);
+
+  if (error) {
+    console.error("Delete circle message failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
 export async function reportInCircle(
   circleId: string,
   reason: string,

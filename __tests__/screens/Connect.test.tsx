@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
+import { Alert } from 'react-native';
 
 import ConnectScreen from '@/app/(tabs)/connect';
 import * as matchingService from '@/services/social/matching';
@@ -10,6 +11,9 @@ jest.mock('@/services/social/matching', () => ({
   findMatches: jest.fn(),
   connectMatch: jest.fn(),
   passMatch: jest.fn(),
+  reportUser: jest.fn().mockResolvedValue(undefined),
+  unmatch: jest.fn().mockResolvedValue(true),
+  cancelPendingMatch: jest.fn().mockResolvedValue(true),
   getMyMatches: jest.fn(),
   getPendingOutgoing: jest.fn(),
   getIncomingLikes: jest.fn(),
@@ -192,5 +196,34 @@ describe('ConnectScreen — existing connections', () => {
       pathname: '/chat',
       params: { matchId: 'match-1', nickname: 'Jordan', avatarUrl: '' },
     });
+  });
+});
+
+describe('ConnectScreen — report profile', () => {
+  it('renders a report button on the match card', async () => {
+    mockFind.mockResolvedValue([SAMPLE_PEER]);
+    render(<ConnectScreen />);
+    await waitFor(() => screen.getByTestId('intention-listener'));
+    fireEvent.press(screen.getByTestId('intention-listener'));
+    await waitFor(() => screen.getByTestId('report-profile-btn'));
+    expect(screen.getByTestId('report-profile-btn')).toBeTruthy();
+  });
+
+  it('pressing report shows confirmation alert', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockFind.mockResolvedValue([SAMPLE_PEER]);
+    render(<ConnectScreen />);
+    await waitFor(() => screen.getByTestId('intention-listener'));
+    fireEvent.press(screen.getByTestId('intention-listener'));
+    await waitFor(() => screen.getByTestId('report-profile-btn'));
+    fireEvent.press(screen.getByTestId('report-profile-btn'));
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        `Report ${SAMPLE_PEER.nickname}?`,
+        expect.any(String),
+        expect.any(Array),
+      )
+    );
+    alertSpy.mockRestore();
   });
 });

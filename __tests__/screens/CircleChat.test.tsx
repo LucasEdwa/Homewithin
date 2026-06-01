@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
+import { Alert } from 'react-native';
 
 import CircleChatScreen from '@/app/(social)/circle';
 import * as chatService from '@/services/social/chat';
@@ -13,6 +14,7 @@ jest.mock('@/services/social/circles', () => ({
   subscribeToCircleMessages: jest.fn(),
   leaveCircle: jest.fn(),
   reportInCircle: jest.fn(),
+  deleteCircleMessage: jest.fn(),
 }));
 
 jest.mock('@/services/social/chat', () => ({
@@ -151,5 +153,44 @@ describe('CircleChatScreen', () => {
     await waitFor(() =>
       expect(screen.getByText(/No messages yet/i)).toBeTruthy()
     );
+  });
+
+  it('blocks a message with objectionable content and does not call sendCircleMessage', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByTestId('circle-message-input'));
+    fireEvent.changeText(screen.getByTestId('circle-message-input'), "i'll kill you");
+    fireEvent.press(screen.getByTestId('circle-send-btn'));
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith('Message blocked', expect.stringMatching(/community guidelines/i))
+    );
+    expect(mockSend).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('own message bubble shows long-press delete label', async () => {
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByText('Hello circle!'));
+    const ownBubble = screen.getByLabelText('Your message, long press to delete');
+    expect(ownBubble).toBeTruthy();
+  });
+
+  it("other user's message bubble shows long-press report label", async () => {
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByText('Welcome!'));
+    const theirBubble = screen.getByLabelText(/long press to report/i);
+    expect(theirBubble).toBeTruthy();
+  });
+
+  it('long-pressing own message shows delete confirmation', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    (circlesService.deleteCircleMessage as jest.Mock).mockResolvedValue(true);
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByLabelText('Your message, long press to delete'));
+    fireEvent(screen.getByLabelText('Your message, long press to delete'), 'longPress');
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith('Delete message?', expect.any(String), expect.any(Array))
+    );
+    alertSpy.mockRestore();
   });
 });

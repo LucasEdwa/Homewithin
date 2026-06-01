@@ -2,6 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { containsCrisisKeywords } from '@/services/social/chat';
 import {
+    deleteCircleMessage,
     getCircleMembers,
     getCircleMessages,
     leaveCircle,
@@ -9,6 +10,7 @@ import {
     sendCircleMessage,
     subscribeToCircleMessages,
 } from '@/services/social/circles';
+import { filterContent } from '@/services/social/contentFilter';
 import { supabase } from '@/services/supabase';
 import type { CircleMember, CircleMessage } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,12 +116,32 @@ export default function CircleChatScreen() {
   async function handleSend() {
     if (!input.trim() || !circleId) return;
     const body = input.trim();
+    const filterResult = filterContent(body);
+    if (filterResult.ok === false) {
+      Alert.alert('Message blocked', filterResult.reason);
+      return;
+    }
+    if (filterResult.ok === 'warn') {
+      Alert.alert(
+        'Strong language',
+        filterResult.reason,
+        [
+          { text: 'Edit message', style: 'cancel' },
+          { text: 'Send anyway', onPress: () => doSend(body) },
+        ],
+      );
+      return;
+    }
+    doSend(body);
+  }
+
+  async function doSend(body: string) {
     setInput('');
     setSending(true);
 
     if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
 
-    const msg = await sendCircleMessage(circleId, body);
+    const msg = await sendCircleMessage(circleId!, body);
     if (msg) {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
@@ -179,6 +201,28 @@ export default function CircleChatScreen() {
         Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
       },
       'plain-text',
+    );
+  }
+
+  function promptDeleteMessage(message: CircleMessage) {
+    Alert.alert(
+      'Delete message?',
+      'This will remove your message for everyone in the circle.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await deleteCircleMessage(message.id);
+            if (ok) {
+              setMessages((prev) => prev.filter((m) => m.id !== message.id));
+            } else {
+              Alert.alert('Delete failed', 'Please check your connection and try again.');
+            }
+          },
+        },
+      ],
     );
   }
 
@@ -261,7 +305,11 @@ export default function CircleChatScreen() {
               <MessageBubble
                 message={item.data}
                 isMe={item.data.senderId === myUserId}
-                onLongPress={() => promptReportMessage(item.data)}
+                onLongPress={() =>
+                  item.data.senderId === myUserId
+                    ? promptDeleteMessage(item.data)
+                    : promptReportMessage(item.data)
+                }
               />
             );
           }}
@@ -419,7 +467,7 @@ function MessageBubble({
         onLongPress={onLongPress}
         activeOpacity={0.85}
         style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}
-        accessibilityLabel={isMe ? 'Your message' : `Message from ${name}, long press to report`}
+        accessibilityLabel={isMe ? 'Your message, long press to delete' : `Message from ${name}, long press to report`}
       >
         {!isMe && <Text style={styles.bubbleSender}>{name}</Text>}
         <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>

@@ -11,14 +11,27 @@ interface Props {
   remaining: number;
   onConnect: () => void;
   onPass: () => void;
+  onReport?: () => void;
 }
 
-export function MatchCard({ peer, remaining, onConnect, onPass }: Props) {
+export function MatchCard({ peer, remaining, onConnect, onPass, onReport }: Props) {
   return (
     <View style={styles.card}>
-      <Text style={styles.remaining}>
-        {remaining} {remaining === 1 ? 'person' : 'people'} nearby
-      </Text>
+      <View style={styles.topRow}>
+        <Text style={styles.remaining}>
+          {remaining} {remaining === 1 ? 'person' : 'people'} nearby
+        </Text>
+        {onReport && (
+          <TouchableOpacity
+            onPress={onReport}
+            style={styles.reportBtn}
+            accessibilityLabel="Report this profile"
+            testID="report-profile-btn"
+          >
+            <Ionicons name="flag-outline" size={16} color={Colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.avatarWrap}>
         <PeerAvatar avatarUrl={peer.avatarUrl} nickname={peer.nickname} size={120} />
@@ -95,12 +108,20 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignSelf: 'stretch',
+  },
   remaining: {
     fontSize: 11,
     color: Colors.textMuted,
     fontWeight: '500',
     letterSpacing: 0.3,
-    alignSelf: 'flex-end',
+  },
+  reportBtn: {
+    padding: 4,
   },
   avatarWrap: {
     width: 120,
