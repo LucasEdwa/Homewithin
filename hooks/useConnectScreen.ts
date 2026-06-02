@@ -2,6 +2,7 @@ import { useUnread } from '@/context/UnreadContext';
 import { useMatches } from '@/hooks/useMatches';
 import {
   acceptIncomingLike,
+  blockUser,
   cancelPendingMatch,
   connectMatch,
   declineIncomingLike,
@@ -14,7 +15,7 @@ import type { IntentionId, Match, PeerProfile } from '@/types';
 import { INTENTIONS } from '@/types';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { ActionSheetIOS, Alert, Platform } from 'react-native';
 
 export type ConnectView = 'intentions' | 'browsing' | 'empty';
 
@@ -149,25 +150,40 @@ export function useConnectScreen() {
   function handleReport() {
     if (candidates.length === 0) return;
     const peer = candidates[0];
-    Alert.alert(
-      `Report ${peer.nickname}?`,
-      'Briefly describe the issue (e.g. inappropriate profile, harassment):',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Report',
-          style: 'destructive',
-          onPress: async () => {
-            await reportUser(peer.userId, 'Reported from browse screen');
-            // Skip to the next candidate after reporting.
-            const rest = candidates.slice(1);
-            setCandidates(rest);
-            if (rest.length === 0) setView('empty');
-            Alert.alert('Reported', "Thank you. We'll review this shortly.");
-          },
+
+    const doBlockAndReport = async () => {
+      await blockUser(peer.userId);
+      await reportUser(peer.userId, 'Blocked and reported from browse screen');
+      const rest = candidates.slice(1);
+      setCandidates(rest);
+      if (rest.length === 0) setView('empty');
+      Alert.alert('Blocked', `${peer.nickname} has been blocked and reported.`);
+    };
+
+    const doReport = async () => {
+      await reportUser(peer.userId, 'Reported from browse screen');
+      const rest = candidates.slice(1);
+      setCandidates(rest);
+      if (rest.length === 0) setView('empty');
+      Alert.alert('Reported', "Thank you. We'll review this shortly.");
+    };
+
+    const options = ['Block & report', 'Report only', 'Cancel'];
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, destructiveButtonIndex: 0, cancelButtonIndex: 2 },
+        (idx) => {
+          if (idx === 0) doBlockAndReport();
+          if (idx === 1) doReport();
         },
-      ],
-    );
+      );
+    } else {
+      Alert.alert('Options', undefined, [
+        { text: 'Block & report', style: 'destructive', onPress: doBlockAndReport },
+        { text: 'Report only', onPress: doReport },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
   }
 
   return {

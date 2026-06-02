@@ -25,10 +25,10 @@ export function MatchCard({ peer, remaining, onConnect, onPass, onReport }: Prop
           <TouchableOpacity
             onPress={onReport}
             style={styles.reportBtn}
-            accessibilityLabel="Report this profile"
+            accessibilityLabel="More options"
             testID="report-profile-btn"
           >
-            <Ionicons name="flag-outline" size={16} color={Colors.textMuted} />
+            <Ionicons name="ellipsis-horizontal" size={18} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>

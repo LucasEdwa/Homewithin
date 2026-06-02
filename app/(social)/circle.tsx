@@ -10,6 +10,7 @@ import {
     sendCircleMessage,
     subscribeToCircleMessages,
 } from '@/services/social/circles';
+import { blockUser } from '@/services/social/matching';
 import { filterContent } from '@/services/social/contentFilter';
 import { supabase } from '@/services/supabase';
 import type { CircleMember, CircleMessage } from '@/types';
@@ -228,19 +229,75 @@ export default function CircleChatScreen() {
 
   function promptReportMessage(message: CircleMessage) {
     if (message.senderId === myUserId) return;
-    Alert.prompt(
-      'Report this message',
-      'Briefly describe the issue:',
-      async (reason) => {
-        if (!reason?.trim() || !circleId) return;
-        await reportInCircle(circleId, reason.trim(), {
+
+    const doBlock = async () => {
+      const ok = await blockUser(message.senderId);
+      if (!ok) {
+        Alert.alert('Block failed', 'Please check your connection and try again.');
+        return;
+      }
+      if (circleId) {
+        await reportInCircle(circleId, 'Blocked from circle', {
           messageId: message.id,
           reportedUserId: message.senderId,
         });
-        Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
-      },
-      'plain-text',
-    );
+      }
+      Alert.alert('Blocked', 'This member has been blocked. You will no longer see their messages.');
+    };
+
+    const doReport = () => {
+      if (Platform.OS === 'ios') {
+        Alert.prompt(
+          'Report this message',
+          'Briefly describe the issue:',
+          async (reason) => {
+            if (!reason?.trim() || !circleId) return;
+            await reportInCircle(circleId, reason.trim(), {
+              messageId: message.id,
+              reportedUserId: message.senderId,
+            });
+            Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+          },
+          'plain-text',
+        );
+      } else {
+        Alert.alert(
+          'Report this message',
+          'This message will be reviewed by our team.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Report',
+              onPress: async () => {
+                if (!circleId) return;
+                await reportInCircle(circleId, 'Reported from circle', {
+                  messageId: message.id,
+                  reportedUserId: message.senderId,
+                });
+                Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+              },
+            },
+          ],
+        );
+      }
+    };
+
+    const options = ['Block this member', 'Report message', 'Cancel'];
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, destructiveButtonIndex: 0, cancelButtonIndex: 2 },
+        (idx) => {
+          if (idx === 0) doBlock();
+          if (idx === 1) doReport();
+        },
+      );
+    } else {
+      Alert.alert('Options', undefined, [
+        { text: 'Block this member', style: 'destructive', onPress: doBlock },
+        { text: 'Report message', onPress: doReport },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
   }
 
   return (
@@ -274,7 +331,7 @@ export default function CircleChatScreen() {
 
       <View style={styles.safetyBanner}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.softGreen} />
-        <Text style={styles.safetyText}>You can leave or report anytime.</Text>
+        <Text style={styles.safetyText}>You can block, leave or report anytime.</Text>
       </View>
 
       {showCrisisBanner && (
