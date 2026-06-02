@@ -191,7 +191,7 @@ export default function WelcomeScreen() {
               I am 18 or older and agree to the{' '}
               <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Terms of Use</Text>
               {' '}and{' '}
-              <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Privacy Policy</Text>.
+              <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>Privacy Policy</Text>.
             </Text>
           </TouchableOpacity>
         </View>

@@ -92,6 +92,7 @@ export default function RootLayout() {
             <Stack.Screen name="(wellness)/progress" />
             <Stack.Screen name="blocked-users" />
             <Stack.Screen name="terms" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="privacy" options={{ presentation: 'modal' }} />
             <Stack.Screen name="(wellness)/intentions" />
             <Stack.Screen name="(safety)/pin" />
             <Stack.Screen name="(safety)/disguise" />

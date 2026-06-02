@@ -46,7 +46,7 @@ export default function ProfileScreen() {
         <SettingRow
           label="Privacy Policy"
           value=""
-          onPress={() => router.push('/terms')}
+          onPress={() => router.push('/privacy')}
         />
         <SettingRow
           label="Report a concern"
