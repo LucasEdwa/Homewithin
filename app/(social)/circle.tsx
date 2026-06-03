@@ -80,6 +80,7 @@ export default function CircleChatScreen() {
   const [sending, setSending] = useState(false);
   const [members, setMembers] = useState<CircleMember[]>([]);
   const [showMembers, setShowMembers] = useState(false);
+  const [blockMode, setBlockMode] = useState(false);
   const membersMapRef = useRef<Map<string, { nickname: string; avatarUrl?: string }>>(new Map());
   const listRef = useRef<FlatList>(null);
 
@@ -151,22 +152,52 @@ export default function CircleChatScreen() {
   }
 
   function handleOptions() {
-    const options = ['Report this circle', 'Leave circle', 'Cancel'];
+    const options = ['Block a member', 'Report this circle', 'Leave circle', 'Cancel'];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
+        { options, destructiveButtonIndex: 2, cancelButtonIndex: 3 },
         (idx) => {
-          if (idx === 0) promptReportCircle();
-          if (idx === 1) confirmLeave();
+          if (idx === 0) { setBlockMode(true); setShowMembers(true); }
+          if (idx === 1) promptReportCircle();
+          if (idx === 2) confirmLeave();
         },
       );
     } else {
       Alert.alert('Options', undefined, [
+        { text: 'Block a member', style: 'destructive', onPress: () => { setBlockMode(true); setShowMembers(true); } },
         { text: 'Report this circle', onPress: promptReportCircle },
         { text: 'Leave circle', style: 'destructive', onPress: confirmLeave },
         { text: 'Cancel', style: 'cancel' },
       ]);
     }
+  }
+
+  async function handleBlockMember(member: CircleMember) {
+    Alert.alert(
+      `Block ${member.nickname}?`,
+      "They will be blocked and you will leave this circle.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block & Leave',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await blockUser(member.userId);
+            if (!ok) {
+              Alert.alert('Block failed', 'Please check your connection and try again.');
+              return;
+            }
+            if (circleId) {
+              await reportInCircle(circleId, 'Blocked from circle', { reportedUserId: member.userId });
+              await leaveCircle(circleId);
+            }
+            setShowMembers(false);
+            setBlockMode(false);
+            router.back();
+          },
+        },
+      ]
+    );
   }
 
   function confirmLeave() {
@@ -331,7 +362,7 @@ export default function CircleChatScreen() {
 
       <View style={styles.safetyBanner}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.softGreen} />
-        <Text style={styles.safetyText}>You can block, leave or report anytime.</Text>
+        <Text style={styles.safetyText}>Block a member (via ⋮), long-press a message, or leave anytime.</Text>
       </View>
 
       {showCrisisBanner && (
@@ -405,18 +436,21 @@ export default function CircleChatScreen() {
         <View style={styles.membersOverlay}>
           <TouchableOpacity
             style={{ flex: 1 }}
-            onPress={() => setShowMembers(false)}
+            onPress={() => { setShowMembers(false); setBlockMode(false); }}
             activeOpacity={1}
             accessibilityLabel="Close members"
           />
           <View style={styles.membersSheet}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Members</Text>
+              <Text style={styles.modalTitle}>{blockMode ? 'Block a member' : 'Members'}</Text>
               <View style={styles.memberCountBadge}>
                 <Text style={styles.memberCountText}>{members.length}</Text>
               </View>
             </View>
+            {blockMode && (
+              <Text style={styles.blockModeHint}>Tap Block next to the member you want to block.</Text>
+            )}
             <FlatList
               data={[...members].sort((a) => (a.isMe ? -1 : 1))}
               keyExtractor={(m) => m.userId}
@@ -427,11 +461,19 @@ export default function CircleChatScreen() {
                   <Text style={styles.memberName} numberOfLines={1}>
                     {item.nickname}
                   </Text>
-                  {item.isMe && (
+                  {item.isMe ? (
                     <View style={styles.youBadge}>
                       <Text style={styles.youBadgeText}>you</Text>
                     </View>
-                  )}
+                  ) : blockMode ? (
+                    <TouchableOpacity
+                      style={styles.blockBtn}
+                      onPress={() => handleBlockMember(item)}
+                      accessibilityLabel={`Block ${item.nickname}`}
+                    >
+                      <Text style={styles.blockBtnText}>Block</Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               )}
             />
@@ -680,4 +722,23 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   youBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.mutedLavender },
+  blockModeHint: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  blockBtn: {
+    backgroundColor: Colors.alertRed + '15',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.alertRed + '50',
+  },
+  blockBtnText: {
+    color: Colors.alertRed,
+    fontSize: 13,
+    fontWeight: '600',
+  },
 });

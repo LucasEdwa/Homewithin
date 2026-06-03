@@ -102,7 +102,7 @@ export default function CircleIntroScreen() {
         <Card style={styles.safetyNote}>
           <Ionicons name="shield-checkmark-outline" size={18} color={Colors.softGreen} />
           <Text style={styles.safetyText}>
-            You can leave or report anyone in this circle at any time.
+            You can block a member, leave, or report anyone in this circle at any time. Blocking a member will also remove you from the circle.
           </Text>
         </Card>
 
