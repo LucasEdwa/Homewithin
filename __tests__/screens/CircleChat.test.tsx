@@ -5,6 +5,7 @@ import { Alert } from 'react-native';
 import CircleChatScreen from '@/app/(social)/circle';
 import * as chatService from '@/services/social/chat';
 import * as circlesService from '@/services/social/circles';
+import * as matchingService from '@/services/social/matching';
 import { useLocalSearchParams } from 'expo-router';
 
 jest.mock('@/services/social/circles', () => ({
@@ -15,6 +16,12 @@ jest.mock('@/services/social/circles', () => ({
   leaveCircle: jest.fn(),
   reportInCircle: jest.fn(),
   deleteCircleMessage: jest.fn(),
+  kickCircleMember: jest.fn(),
+}));
+
+jest.mock('@/services/social/matching', () => ({
+  blockUser: jest.fn(),
+  getBlockedUserIds: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock('@/services/social/chat', () => ({
@@ -34,10 +41,13 @@ jest.mock('expo-router', () => ({
 }));
 
 const mockGetMessages = circlesService.getCircleMessages as jest.Mock;
+const mockGetMembers = circlesService.getCircleMembers as jest.Mock;
 const mockSend = circlesService.sendCircleMessage as jest.Mock;
 const mockSubscribe = circlesService.subscribeToCircleMessages as jest.Mock;
 const mockLeave = circlesService.leaveCircle as jest.Mock;
 const mockReport = circlesService.reportInCircle as jest.Mock;
+const mockBlock = matchingService.blockUser as jest.Mock;
+const mockBlockedIds = matchingService.getBlockedUserIds as jest.Mock;
 const mockCrisis = chatService.containsCrisisKeywords as jest.Mock;
 const mockParams = useLocalSearchParams as jest.Mock;
 
@@ -60,10 +70,26 @@ const SAMPLE_MESSAGES = [
   },
 ];
 
+const SAMPLE_MEMBERS = [
+  {
+    userId: 'my-user-id',
+    nickname: 'Me',
+    role: 'moderator' as const,
+    isMe: true,
+  },
+  {
+    userId: 'peer-id',
+    nickname: 'AlexQ',
+    role: 'member' as const,
+    isMe: false,
+  },
+];
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockParams.mockReturnValue({ circleId: 'circle-1', name: 'Family Rejection Survivors' });
   mockGetMessages.mockResolvedValue(SAMPLE_MESSAGES);
+  mockGetMembers.mockResolvedValue(SAMPLE_MEMBERS);
   mockSend.mockResolvedValue({
     id: 'cm-3',
     circleId: 'circle-1',
@@ -75,6 +101,8 @@ beforeEach(() => {
   mockCrisis.mockReturnValue(false);
   mockLeave.mockResolvedValue(true);
   mockReport.mockResolvedValue(undefined);
+  mockBlock.mockResolvedValue(true);
+  mockBlockedIds.mockResolvedValue([]);
 });
 
 describe('CircleChatScreen', () => {
@@ -88,7 +116,7 @@ describe('CircleChatScreen', () => {
   it('renders the safety banner', async () => {
     render(<CircleChatScreen />);
     await waitFor(() =>
-      expect(screen.getByText(/leave or report anytime/i)).toBeTruthy()
+      expect(screen.getByText(/member menu to block, report, or remove/i)).toBeTruthy()
     );
   });
 
@@ -103,6 +131,13 @@ describe('CircleChatScreen', () => {
   it('renders sender nickname on other-user messages', async () => {
     render(<CircleChatScreen />);
     await waitFor(() => expect(screen.getByText('AlexQ')).toBeTruthy());
+  });
+
+  it('shows the member actions button for other members', async () => {
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByLabelText('View circle members'));
+    fireEvent.press(screen.getByLabelText('View circle members'));
+    await waitFor(() => expect(screen.getByLabelText('Member actions for AlexQ')).toBeTruthy());
   });
 
   it('renders message input', async () => {

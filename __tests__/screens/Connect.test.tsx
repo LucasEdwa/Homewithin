@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { Alert } from 'react-native';
+import { ActionSheetIOS, Alert } from 'react-native';
 
 import ConnectScreen from '@/app/(tabs)/connect';
 import * as matchingService from '@/services/social/matching';
@@ -211,6 +211,11 @@ describe('ConnectScreen — report profile', () => {
 
   it('pressing report shows confirmation alert', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const actionSheetSpy = jest
+      .spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+      .mockImplementation((_opts: any, callback?: (idx: number) => void) => {
+        callback?.(1);
+      });
     mockFind.mockResolvedValue([SAMPLE_PEER]);
     render(<ConnectScreen />);
     await waitFor(() => screen.getByTestId('intention-listener'));
@@ -219,11 +224,11 @@ describe('ConnectScreen — report profile', () => {
     fireEvent.press(screen.getByTestId('report-profile-btn'));
     await waitFor(() =>
       expect(alertSpy).toHaveBeenCalledWith(
-        `Report ${SAMPLE_PEER.nickname}?`,
-        expect.any(String),
-        expect.any(Array),
+        'Reported',
+        "Thank you. We'll review this shortly.",
       )
     );
+    actionSheetSpy.mockRestore();
     alertSpy.mockRestore();
   });
 });

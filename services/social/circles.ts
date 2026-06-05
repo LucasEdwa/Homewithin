@@ -1,7 +1,7 @@
 import type { Circle, CircleMessage, CircleMember } from "@/types";
 import { currentUserId, supabase } from "../supabase";
 
-type MemberInfo = { nickname: string; avatarUrl?: string };
+type MemberInfo = { nickname: string; avatarUrl?: string; role: CircleMember["role"] };
 
 function rowToMessage(
   row: any,
@@ -186,7 +186,11 @@ async function fetchMemberMap(
   return new Map(
     (profiles ?? []).map((p: any) => [
       p.user_id,
-      { nickname: p.nickname ?? "Unknown", avatarUrl: p.avatar_url ?? undefined },
+      {
+        nickname: p.nickname ?? "Unknown",
+        avatarUrl: p.avatar_url ?? undefined,
+        role: p.role === "moderator" ? "moderator" : "member",
+      },
     ]),
   );
 }
@@ -199,6 +203,7 @@ export async function getCircleMembers(circleId: string): Promise<CircleMember[]
     userId,
     nickname: info.nickname,
     avatarUrl: info.avatarUrl,
+    role: info.role,
     isMe: userId === uid,
   }));
 }
@@ -306,4 +311,23 @@ export async function reportInCircle(
     reason,
   });
   if (error) console.error("Circle report failed:", error.message);
+}
+
+export async function kickCircleMember(
+  circleId: string,
+  targetUserId: string,
+): Promise<boolean> {
+  if (!supabase) return false;
+  const uid = await currentUserId();
+  if (!uid || uid === targetUserId) return false;
+
+  const { data, error } = await supabase.rpc("kick_circle_member", {
+    p_circle_id: circleId,
+    p_target_user_id: targetUserId,
+  });
+  if (error) {
+    console.error("Kick circle member failed:", error.message);
+    return false;
+  }
+  return data === true;
 }

@@ -108,10 +108,13 @@ export interface CircleMessage {
   createdAt: string;
 }
 
+export type CircleMemberRole = "member" | "moderator";
+
 export interface CircleMember {
   userId: string;
   nickname: string;
   avatarUrl?: string;
+  role: CircleMemberRole;
   isMe?: boolean;
 }
 

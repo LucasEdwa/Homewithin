@@ -422,6 +422,7 @@ export async function getBlockedUserIds(): Promise<string[]> {
   }
   return (data ?? []).map((row: any) => row.blocked_id);
 }
+
 export type { BlockedUser };
 
 export async function getBlockedUsers(): Promise<BlockedUser[]> {

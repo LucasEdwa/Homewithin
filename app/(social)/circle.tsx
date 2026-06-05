@@ -3,6 +3,7 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import { containsCrisisKeywords } from '@/services/social/chat';
 import {
     deleteCircleMessage,
+  kickCircleMember,
     getCircleMembers,
     getCircleMessages,
     leaveCircle,
@@ -10,7 +11,7 @@ import {
     sendCircleMessage,
     subscribeToCircleMessages,
 } from '@/services/social/circles';
-import { blockUser } from '@/services/social/matching';
+import { blockUser, getBlockedUserIds } from '@/services/social/matching';
 import { filterContent } from '@/services/social/contentFilter';
 import { supabase } from '@/services/supabase';
 import type { CircleMember, CircleMessage } from '@/types';
@@ -80,8 +81,8 @@ export default function CircleChatScreen() {
   const [sending, setSending] = useState(false);
   const [members, setMembers] = useState<CircleMember[]>([]);
   const [showMembers, setShowMembers] = useState(false);
-  const [blockMode, setBlockMode] = useState(false);
   const membersMapRef = useRef<Map<string, { nickname: string; avatarUrl?: string }>>(new Map());
+  const blockedUserIdsRef = useRef<Set<string>>(new Set());
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -90,18 +91,28 @@ export default function CircleChatScreen() {
 
   useEffect(() => {
     if (!circleId) return;
-    getCircleMessages(circleId).then((msgs) => {
-      setMessages(msgs);
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
-    });
-    getCircleMembers(circleId).then((m) => {
+    let cancelled = false;
+
+    (async () => {
+      const [msgs, m, blockedIds] = await Promise.all([
+        getCircleMessages(circleId),
+        getCircleMembers(circleId),
+        getBlockedUserIds(),
+      ]);
+      if (cancelled) return;
+
       setMembers(m);
       membersMapRef.current = new Map(
         m.map((mb) => [mb.userId, { nickname: mb.nickname, avatarUrl: mb.avatarUrl }]),
       );
-    });
+
+      blockedUserIdsRef.current = new Set(blockedIds);
+      setMessages(msgs.filter((msg) => !blockedUserIdsRef.current.has(msg.senderId)));
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
+    })();
 
     const unsub = subscribeToCircleMessages(circleId, (msg) => {
+      if (blockedUserIdsRef.current.has(msg.senderId)) return;
       const info = membersMapRef.current.get(msg.senderId);
       const annotated: CircleMessage = info
         ? { ...msg, senderNickname: info.nickname, senderAvatarUrl: info.avatarUrl }
@@ -112,7 +123,11 @@ export default function CircleChatScreen() {
       });
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     });
-    return unsub;
+
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, [circleId]);
 
   async function handleSend() {
@@ -152,19 +167,17 @@ export default function CircleChatScreen() {
   }
 
   function handleOptions() {
-    const options = ['Block a member', 'Report this circle', 'Leave circle', 'Cancel'];
+    const options = ['Report this circle', 'Leave circle', 'Cancel'];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex: 2, cancelButtonIndex: 3 },
+        { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
         (idx) => {
-          if (idx === 0) { setBlockMode(true); setShowMembers(true); }
-          if (idx === 1) promptReportCircle();
-          if (idx === 2) confirmLeave();
+          if (idx === 0) promptReportCircle();
+          if (idx === 1) confirmLeave();
         },
       );
     } else {
       Alert.alert('Options', undefined, [
-        { text: 'Block a member', style: 'destructive', onPress: () => { setBlockMode(true); setShowMembers(true); } },
         { text: 'Report this circle', onPress: promptReportCircle },
         { text: 'Leave circle', style: 'destructive', onPress: confirmLeave },
         { text: 'Cancel', style: 'cancel' },
@@ -173,27 +186,74 @@ export default function CircleChatScreen() {
   }
 
   async function handleBlockMember(member: CircleMember) {
+    const ok = await blockUser(member.userId);
+    if (!ok) {
+      Alert.alert('Block failed', 'Please check your connection and try again.');
+      return;
+    }
+
+    blockedUserIdsRef.current = new Set([...blockedUserIdsRef.current, member.userId]);
+    setMessages((prev) => prev.filter((message) => message.senderId !== member.userId));
+    Alert.alert('Blocked', 'You will no longer see this member\'s messages.');
+  }
+
+  async function handleReportMember(member: CircleMember) {
+    if (!circleId) return;
+
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Report this member',
+        'Briefly describe the issue (harassment, spam, unsafe behavior):',
+        async (reason) => {
+          if (!reason?.trim()) return;
+          await reportInCircle(circleId, reason.trim(), { reportedUserId: member.userId });
+          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+        },
+        'plain-text',
+      );
+      return;
+    }
+
     Alert.alert(
-      `Block ${member.nickname}?`,
-      "They will be blocked and you will leave this circle.",
+      'Report this member',
+      'This will send the member to our moderation team.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Block & Leave',
+          text: 'Report',
+          onPress: async () => {
+            await reportInCircle(circleId, 'Reported from member list', {
+              reportedUserId: member.userId,
+            });
+            Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+          },
+        },
+      ]
+    );
+  }
+
+  async function handleKickMember(member: CircleMember) {
+    if (!circleId) return;
+
+    Alert.alert(
+      `Remove ${member.nickname} from this circle?`,
+      'This will remove them from the circle for everyone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove member',
           style: 'destructive',
           onPress: async () => {
-            const ok = await blockUser(member.userId);
+            const ok = await kickCircleMember(circleId, member.userId);
             if (!ok) {
-              Alert.alert('Block failed', 'Please check your connection and try again.');
+              Alert.alert(
+                'Could not remove member',
+                'Only a circle moderator can remove members.',
+              );
               return;
             }
-            if (circleId) {
-              await reportInCircle(circleId, 'Blocked from circle', { reportedUserId: member.userId });
-              await leaveCircle(circleId);
-            }
-            setShowMembers(false);
-            setBlockMode(false);
-            router.back();
+            setMembers((prev) => prev.filter((item) => item.userId !== member.userId));
+            Alert.alert('Removed', 'The member has been removed from the circle.');
           },
         },
       ]
@@ -224,16 +284,32 @@ export default function CircleChatScreen() {
   }
 
   function promptReportCircle() {
-    Alert.prompt(
-      'Report this circle',
-      'Briefly describe the issue (e.g. harassment, unsafe content):',
-      async (reason) => {
-        if (!reason?.trim() || !circleId) return;
-        await reportInCircle(circleId, reason.trim());
-        Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+    if (!circleId) return;
+
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Report this circle',
+        'Briefly describe the issue (e.g. harassment, unsafe content):',
+        async (reason) => {
+          if (!reason?.trim()) return;
+          await reportInCircle(circleId, reason.trim());
+          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+        },
+        'plain-text',
+      );
+      return;
+    }
+
+    Alert.alert('Report this circle', 'This will send the circle to our moderation team.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Report',
+        onPress: async () => {
+          await reportInCircle(circleId, 'Reported from circle options');
+          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+        },
       },
-      'plain-text',
-    );
+    ]);
   }
 
   function promptDeleteMessage(message: CircleMessage) {
@@ -362,7 +438,7 @@ export default function CircleChatScreen() {
 
       <View style={styles.safetyBanner}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.softGreen} />
-        <Text style={styles.safetyText}>Block a member (via ⋮), long-press a message, or leave anytime.</Text>
+        <Text style={styles.safetyText}>Use the member menu to block, report, or remove people. Long-press messages to moderate them too.</Text>
       </View>
 
       {showCrisisBanner && (
@@ -436,21 +512,18 @@ export default function CircleChatScreen() {
         <View style={styles.membersOverlay}>
           <TouchableOpacity
             style={{ flex: 1 }}
-            onPress={() => { setShowMembers(false); setBlockMode(false); }}
+            onPress={() => setShowMembers(false)}
             activeOpacity={1}
             accessibilityLabel="Close members"
           />
           <View style={styles.membersSheet}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{blockMode ? 'Block a member' : 'Members'}</Text>
+              <Text style={styles.modalTitle}>Members</Text>
               <View style={styles.memberCountBadge}>
                 <Text style={styles.memberCountText}>{members.length}</Text>
               </View>
             </View>
-            {blockMode && (
-              <Text style={styles.blockModeHint}>Tap Block next to the member you want to block.</Text>
-            )}
             <FlatList
               data={[...members].sort((a) => (a.isMe ? -1 : 1))}
               keyExtractor={(m) => m.userId}
@@ -458,22 +531,65 @@ export default function CircleChatScreen() {
               renderItem={({ item }) => (
                 <View style={styles.memberRow}>
                   <MemberAvatar nickname={item.nickname} avatarUrl={item.avatarUrl} size={44} />
-                  <Text style={styles.memberName} numberOfLines={1}>
-                    {item.nickname}
-                  </Text>
+                  <View style={styles.memberBody}>
+                    <View style={styles.memberNameRow}>
+                      <Text style={styles.memberName} numberOfLines={1}>
+                        {item.nickname}
+                      </Text>
+                      {item.role === 'moderator' && (
+                        <View style={styles.modBadge}>
+                          <Text style={styles.modBadgeText}>mod</Text>
+                        </View>
+                      )}
+                    </View>
+                    {item.isMe && <Text style={styles.memberMeta}>You</Text>}
+                  </View>
                   {item.isMe ? (
                     <View style={styles.youBadge}>
                       <Text style={styles.youBadgeText}>you</Text>
                     </View>
-                  ) : blockMode ? (
+                  ) : (
                     <TouchableOpacity
-                      style={styles.blockBtn}
-                      onPress={() => handleBlockMember(item)}
-                      accessibilityLabel={`Block ${item.nickname}`}
+                      style={styles.memberMenuBtn}
+                      onPress={() => {
+                        const canKick = members.some((m) => m.isMe && m.role === 'moderator');
+                        const options = canKick
+                          ? ['Block member', 'Report member', 'Remove from circle', 'Cancel']
+                          : ['Block member', 'Report member', 'Cancel'];
+                        const cancelButtonIndex = options.length - 1;
+                        const destructiveButtonIndex = 0;
+
+                        const onSelect = (idx: number) => {
+                          if (idx === 0) handleBlockMember(item);
+                          if (idx === 1) handleReportMember(item);
+                          if (canKick && idx === 2) handleKickMember(item);
+                        };
+
+                        if (Platform.OS === 'ios') {
+                          ActionSheetIOS.showActionSheetWithOptions(
+                            {
+                              options,
+                              cancelButtonIndex,
+                              destructiveButtonIndex,
+                            },
+                            onSelect,
+                          );
+                        } else {
+                          Alert.alert('Member options', undefined, [
+                            { text: 'Block member', style: 'destructive', onPress: () => handleBlockMember(item) },
+                            { text: 'Report member', onPress: () => handleReportMember(item) },
+                            ...(canKick
+                              ? [{ text: 'Remove from circle', style: 'destructive' as const, onPress: () => handleKickMember(item) }]
+                              : []),
+                            { text: 'Cancel', style: 'cancel' },
+                          ]);
+                        }
+                      }}
+                      accessibilityLabel={`Member actions for ${item.nickname}`}
                     >
-                      <Text style={styles.blockBtnText}>Block</Text>
+                      <Ionicons name="ellipsis-horizontal" size={18} color={Colors.textMuted} />
                     </TouchableOpacity>
-                  ) : null}
+                  )}
                 </View>
               )}
             />
@@ -714,7 +830,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  memberName: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontWeight: '600' },
+  memberBody: { flex: 1, gap: 3 },
+  memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  memberName: { flexShrink: 1, fontSize: 15, color: Colors.textPrimary, fontWeight: '600' },
+  memberMeta: { fontSize: 12, color: Colors.textMuted },
+  modBadge: {
+    backgroundColor: Colors.safeBlue + '16',
+    borderRadius: Radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  modBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.safeBlue, textTransform: 'uppercase' },
   youBadge: {
     backgroundColor: Colors.mutedLavender + '25',
     borderRadius: Radius.full,
@@ -722,23 +848,5 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   youBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.mutedLavender },
-  blockModeHint: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  blockBtn: {
-    backgroundColor: Colors.alertRed + '15',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: Colors.alertRed + '50',
-  },
-  blockBtnText: {
-    color: Colors.alertRed,
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  memberMenuBtn: { padding: Spacing.xs },
 });
