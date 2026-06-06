@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
-import type { AIMessage } from '@/types';
+import type { AIMessage, CircleMessage } from '@/types';
+import { supabase } from '@/services/supabase';
 
 const HISTORY_KEY = 'hw_ai_history';
 const RATE_KEY = 'hw_ai_timestamps';
@@ -72,6 +73,61 @@ async function appendHistory(message: AIMessage): Promise<void> {
   const history = await getHistory();
   const updated = [...history, message].slice(-MAX_HISTORY);
   await SecureStore.setItemAsync(HISTORY_KEY, JSON.stringify(updated));
+}
+
+async function getScopedSessionKeys(scope: string): Promise<{
+  sessionIdKey: string;
+  sessionNewKey: string;
+}> {
+  if (scope === 'personal') {
+    return {
+      sessionIdKey: SESSION_ID_KEY,
+      sessionNewKey: SESSION_NEW_KEY,
+    };
+  }
+
+  const suffix = scope.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return {
+    sessionIdKey: `${SESSION_ID_KEY}_${suffix}`,
+    sessionNewKey: `${SESSION_NEW_KEY}_${suffix}`,
+  };
+}
+
+async function getOrCreateSession(scope: string): Promise<{
+  sessionId: string;
+  isNewSession: boolean;
+  sessionNewKey: string;
+}> {
+  const { sessionIdKey, sessionNewKey } = await getScopedSessionKeys(scope);
+  let sessionId = await SecureStore.getItemAsync(sessionIdKey);
+  if (!sessionId) {
+    sessionId = `hw-${scope}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    await SecureStore.setItemAsync(sessionIdKey, sessionId);
+    await SecureStore.setItemAsync(sessionNewKey, 'true');
+  }
+
+  const isNewSession = (await SecureStore.getItemAsync(sessionNewKey)) === 'true';
+  return { sessionId, isNewSession, sessionNewKey };
+}
+
+async function sendToAIEndpoint(messageToSend: string, sessionId: string): Promise<string> {
+  const AI_API_KEY = process.env.EXPO_PUBLIC_AI_API_KEY ?? '';
+  if (!AI_API_KEY) {
+    throw new Error('AI companion not configured. Add EXPO_PUBLIC_AI_API_KEY to .env.');
+  }
+
+  const res = await fetch(AI_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': AI_API_KEY,
+    },
+    body: JSON.stringify({ session_id: sessionId, message: messageToSend }),
+  });
+
+  if (!res.ok) throw new Error(`AI endpoint error ${res.status}`);
+  const json = await res.json();
+  return json.reply ?? "I'm here with you. Could you say that again?";
 }
 
 // ─── AI call ─────────────────────────────────────────────────────────────────
@@ -197,6 +253,94 @@ export interface AIContext {
   userContext?: UserContext;
 }
 
+export interface CircleAIContext {
+  circleId: string;
+  circleTitle: string;
+  circleDescription?: string;
+  circleTags?: string[];
+  language?: string;
+  region?: string;
+  safetyLevel: 'standard' | 'heightened';
+}
+
+function buildCircleTranscript(messages: CircleMessage[]): string {
+  return messages
+    .map((message) => {
+      const sender = message.isAI ? 'AI Companion' : message.senderNickname ?? 'Member';
+      return `[${sender}] ${message.body}`;
+    })
+    .join('\n');
+}
+
+export function buildCirclePrompt(
+  circle: CircleAIContext,
+  conversation: CircleMessage[],
+  userText: string,
+): string {
+  const circleSummary = [
+    `Circle title: ${circle.circleTitle}`,
+    circle.circleDescription ? `Circle description: ${circle.circleDescription}` : null,
+    circle.circleTags?.length ? `Circle tags: ${circle.circleTags.join(', ')}` : null,
+    `Safety mode: ${circle.safetyLevel}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const transcript = buildCircleTranscript(conversation);
+
+  return `${SYSTEM_PROMPT}
+
+You are AI Companion inside a group support circle on Homewithin.
+Keep your response relevant to the circle theme and the current discussion.
+Address the group when appropriate, but respond directly to the member who mentioned you.
+Do not claim to be a therapist, doctor, moderator, or emergency service.
+Do not reveal or infer private details about one member to the rest of the circle.
+If the member asks something unrelated, answer briefly and reconnect to the circle's purpose.
+
+--- CIRCLE CONTEXT ---
+${circleSummary}
+
+--- GROUP CONVERSATION ---
+${transcript || 'No prior circle messages.'}
+
+--- CURRENT REQUEST ---
+${userText}`;
+}
+
+export async function sendCircleAIMessage(
+  circleId: string,
+  triggerMessageId: string,
+): Promise<{ message: CircleMessage | null; error?: string }> {
+  const { allowed } = await checkRateLimit();
+  if (!allowed) {
+    return { message: null, error: `Daily limit reached (${MAX_PER_DAY} messages/day). Come back tomorrow.` };
+  }
+
+  if (!supabase) {
+    return { message: null, error: 'Circle AI is unavailable until Supabase is configured.' };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('circle-ai-companion', {
+      body: { circleId, triggerMessageId },
+    });
+
+    if (error) throw new Error(error.message || 'Circle AI invocation failed');
+    if (data?.error) throw new Error(data.error);
+
+    await recordUsage();
+
+    const message = data?.message as CircleMessage | undefined;
+    return { message: message ?? null };
+  } catch (err: any) {
+    console.error('Circle AI call failed:', err?.message);
+    return {
+      message: null,
+      error: err?.message || 'Something went wrong. Try again in a moment.',
+    };
+  }
+}
+
 export async function sendAIMessage(
   userText: string,
   context?: AIContext
@@ -238,45 +382,20 @@ export async function sendAIMessage(
   }
 
   // ── Session ID (server tracks conversation history via this ID) ──────────────
-  let sessionId = await SecureStore.getItemAsync(SESSION_ID_KEY);
-  if (!sessionId) {
-    sessionId = `hw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    await SecureStore.setItemAsync(SESSION_ID_KEY, sessionId);
-    // Mark as a fresh session so we inject context on the first real message
-    await SecureStore.setItemAsync(SESSION_NEW_KEY, 'true');
-  }
+  const { sessionId, isNewSession, sessionNewKey } = await getOrCreateSession('personal');
 
   // On a brand-new session, prepend the system context to the first user message.
   // The server sees this as background info; the UI only shows the bare user text.
-  const isNewSession = (await SecureStore.getItemAsync(SESSION_NEW_KEY)) === 'true';
   const messageToSend = isNewSession
     ? `${systemContent}\n\n---\n\n${userText}`
     : userText;
 
   if (isNewSession) {
-    await SecureStore.setItemAsync(SESSION_NEW_KEY, 'false');
-  }
-
-  const AI_API_KEY = process.env.EXPO_PUBLIC_AI_API_KEY ?? '';
-  if (!AI_API_KEY) {
-    return { message: null, error: 'AI companion not configured. Add EXPO_PUBLIC_AI_API_KEY to .env.' };
+    await SecureStore.setItemAsync(sessionNewKey, 'false');
   }
 
   try {
-    let responseText: string;
-
-    const res = await fetch(AI_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': AI_API_KEY,
-      },
-      body: JSON.stringify({ session_id: sessionId, message: messageToSend }),
-    });
-
-    if (!res.ok) throw new Error(`AI endpoint error ${res.status}`);
-    const json = await res.json();
-    responseText = json.reply ?? "I'm here with you. Could you say that again?";
+    const responseText = await sendToAIEndpoint(messageToSend, sessionId);
 
     await recordUsage();
 
@@ -291,6 +410,8 @@ export async function sendAIMessage(
     return { message: assistantMessage };
   } catch (err: any) {
     console.error('AI call failed:', err?.message);
-    return { message: null, error: 'Something went wrong. Try again in a moment.' };
+    return { message: null, error: err?.message?.includes('AI companion not configured')
+      ? err.message
+      : 'Something went wrong. Try again in a moment.' };
   }
 }

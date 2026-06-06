@@ -9,6 +9,8 @@ const PIN_KEY = "hw_pin";
 const DISGUISE_ENABLED_KEY = "hw_disguise_enabled";
 const DISGUISE_STYLE_KEY = "hw_disguise_style";
 const AI_CONSENT_KEY = "hw_ai_consent";
+const CIRCLE_AI_CONSENT_KEY = "hw_circle_ai_consent";
+const CIRCLE_AI_CONSENT_VERSION = "2026-06-05";
 
 export type { DisguiseStyle };
 
@@ -125,6 +127,7 @@ export async function deleteSensitiveData() {
     SecureStore.deleteItemAsync(JOURNAL_IDS_KEY),
     SecureStore.deleteItemAsync(CHECKIN_DATES_KEY),
     SecureStore.deleteItemAsync(AI_CONSENT_KEY),
+    SecureStore.deleteItemAsync(CIRCLE_AI_CONSENT_KEY),
     ...journalIds.map((id) => SecureStore.deleteItemAsync(journalKey(id))),
   ]);
 }
@@ -136,6 +139,28 @@ export async function hasAIConsent(): Promise<boolean> {
 
 export async function grantAIConsent(): Promise<void> {
   await SecureStore.setItemAsync(AI_CONSENT_KEY, "true");
+}
+
+export async function hasCircleAIConsent(): Promise<boolean> {
+  const value = await SecureStore.getItemAsync(CIRCLE_AI_CONSENT_KEY);
+  if (!value) return false;
+
+  try {
+    const parsed = JSON.parse(value) as { version?: string };
+    return parsed.version === CIRCLE_AI_CONSENT_VERSION;
+  } catch {
+    return false;
+  }
+}
+
+export async function grantCircleAIConsent(): Promise<void> {
+  await SecureStore.setItemAsync(
+    CIRCLE_AI_CONSENT_KEY,
+    JSON.stringify({
+      version: CIRCLE_AI_CONSENT_VERSION,
+      acceptedAt: new Date().toISOString(),
+    }),
+  );
 }
 
 // ─── Check-ins ────────────────────────────────────────────────

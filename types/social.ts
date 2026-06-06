@@ -104,6 +104,7 @@ export interface CircleMessage {
   senderId: string;
   senderNickname?: string;
   senderAvatarUrl?: string;
+  isAI?: boolean;
   body: string;
   createdAt: string;
 }

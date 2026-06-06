@@ -1,8 +1,10 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { grantCircleAIConsent, hasCircleAIConsent } from '@/services/storage';
 import { containsCrisisKeywords } from '@/services/social/chat';
 import {
     deleteCircleMessage,
+    getCircle,
   kickCircleMember,
     getCircleMembers,
     getCircleMessages,
@@ -14,6 +16,7 @@ import {
 import { blockUser, getBlockedUserIds } from '@/services/social/matching';
 import { filterContent } from '@/services/social/contentFilter';
 import { supabase } from '@/services/supabase';
+import { AI_DISCLAIMER, sendCircleAIMessage } from '@/services/wellness/ai';
 import type { CircleMember, CircleMessage } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -21,11 +24,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActionSheetIOS,
+  ActivityIndicator,
     Alert,
     FlatList,
     KeyboardAvoidingView,
+  Modal,
     Platform,
     SafeAreaView,
+  ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -35,6 +41,7 @@ import {
 
 const CRISIS_HOTLINE =
   'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Line: text HOME to 741741';
+const AI_COMPANION_ID = 'ai-companion';
 
 type ListItem =
   | { type: 'message'; data: CircleMessage }
@@ -79,14 +86,20 @@ export default function CircleChatScreen() {
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [members, setMembers] = useState<CircleMember[]>([]);
   const [showMembers, setShowMembers] = useState(false);
+  const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+  const [circleAIConsented, setCircleAIConsented] = useState(false);
+  const [circleTitle, setCircleTitle] = useState(name ?? 'Circle');
   const membersMapRef = useRef<Map<string, { nickname: string; avatarUrl?: string }>>(new Map());
   const blockedUserIdsRef = useRef<Set<string>>(new Set());
+  const pendingAIMessageRef = useRef<string | null>(null);
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
     supabase?.auth.getUser().then(({ data: { user } }) => setMyUserId(user?.id ?? null));
+    hasCircleAIConsent().then(setCircleAIConsented).catch(() => setCircleAIConsented(false));
   }, []);
 
   useEffect(() => {
@@ -94,12 +107,16 @@ export default function CircleChatScreen() {
     let cancelled = false;
 
     (async () => {
-      const [msgs, m, blockedIds] = await Promise.all([
+      const [circle, msgs, m, blockedIds] = await Promise.all([
+        getCircle(circleId),
         getCircleMessages(circleId),
         getCircleMembers(circleId),
         getBlockedUserIds(),
       ]);
       if (cancelled) return;
+
+      const title = circle?.name ?? name ?? 'Circle';
+      setCircleTitle(title);
 
       setMembers(m);
       membersMapRef.current = new Map(
@@ -128,11 +145,19 @@ export default function CircleChatScreen() {
       cancelled = true;
       unsub();
     };
-  }, [circleId]);
+  }, [circleId, name]);
 
   async function handleSend() {
     if (!input.trim() || !circleId) return;
     const body = input.trim();
+    const wantsAI = /@companion\b/i.test(body);
+
+    if (wantsAI && members.length > 1 && !circleAIConsented) {
+      pendingAIMessageRef.current = body;
+      setShowAIConsentModal(true);
+      return;
+    }
+
     const filterResult = filterContent(body);
     if (filterResult.ok === false) {
       Alert.alert('Message blocked', filterResult.reason);
@@ -153,17 +178,69 @@ export default function CircleChatScreen() {
   }
 
   async function doSend(body: string) {
+    const wantsAI = /@companion\b/i.test(body);
     setInput('');
     setSending(true);
 
     if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
 
     const msg = await sendCircleMessage(circleId!, body);
+    let nextMessages = messages;
     if (msg) {
+      nextMessages = messages.some((existing) => existing.id === msg.id)
+        ? messages
+        : [...messages, msg];
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     }
     setSending(false);
+
+    if (wantsAI) {
+      if (members.length <= 1) {
+        Alert.alert('AI Companion unavailable', 'AI Companion responds in circles with at least two members.');
+        return;
+      }
+      if (!msg) {
+        Alert.alert('AI Companion unavailable', 'Your message could not be sent, so AI Companion could not reply.');
+        return;
+      }
+      await handleCompanionReply(msg.id);
+    }
+  }
+
+  async function handleCompanionReply(triggerMessageId: string) {
+    if (!circleId) return;
+
+    setAiLoading(true);
+    const { message, error } = await sendCircleAIMessage(circleId, triggerMessageId);
+    setAiLoading(false);
+
+    if (error) {
+      Alert.alert('AI Companion unavailable', error);
+      return;
+    }
+
+    if (!message) return;
+
+    setMessages((prev) => (prev.some((existing) => existing.id === message.id) ? prev : [...prev, message]));
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+  }
+
+  async function handleGrantAIConsent() {
+    await grantCircleAIConsent();
+    setCircleAIConsented(true);
+    setShowAIConsentModal(false);
+
+    const pendingMessage = pendingAIMessageRef.current;
+    pendingAIMessageRef.current = null;
+    if (!pendingMessage) return;
+
+    await doSend(pendingMessage);
+  }
+
+  function handleDenyAIConsent() {
+    pendingAIMessageRef.current = null;
+    setShowAIConsentModal(false);
   }
 
   function handleOptions() {
@@ -410,6 +487,40 @@ export default function CircleChatScreen() {
   return (
     <View style={styles.safeWrapper}>
     <SafeAreaView style={styles.safe}>
+      <Modal
+        visible={showAIConsentModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleDenyAIConsent}
+      >
+        <View style={styles.consentOverlay}>
+          <View style={styles.consentCard}>
+            <View style={styles.consentHeader}>
+              <Ionicons name="sparkles" size={20} color={Colors.mutedLavender} />
+              <Text style={styles.consentTitle}>AI Companion in Support Circles</Text>
+            </View>
+            <ScrollView style={styles.consentScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.consentBody}>
+                When you mention AI Companion in this circle, your message and the circle conversation are sent to our AI provider to generate a reply for the group.
+              </Text>
+              <Text style={styles.consentSectionLabel}>What is shared</Text>
+              <Text style={styles.consentBody}>
+                {'• The messages in this support circle\n• The circle title and theme\n• Your message that mentions AI Companion\n• Safety signals needed for moderation and crisis guidance'}
+              </Text>
+              <Text style={styles.consentSectionLabel}>Important</Text>
+              <Text style={styles.consentBody}>
+                AI Companion is not a therapist or emergency service. If there is an immediate safety concern, the app may show crisis resources and moderation flows.
+              </Text>
+            </ScrollView>
+            <TouchableOpacity style={styles.consentAgreeBtn} onPress={handleGrantAIConsent}>
+              <Text style={styles.consentAgreeBtnText}>I Agree</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.consentDenyBtn} onPress={handleDenyAIConsent}>
+              <Text style={styles.consentDenyBtnText}>Not now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.nav}>
         <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
@@ -424,7 +535,7 @@ export default function CircleChatScreen() {
           </View>
           <View style={{ alignItems: 'flex-start' }}>
             <Text style={styles.navName} numberOfLines={1}>
-              {name ?? 'Circle'}
+              {circleTitle}
             </Text>
             {members.length > 0 && (
               <Text style={styles.navMemberCount}>{members.length} members</Text>
@@ -439,6 +550,13 @@ export default function CircleChatScreen() {
       <View style={styles.safetyBanner}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.softGreen} />
         <Text style={styles.safetyText}>Use the member menu to block, report, or remove people. Long-press messages to moderate them too.</Text>
+      </View>
+
+      <View style={styles.aiBanner}>
+        <Ionicons name="sparkles-outline" size={14} color={Colors.mutedLavender} />
+        <Text style={styles.aiBannerText}>
+          Mention @companion to ask AI Companion about this circle. {AI_DISCLAIMER}
+        </Text>
       </View>
 
       {showCrisisBanner && (
@@ -469,8 +587,11 @@ export default function CircleChatScreen() {
               <MessageBubble
                 message={item.data}
                 isMe={item.data.senderId === myUserId}
+                isAIMessage={item.data.isAI === true}
                 onLongPress={() =>
-                  item.data.senderId === myUserId
+                  item.data.isAI
+                    ? undefined
+                    : item.data.senderId === myUserId
                     ? promptDeleteMessage(item.data)
                     : promptReportMessage(item.data)
                 }
@@ -479,6 +600,14 @@ export default function CircleChatScreen() {
           }}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No messages yet. Be the first to share.</Text>
+          }
+          ListFooterComponent={
+            aiLoading ? (
+              <View style={styles.aiThinkingRow}>
+                <ActivityIndicator size="small" color={Colors.mutedLavender} />
+                <Text style={styles.aiThinkingText}>AI Companion is thinking…</Text>
+              </View>
+            ) : null
           }
         />
 
@@ -657,11 +786,13 @@ function MemberAvatar({
 function MessageBubble({
   message,
   isMe,
+  isAIMessage,
   onLongPress,
 }: {
   message: CircleMessage;
   isMe: boolean;
-  onLongPress: () => void;
+  isAIMessage: boolean;
+  onLongPress?: () => void;
 }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',
@@ -681,10 +812,15 @@ function MessageBubble({
       <TouchableOpacity
         onLongPress={onLongPress}
         activeOpacity={0.85}
-        style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}
-        accessibilityLabel={isMe ? 'Your message, long press to delete' : `Message from ${name}, long press to report`}
+        disabled={!onLongPress}
+        style={[styles.bubble, isMe ? styles.bubbleMe : isAIMessage ? styles.bubbleAI : styles.bubbleThem]}
+        accessibilityLabel={isAIMessage
+          ? 'AI Companion message'
+          : isMe
+            ? 'Your message, long press to delete'
+            : `Message from ${name}, long press to report`}
       >
-        {!isMe && <Text style={styles.bubbleSender}>{name}</Text>}
+        {!isMe && <Text style={[styles.bubbleSender, isAIMessage && styles.bubbleSenderAI]}>{name}</Text>}
         <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
         <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>{time}</Text>
       </TouchableOpacity>
@@ -720,6 +856,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: 6,
   },
   safetyText: { fontSize: 12, color: Colors.softGreen, fontWeight: '600' },
+  aiBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6,
+    backgroundColor: Colors.mutedLavender + '14',
+    paddingHorizontal: Spacing.md, paddingVertical: 8,
+  },
+  aiBannerText: { flex: 1, fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
   crisisBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
     backgroundColor: Colors.alertRed + '12',
@@ -749,12 +891,19 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bubbleMe: { backgroundColor: Colors.safeBlue, borderBottomRightRadius: 4 },
+  bubbleAI: { backgroundColor: Colors.mutedLavender + '18', borderBottomLeftRadius: 4 },
   bubbleThem: { backgroundColor: Colors.softGray, borderBottomLeftRadius: 4 },
   bubbleSender: { fontSize: 11, fontWeight: '700', color: Colors.mutedLavender, marginBottom: 2 },
+  bubbleSenderAI: { color: Colors.safeBlue },
   bubbleText: { fontSize: 15, color: Colors.textPrimary, lineHeight: 21 },
   bubbleTextMe: { color: Colors.white },
   bubbleTime: { fontSize: 11, color: Colors.textMuted, alignSelf: 'flex-end', marginTop: 2 },
   bubbleTimeMe: { color: 'rgba(255,255,255,0.65)' },
+  aiThinkingRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+  },
+  aiThinkingText: { fontSize: 13, color: Colors.textMuted },
   inputRow: {
     flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm,
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
@@ -774,6 +923,38 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { backgroundColor: Colors.border },
+  consentOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.lg,
+  },
+  consentCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: Colors.warmWhite,
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  consentHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  consentTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  consentScroll: { maxHeight: 280 },
+  consentSectionLabel: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginTop: Spacing.sm },
+  consentBody: { fontSize: 14, lineHeight: 20, color: Colors.textSecondary },
+  consentAgreeBtn: {
+    backgroundColor: Colors.safeBlue,
+    borderRadius: Radius.lg,
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  consentAgreeBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
+  consentDenyBtn: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xs,
+  },
+  consentDenyBtnText: { color: Colors.textMuted, fontSize: 14, fontWeight: '600' },
   // ── Members bottom sheet ──────────────────────────────────
   membersOverlay: {
     position: 'absolute',

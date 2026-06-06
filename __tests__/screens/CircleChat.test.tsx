@@ -6,10 +6,13 @@ import CircleChatScreen from '@/app/(social)/circle';
 import * as chatService from '@/services/social/chat';
 import * as circlesService from '@/services/social/circles';
 import * as matchingService from '@/services/social/matching';
+import * as storageService from '@/services/storage';
+import * as aiService from '@/services/wellness/ai';
 import { useLocalSearchParams } from 'expo-router';
 
 jest.mock('@/services/social/circles', () => ({
   getCircleMessages: jest.fn(),
+  getCircle: jest.fn(),
   getCircleMembers: jest.fn().mockResolvedValue([]),
   sendCircleMessage: jest.fn(),
   subscribeToCircleMessages: jest.fn(),
@@ -28,6 +31,16 @@ jest.mock('@/services/social/chat', () => ({
   containsCrisisKeywords: jest.fn(),
 }));
 
+jest.mock('@/services/storage', () => ({
+  hasCircleAIConsent: jest.fn().mockResolvedValue(true),
+  grantCircleAIConsent: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@/services/wellness/ai', () => ({
+  AI_DISCLAIMER: 'AI is not a therapist or crisis counselor. If you are in danger, use the emergency button.',
+  sendCircleAIMessage: jest.fn(),
+}));
+
 jest.mock('@/services/supabase', () => ({
   supabase: {
     auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'my-user-id' } } }) },
@@ -41,6 +54,7 @@ jest.mock('expo-router', () => ({
 }));
 
 const mockGetMessages = circlesService.getCircleMessages as jest.Mock;
+const mockGetCircle = circlesService.getCircle as jest.Mock;
 const mockGetMembers = circlesService.getCircleMembers as jest.Mock;
 const mockSend = circlesService.sendCircleMessage as jest.Mock;
 const mockSubscribe = circlesService.subscribeToCircleMessages as jest.Mock;
@@ -49,6 +63,9 @@ const mockReport = circlesService.reportInCircle as jest.Mock;
 const mockBlock = matchingService.blockUser as jest.Mock;
 const mockBlockedIds = matchingService.getBlockedUserIds as jest.Mock;
 const mockCrisis = chatService.containsCrisisKeywords as jest.Mock;
+const mockHasCircleAIConsent = storageService.hasCircleAIConsent as jest.Mock;
+const mockGrantCircleAIConsent = storageService.grantCircleAIConsent as jest.Mock;
+const mockSendCircleAIMessage = aiService.sendCircleAIMessage as jest.Mock;
 const mockParams = useLocalSearchParams as jest.Mock;
 
 const SAMPLE_MESSAGES = [
@@ -88,6 +105,19 @@ const SAMPLE_MEMBERS = [
 beforeEach(() => {
   jest.clearAllMocks();
   mockParams.mockReturnValue({ circleId: 'circle-1', name: 'Family Rejection Survivors' });
+  mockGetCircle.mockResolvedValue({
+    id: 'circle-1',
+    slug: 'family-rejection-survivors',
+    name: 'Family Rejection Survivors',
+    description: 'Support for healing from family rejection.',
+    rules: 'Be kind.',
+    category: 'family',
+    memberCap: 20,
+    memberCount: 2,
+    isMember: true,
+    introSeen: true,
+    createdAt: new Date().toISOString(),
+  });
   mockGetMessages.mockResolvedValue(SAMPLE_MESSAGES);
   mockGetMembers.mockResolvedValue(SAMPLE_MEMBERS);
   mockSend.mockResolvedValue({
@@ -103,6 +133,19 @@ beforeEach(() => {
   mockReport.mockResolvedValue(undefined);
   mockBlock.mockResolvedValue(true);
   mockBlockedIds.mockResolvedValue([]);
+  mockHasCircleAIConsent.mockResolvedValue(true);
+  mockGrantCircleAIConsent.mockResolvedValue(undefined);
+  mockSendCircleAIMessage.mockResolvedValue({
+    message: {
+      id: 'circle-ai-1',
+      circleId: 'circle-1',
+      senderId: 'ai-companion',
+      senderNickname: 'AI Companion',
+      isAI: true,
+      body: 'Let us slow down together and stay with what this circle is about.',
+      createdAt: new Date().toISOString(),
+    },
+  });
 });
 
 describe('CircleChatScreen', () => {
@@ -162,6 +205,54 @@ describe('CircleChatScreen', () => {
     await waitFor(() =>
       expect(mockSend).toHaveBeenCalledWith('circle-1', 'Hey everyone')
     );
+  });
+
+  it('calls sendCircleAIMessage when @companion is mentioned', async () => {
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByTestId('circle-message-input'));
+
+    fireEvent.changeText(screen.getByTestId('circle-message-input'), '@companion can you help this group?');
+    fireEvent.press(screen.getByTestId('circle-send-btn'));
+
+    await waitFor(() => {
+      expect(mockSendCircleAIMessage).toHaveBeenCalledWith(
+        'circle-1',
+        'cm-3',
+      );
+    });
+
+    expect(screen.getByText('AI Companion')).toBeTruthy();
+  });
+
+  it('requires consent before first AI mention in circle chat', async () => {
+    mockHasCircleAIConsent.mockResolvedValue(false);
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByTestId('circle-message-input'));
+
+    fireEvent.changeText(screen.getByTestId('circle-message-input'), '@companion can you help this group?');
+    fireEvent.press(screen.getByTestId('circle-send-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('AI Companion in Support Circles')).toBeTruthy();
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockSendCircleAIMessage).not.toHaveBeenCalled();
+  });
+
+  it('resumes the pending AI request after consent is granted', async () => {
+    mockHasCircleAIConsent.mockResolvedValue(false);
+    render(<CircleChatScreen />);
+    await waitFor(() => screen.getByTestId('circle-message-input'));
+
+    fireEvent.changeText(screen.getByTestId('circle-message-input'), '@companion can you help this group?');
+    fireEvent.press(screen.getByTestId('circle-send-btn'));
+
+    await waitFor(() => screen.getByText('I Agree'));
+    fireEvent.press(screen.getByText('I Agree'));
+
+    await waitFor(() => expect(mockGrantCircleAIConsent).toHaveBeenCalled());
+    await waitFor(() => expect(mockSend).toHaveBeenCalledWith('circle-1', '@companion can you help this group?'));
+    await waitFor(() => expect(mockSendCircleAIMessage).toHaveBeenCalled());
   });
 
   it('shows crisis banner when crisis keywords detected', async () => {

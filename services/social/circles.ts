@@ -8,12 +8,14 @@ function rowToMessage(
   memberMap?: Map<string, MemberInfo>,
 ): CircleMessage {
   const info = memberMap?.get(row.sender_id);
+  const isAI = row.is_ai === true;
   return {
     id: row.id,
     circleId: row.circle_id,
-    senderId: row.sender_id,
-    senderNickname: info?.nickname,
-    senderAvatarUrl: info?.avatarUrl,
+    senderId: isAI ? 'ai-companion' : row.sender_id,
+    senderNickname: isAI ? row.ai_name ?? 'AI Companion' : info?.nickname,
+    senderAvatarUrl: isAI ? undefined : info?.avatarUrl,
+    isAI,
     body: row.body,
     createdAt: row.created_at,
   };
