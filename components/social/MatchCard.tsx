@@ -34,7 +34,7 @@ export function MatchCard({ peer, remaining, onConnect, onPass, onReport }: Prop
       </View>
 
       <View style={styles.avatarWrap}>
-        <PeerAvatar avatarUrl={peer.avatarUrl} nickname={peer.nickname} size={120} />
+        <PeerAvatar avatarUrl={peer.avatarUrl} nickname={peer.nickname} size={220} square />
       </View>
 
       <Text style={styles.nickname}>{peer.nickname}</Text>
@@ -124,9 +124,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   avatarWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 220,
+    height: 220,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.1)',

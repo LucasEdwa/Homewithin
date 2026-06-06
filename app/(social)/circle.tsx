@@ -21,7 +21,7 @@ import type { CircleMember, CircleMessage } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActionSheetIOS,
   ActivityIndicator,
@@ -46,6 +46,13 @@ const AI_COMPANION_ID = 'ai-companion';
 type ListItem =
   | { type: 'message'; data: CircleMessage }
   | { type: 'date'; label: string; key: string };
+
+type MentionSuggestion = {
+  key: string;
+  label: string;
+  mentionValue: string;
+  isAI?: boolean;
+};
 
 function dayKey(date: Date) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
@@ -79,6 +86,16 @@ function buildListItems(messages: CircleMessage[]): ListItem[] {
   return items;
 }
 
+function getMentionQuery(text: string): string | null {
+  const match = text.match(/(?:^|\s)@([\w.-]*)$/);
+  if (!match) return null;
+  return match[1] ?? '';
+}
+
+function mentionValueForName(name: string): string {
+  return name.trim().replace(/\s+/g, '_');
+}
+
 export default function CircleChatScreen() {
   const { circleId, name } = useLocalSearchParams<{ circleId: string; name: string }>();
   const [messages, setMessages] = useState<CircleMessage[]>([]);
@@ -96,6 +113,32 @@ export default function CircleChatScreen() {
   const blockedUserIdsRef = useRef<Set<string>>(new Set());
   const pendingAIMessageRef = useRef<string | null>(null);
   const listRef = useRef<FlatList>(null);
+  const mentionQuery = useMemo(() => getMentionQuery(input), [input]);
+  const mentionSuggestions = useMemo<MentionSuggestion[]>(() => {
+    if (mentionQuery == null) return [];
+    const q = mentionQuery.toLowerCase();
+
+    const userSuggestions = members
+      .map((member) => ({
+        key: member.userId,
+        label: member.nickname,
+        mentionValue: mentionValueForName(member.nickname),
+      }))
+      .filter((item) => {
+        if (!q) return true;
+        return item.label.toLowerCase().includes(q) || item.mentionValue.toLowerCase().includes(q);
+      });
+
+    const aiSuggestion: MentionSuggestion = {
+      key: AI_COMPANION_ID,
+      label: 'AI Companion',
+      mentionValue: 'companion',
+      isAI: true,
+    };
+
+    const includeAI = !q || aiSuggestion.label.toLowerCase().includes(q) || aiSuggestion.mentionValue.includes(q);
+    return includeAI ? [...userSuggestions, aiSuggestion] : userSuggestions;
+  }, [members, mentionQuery]);
 
   useEffect(() => {
     supabase?.auth.getUser().then(({ data: { user } }) => setMyUserId(user?.id ?? null));
@@ -241,6 +284,10 @@ export default function CircleChatScreen() {
   function handleDenyAIConsent() {
     pendingAIMessageRef.current = null;
     setShowAIConsentModal(false);
+  }
+
+  function handleMentionSelect(suggestion: MentionSuggestion) {
+    setInput((prev) => prev.replace(/(?:^|\s)@[\w.-]*$/, (m) => `${m.startsWith(' ') ? ' ' : ''}@${suggestion.mentionValue} `));
   }
 
   function handleOptions() {
@@ -635,6 +682,31 @@ export default function CircleChatScreen() {
             <Ionicons name="send" size={20} color={Colors.white} />
           </TouchableOpacity>
         </View>
+
+        {mentionQuery !== null && mentionSuggestions.length > 0 && (
+          <View style={styles.mentionsPanel}>
+            {mentionSuggestions.slice(0, 8).map((suggestion) => (
+              <TouchableOpacity
+                key={suggestion.key}
+                style={styles.mentionRow}
+                onPress={() => handleMentionSelect(suggestion)}
+                accessibilityLabel={`Mention ${suggestion.label}`}
+              >
+                <View style={styles.mentionIconWrap}>
+                  <Ionicons
+                    name={suggestion.isAI ? 'sparkles' : 'at'}
+                    size={14}
+                    color={suggestion.isAI ? Colors.mutedLavender : Colors.textMuted}
+                  />
+                </View>
+                <Text style={styles.mentionLabel}>@{suggestion.mentionValue}</Text>
+                {suggestion.mentionValue !== suggestion.label && (
+                  <Text style={styles.mentionMeta}>{suggestion.label}</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       {showMembers && (
@@ -923,6 +995,32 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { backgroundColor: Colors.border },
+  mentionsPanel: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    backgroundColor: Colors.softGray,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    gap: 2,
+  },
+  mentionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: Radius.md,
+  },
+  mentionIconWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.warmWhite,
+  },
+  mentionLabel: { fontSize: 14, color: Colors.textPrimary, fontWeight: '600' },
+  mentionMeta: { fontSize: 12, color: Colors.textMuted },
   consentOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

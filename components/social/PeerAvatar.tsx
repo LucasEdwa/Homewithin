@@ -7,13 +7,15 @@ export function PeerAvatar({
   avatarUrl,
   nickname,
   size = 44,
+  square = false,
 }: {
   avatarUrl?: string;
   nickname?: string;
   size?: number;
+  square?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const radius = size / 2;
+  const radius = square ? 0 : size / 2;
 
   if (avatarUrl && !failed) {
     return (
