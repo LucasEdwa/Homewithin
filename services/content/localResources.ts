@@ -15,7 +15,9 @@ import type {
 
 export interface LocationResult {
   granted: boolean;
-  state?: string; // matched Swedish state, if detectable
+  state?: string; // matched location label used by resource filtering (state or country)
+  region?: string;
+  country?: string;
 }
 
 export async function requestLocationPermission(): Promise<LocationResult> {
@@ -35,14 +37,19 @@ export async function requestLocationPermission(): Promise<LocationResult> {
     });
 
     const region = address?.region ?? "";
-    // Match against the known Swedish states list (case-insensitive prefix match)
+    const country = address?.country ?? "";
+
+    // Prefer a known Swedish state when available.
     const matched = (SWEDISH_STATES as readonly string[]).find(
       (s) =>
         region.toLowerCase().startsWith(s.toLowerCase()) ||
         s.toLowerCase().startsWith(region.toLowerCase()),
     );
 
-    return { granted: true, state: matched };
+    // Fall back to country so non-Swedish users can still get location-based defaults.
+    const locationLabel = matched ?? country ?? region ?? undefined;
+
+    return { granted: true, state: locationLabel, region: region || undefined, country: country || undefined };
   } catch {
     return { granted: false };
   }

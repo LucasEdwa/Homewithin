@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { SWEDISH_STATES } from '@/data/localResources';
+import { RESOURCE_LOCATIONS } from '@/data/localResources';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import {
@@ -31,9 +31,9 @@ import {
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function LocalResourcesScreen() {
-  const { nearbyState } = useSession();
+  const { nearbyState, profile } = useSession();
   const [selectedType, setSelectedType] = useState<LocalResourceType | undefined>(undefined);
-  const [selectedState, setSelectedState] = useState<string>(nearbyState ?? 'Stockholm');
+  const [selectedState, setSelectedState] = useState<string>(nearbyState ?? profile?.country ?? 'Sweden');
   const [locationGranted, setLocationGranted] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
 
@@ -51,7 +51,7 @@ export default function LocalResourcesScreen() {
         setSelectedState(result.state);
         Alert.alert('Location detected', `Showing resources in ${result.state}.`);
       } else {
-        Alert.alert('Location enabled', 'Could not detect your state. Browse the list to select it.');
+        Alert.alert('Location enabled', 'Could not detect your location. Browse the list to select it.');
       }
     } else {
       Alert.alert(
@@ -96,7 +96,7 @@ export default function LocalResourcesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* County picker */}
+      {/* Location picker */}
       <TouchableOpacity
         testID="state-picker"
         style={styles.stateRow}
@@ -114,7 +114,7 @@ export default function LocalResourcesScreen() {
 
       {showStatePicker && (
         <View style={styles.stateList}>
-          {SWEDISH_STATES.map((c) => (
+          {RESOURCE_LOCATIONS.map((c) => (
             <TouchableOpacity
               key={c}
               testID={`state-${c}`}

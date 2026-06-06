@@ -568,3 +568,7 @@ export const SWEDISH_STATES = [
   "Örebro",
   "Östergötland",
 ] as const;
+
+export const RESOURCE_LOCATIONS = Array.from(
+  new Set(LOCAL_RESOURCES.map((resource) => resource.state)),
+).sort((a, b) => a.localeCompare(b));

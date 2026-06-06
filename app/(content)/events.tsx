@@ -1,11 +1,12 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { RESOURCE_LOCATIONS } from '@/data/localResources';
 import { useSession } from '@/context/SessionContext';
 import { getMeetups, getWorkshops } from '@/services/content/localResources';
 import type { LocalMeetup, Workshop, WorkshopFormat } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Linking,
@@ -37,11 +38,22 @@ const FORMAT_LABELS: Record<WorkshopFormat, string> = {
 };
 
 export default function EventsScreen() {
-  const { nearbyState } = useSession();
+  const { nearbyState, profile } = useSession();
   const [activeTab, setActiveTab] = useState<Tab>('workshops');
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [manualLocationOverride, setManualLocationOverride] = useState(false);
+
+  const nearbyLocation = nearbyState ?? profile?.country ?? 'your area';
+  const [selectedLocation, setSelectedLocation] = useState(nearbyLocation);
+
+  useEffect(() => {
+    if (!manualLocationOverride) {
+      setSelectedLocation(nearbyLocation);
+    }
+  }, [nearbyLocation, manualLocationOverride]);
 
   const workshops = getWorkshops();
-  const meetups = getMeetups(nearbyState ?? undefined);
+  const meetups = getMeetups(selectedLocation);
 
   const openLink = useCallback((url: string) => {
     Linking.openURL(url).catch(() =>
@@ -91,10 +103,74 @@ export default function EventsScreen() {
         </TouchableOpacity>
       </View>
 
+      {activeTab === 'meetups' && (
+        <>
+          <TouchableOpacity
+            style={styles.locationRow}
+            onPress={() => setShowLocationPicker((value) => !value)}
+            accessibilityLabel="Choose meetup location"
+            testID="events-location-picker"
+          >
+            <Ionicons name="location-outline" size={16} color={Colors.safeBlue} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.locationLabel}>Using your location</Text>
+              <Text style={styles.locationValue}>{selectedLocation}</Text>
+            </View>
+            <Ionicons
+              name={showLocationPicker ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={Colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          {showLocationPicker && (
+            <View style={styles.locationList}>
+              {RESOURCE_LOCATIONS.map((location) => (
+                <TouchableOpacity
+                  key={location}
+                  style={[
+                    styles.locationOption,
+                    location === selectedLocation && styles.locationOptionActive,
+                  ]}
+                  onPress={() => {
+                    setSelectedLocation(location);
+                    setManualLocationOverride(true);
+                    setShowLocationPicker(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.locationOptionText,
+                      location === selectedLocation && styles.locationOptionTextActive,
+                    ]}
+                  >
+                    {location}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+
+              {manualLocationOverride && (
+                <TouchableOpacity
+                  style={styles.locationResetBtn}
+                  onPress={() => {
+                    setManualLocationOverride(false);
+                    setSelectedLocation(nearbyLocation);
+                    setShowLocationPicker(false);
+                  }}
+                >
+                  <Ionicons name="navigate-outline" size={13} color={Colors.safeBlue} />
+                  <Text style={styles.locationResetBtnText}>Use detected location ({nearbyLocation})</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </>
+      )}
+
       {activeTab === 'workshops' ? (
         <WorkshopsList workshops={workshops} onOpenLink={openLink} />
       ) : (
-        <MeetupsList meetups={meetups} country={nearbyState ?? ''} onOpenLink={openLink} />
+        <MeetupsList meetups={meetups} country={selectedLocation} onOpenLink={openLink} />
       )}
     </SafeAreaView>
   );
@@ -289,6 +365,47 @@ const styles = StyleSheet.create({
     padding: 4,
     gap: 4,
   },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xs,
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  locationLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+  locationValue: { fontSize: 15, color: Colors.textPrimary, fontWeight: '600' },
+  locationList: {
+    marginHorizontal: Spacing.lg,
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+    marginBottom: Spacing.sm,
+  },
+  locationOption: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  locationOptionActive: { backgroundColor: Colors.safeBlue + '10' },
+  locationOptionText: { fontSize: 15, color: Colors.textSecondary },
+  locationOptionTextActive: { color: Colors.safeBlue, fontWeight: '600' },
+  locationResetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  locationResetBtnText: { fontSize: 13, color: Colors.safeBlue, fontWeight: '600' },
   tab: {
     flex: 1,
     flexDirection: 'row',
