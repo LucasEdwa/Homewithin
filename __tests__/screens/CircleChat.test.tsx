@@ -268,7 +268,7 @@ describe('CircleChatScreen', () => {
     const unsub = jest.fn();
     mockSubscribe.mockReturnValue(unsub);
     const { unmount } = render(<CircleChatScreen />);
-    await waitFor(() => expect(mockSubscribe).toHaveBeenCalledWith('circle-1', expect.any(Function)));
+    await waitFor(() => expect(mockSubscribe).toHaveBeenCalledWith('circle-1', expect.any(Function), expect.any(Function)));
     unmount();
     expect(unsub).toHaveBeenCalled();
   });
