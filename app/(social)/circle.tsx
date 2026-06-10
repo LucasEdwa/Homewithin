@@ -171,18 +171,24 @@ export default function CircleChatScreen() {
       setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
     })();
 
-    const unsub = subscribeToCircleMessages(circleId, (msg) => {
-      if (blockedUserIdsRef.current.has(msg.senderId)) return;
-      const info = membersMapRef.current.get(msg.senderId);
-      const annotated: CircleMessage = info
-        ? { ...msg, senderNickname: info.nickname, senderAvatarUrl: info.avatarUrl }
-        : msg;
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === annotated.id)) return prev;
-        return [...prev, annotated];
-      });
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
-    });
+    const unsub = subscribeToCircleMessages(
+      circleId,
+      (msg) => {
+        if (blockedUserIdsRef.current.has(msg.senderId)) return;
+        const info = membersMapRef.current.get(msg.senderId);
+        const annotated: CircleMessage = info
+          ? { ...msg, senderNickname: info.nickname, senderAvatarUrl: info.avatarUrl }
+          : msg;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === annotated.id)) return prev;
+          return [...prev, annotated];
+        });
+        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+      },
+      (deletedId) => {
+        setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+      },
+    );
 
     return () => {
       cancelled = true;

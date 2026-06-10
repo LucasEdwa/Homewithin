@@ -252,10 +252,11 @@ export async function sendCircleMessage(
 export function subscribeToCircleMessages(
   circleId: string,
   onMessage: (msg: CircleMessage) => void,
+  onDelete?: (messageId: string) => void,
 ): () => void {
   if (!supabase) return () => {};
 
-  const channel = supabase
+  let channel = supabase
     .channel(`circle_messages:${circleId}`)
     .on(
       "postgres_changes",
@@ -266,8 +267,25 @@ export function subscribeToCircleMessages(
         filter: `circle_id=eq.${circleId}`,
       },
       (payload) => onMessage(rowToMessage(payload.new as any)),
-    )
-    .subscribe();
+    );
+
+  if (onDelete) {
+    channel = channel.on(
+      "postgres_changes",
+      {
+        event: "DELETE",
+        schema: "public",
+        table: "circle_messages",
+        filter: `circle_id=eq.${circleId}`,
+      },
+      (payload) => {
+        const id = (payload.old as any)?.id;
+        if (id) onDelete(id);
+      },
+    );
+  }
+
+  channel.subscribe();
 
   return () => {
     supabase!.removeChannel(channel);
