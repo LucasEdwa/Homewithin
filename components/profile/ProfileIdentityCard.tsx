@@ -50,7 +50,7 @@ export function ProfileIdentityCard() {
       if (profile) {
         const updated = { ...profile, avatarUrl: remoteUrl };
         await setProfile(updated);
-        await syncProfile(updated).catch(() => {});
+        await syncProfile(updated);
       }
     } catch (e: any) {
       if (profile) await setProfile({ ...profile, avatarUrl: previousAvatarUrl });
