@@ -5,6 +5,7 @@ import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { LogBox, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Suppress spurious multi-touch tracking warnings from RN internals.
@@ -65,6 +66,7 @@ function LockGate({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
     <ErrorBoundary>
       <SessionProvider>
@@ -107,5 +109,6 @@ export default function RootLayout() {
       </SessionProvider>
     </ErrorBoundary>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

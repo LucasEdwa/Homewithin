@@ -8,6 +8,10 @@ type MessageRow = {
   body: string;
   expires_at: string | null;
   created_at: string;
+  liked: boolean | null;
+  reply_to_id: string | null;
+  reply_to_body: string | null;
+  reply_to_sender_id: string | null;
 };
 
 const CRISIS_KEYWORDS = [
@@ -39,6 +43,10 @@ function rowToMessage(row: MessageRow): Message {
     body: row.body,
     expiresAt: row.expires_at ?? undefined,
     createdAt: row.created_at,
+    liked: row.liked ?? false,
+    replyToId: row.reply_to_id ?? undefined,
+    replyToBody: row.reply_to_body ?? undefined,
+    replyToSenderId: row.reply_to_sender_id ?? undefined,
   };
 }
 
@@ -46,6 +54,7 @@ export async function sendMessage(
   matchId: string,
   body: string,
   expiryHours: number | null,
+  replyTo?: { id: string; body: string; senderId: string },
 ): Promise<Message | null> {
   if (!supabase) return null;
   const {
@@ -64,6 +73,9 @@ export async function sendMessage(
       sender_id: user.id,
       body,
       expires_at: expiresAt,
+      reply_to_id: replyTo?.id ?? null,
+      reply_to_body: replyTo?.body ?? null,
+      reply_to_sender_id: replyTo?.senderId ?? null,
     })
     .select()
     .single();
@@ -73,7 +85,6 @@ export async function sendMessage(
     return null;
   }
 
-  // Fire push notification to the other participant — ignore failures so chat still works.
   supabase.functions
     .invoke("send-push", { body: { matchId, body } })
     .catch(() => {});
@@ -99,9 +110,28 @@ export async function getMessages(matchId: string): Promise<Message[]> {
   return (data ?? []).map(rowToMessage);
 }
 
+export async function toggleMessageLike(
+  messageId: string,
+  currentlyLiked: boolean,
+): Promise<boolean> {
+  if (!supabase) return false;
+
+  const { error } = await supabase
+    .from("messages")
+    .update({ liked: !currentlyLiked })
+    .eq("id", messageId);
+
+  if (error) {
+    console.error("Toggle like failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
 export function subscribeToMessages(
   matchId: string,
   onMessage: (msg: Message) => void,
+  onMessageUpdated: (msg: Message) => void,
 ): () => void {
   if (!supabase) return () => {};
 
@@ -121,6 +151,19 @@ export function subscribeToMessages(
         onMessage(rowToMessage(row));
       },
     )
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "messages",
+        filter: `match_id=eq.${matchId}`,
+      },
+      (payload) => {
+        const row = payload.new as any;
+        onMessageUpdated(rowToMessage(row));
+      },
+    )
     .subscribe((status) => {
       if (status === "CHANNEL_ERROR")
         console.warn(
@@ -135,11 +178,6 @@ export function subscribeToMessages(
   };
 }
 
-/**
- * Bulk-apply an expiry to all messages the current user sent in a match.
- * Called when the user changes the auto-delete setting so existing messages
- * also get the new expiry rather than only future ones.
- */
 export async function applyExpiryToMatch(
   matchId: string,
   expiryHours: number,
@@ -166,6 +204,7 @@ export async function applyExpiryToMatch(
   }
   return true;
 }
+
 export async function deleteMessage(messageId: string): Promise<boolean> {
   if (!supabase) return false;
   const {

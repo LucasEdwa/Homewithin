@@ -82,6 +82,10 @@ export interface Message {
   body: string;
   expiresAt?: string;
   createdAt: string;
+  liked?: boolean;
+  replyToId?: string;
+  replyToBody?: string;
+  replyToSenderId?: string;
 }
 
 export interface Circle {

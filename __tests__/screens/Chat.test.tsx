@@ -117,7 +117,7 @@ describe('ChatScreen', () => {
     fireEvent.changeText(screen.getByTestId('message-input'), 'Hello!');
     fireEvent.press(screen.getByTestId('send-btn'));
     await waitFor(() =>
-      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Hello!', null)
+      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Hello!', null, undefined)
     );
   });
 
@@ -139,7 +139,7 @@ describe('ChatScreen', () => {
     fireEvent.changeText(screen.getByTestId('message-input'), 'Private');
     fireEvent.press(screen.getByTestId('send-btn'));
     await waitFor(() =>
-      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Private', 24)
+      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Private', 24, undefined)
     );
     spy.mockRestore();
   });
@@ -173,7 +173,7 @@ describe('ChatScreen', () => {
   it('own message bubble is accessible with delete label', async () => {
     render(<ChatScreen />);
     await waitFor(() => screen.getByText('Hello there!'));
-    const ownBubble = screen.getByLabelText('Your message, long press to delete');
+    const ownBubble = screen.getByLabelText('Your message, double-tap to like, long-press to delete');
     expect(ownBubble).toBeTruthy();
   });
 
@@ -181,8 +181,8 @@ describe('ChatScreen', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     (chatService.deleteMessage as jest.Mock).mockResolvedValue(true);
     render(<ChatScreen />);
-    await waitFor(() => screen.getByLabelText('Your message, long press to delete'));
-    fireEvent(screen.getByLabelText('Your message, long press to delete'), 'longPress');
+    await waitFor(() => screen.getByLabelText('Your message, double-tap to like, long-press to delete'));
+    fireEvent(screen.getByLabelText('Your message, double-tap to like, long-press to delete'), 'longPress');
     await waitFor(() =>
       expect(alertSpy).toHaveBeenCalledWith('Delete message?', expect.any(String), expect.any(Array))
     );

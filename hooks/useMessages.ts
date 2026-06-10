@@ -18,20 +18,26 @@ export function useMessages(matchId: string | undefined) {
 
     loadMessages();
 
-    const unsub = subscribeToMessages(matchId, (msg) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-      markRead(matchId!);
-    });
+    const unsub = subscribeToMessages(
+      matchId,
+      (msg) => {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+        markRead(matchId!);
+      },
+      (updated) => {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === updated.id ? { ...m, liked: updated.liked } : m)),
+        );
+      },
+    );
 
-    // Refetch on foreground — covers WebSocket gaps when the app was backgrounded.
     const appStateSub = AppState.addEventListener("change", (state) => {
       if (state === "active") loadMessages();
     });
 
-    // Purge expired messages from state every 60 s so they disappear in real-time.
     const purgeInterval = setInterval(() => {
       const now = new Date();
       setMessages((prev) => prev.filter((m) => !m.expiresAt || new Date(m.expiresAt) > now));

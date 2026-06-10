@@ -1,12 +1,12 @@
 import { useUnread } from '@/context/UnreadContext';
 import { useMessages } from '@/hooks/useMessages';
-import { containsCrisisKeywords, deleteMessage, sendMessage, applyExpiryToMatch } from '@/services/social/chat';
+import { containsCrisisKeywords, deleteMessage, sendMessage, applyExpiryToMatch, toggleMessageLike } from '@/services/social/chat';
 import { filterContent } from '@/services/social/contentFilter';
 import { blockUser, getMatchPeerId, reportMessage } from '@/services/social/matching';
 import { supabase } from '@/services/supabase';
 import type { Message } from '@/types';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, FlatList, Platform } from 'react-native';
 
 export const EXPIRY_OPTIONS: { label: string; hours: number | null }[] = [
@@ -19,7 +19,8 @@ export const EXPIRY_OPTIONS: { label: string; hours: number | null }[] = [
 
 export type ListItem =
   | { type: 'message';    data: Message }
-  | { type: 'dateHeader'; label: string; key: string };
+  | { type: 'dateHeader'; label: string; key: string }
+  | { type: 'unreadSeparator'; key: string; count: number };
 
 function isExpired(msg: Message) {
   return !!msg.expiresAt && new Date(msg.expiresAt) < new Date();
@@ -38,18 +39,25 @@ function formatDateLabel(date: Date): string {
   });
 }
 
-function buildListItems(messages: Message[]): ListItem[] {
+function buildListItems(messages: Message[], initialUnread: number): ListItem[] {
   const items: ListItem[] = [];
   let lastDateStr = '';
-  for (const msg of messages) {
+  const unreadStartIdx = initialUnread > 0 ? Math.max(0, messages.length - initialUnread) : -1;
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
     const dateStr = new Date(msg.createdAt).toDateString();
     if (dateStr !== lastDateStr) {
       lastDateStr = dateStr;
       items.push({ type: 'dateHeader', label: formatDateLabel(new Date(msg.createdAt)), key: `dh-${dateStr}` });
     }
+    if (i === unreadStartIdx) {
+      items.push({ type: 'unreadSeparator', key: 'unread-sep', count: initialUnread });
+    }
     items.push({ type: 'message', data: msg });
   }
-  return items;
+  // Reverse so newest is at index 0 — used with FlatList inverted={true}, which renders
+  // index 0 at the bottom. The list therefore opens at the latest message with no scroll.
+  return [...items].reverse();
 }
 
 export function useChatScreen() {
@@ -58,31 +66,34 @@ export function useChatScreen() {
     nickname: string;
     avatarUrl?: string;
   }>();
-  const { setActiveMatch } = useUnread();
+  const { setActiveMatch, unreadByMatch } = useUnread();
   const { messages, setMessages } = useMessages(matchId);
   const [input, setInput] = useState('');
   const [expiryHours, setExpiryHours] = useState<number | null>(null);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const listRef = useRef<FlatList>(null);
+
+  // Captured once on mount, before setActiveMatch resets the badge count.
+  const initialUnreadCount = useRef(matchId ? (unreadByMatch[matchId] ?? 0) : 0);
+
+  const listItems = useMemo(
+    () => buildListItems(messages.filter((m) => !isExpired(m)), initialUnreadCount.current),
+    [messages],
+  );
 
   useEffect(() => {
     supabase?.auth.getUser().then(({ data: { user } }) => setMyUserId(user?.id ?? null));
   }, []);
 
-  // Tell UnreadContext this chat is active so incoming messages don't increment the badge.
   useEffect(() => {
     if (!matchId) return;
     setActiveMatch(matchId);
     return () => setActiveMatch(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
-
-  // Scroll to end when messages load or a new one arrives.
-  useEffect(() => {
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: messages.length > 0 }), 50);
-  }, [messages.length]);
 
   // Remove expired messages from local state every 30 s.
   useEffect(() => {
@@ -117,14 +128,40 @@ export function useChatScreen() {
   }
 
   async function doSend(body: string) {
+    const currentReplyTo = replyTo;
     setInput('');
+    setReplyTo(null);
     setSending(true);
     if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
-    const msg = await sendMessage(matchId!, body, expiryHours);
+    const msg = await sendMessage(
+      matchId!,
+      body,
+      expiryHours,
+      currentReplyTo
+        ? { id: currentReplyTo.id, body: currentReplyTo.body, senderId: currentReplyTo.senderId }
+        : undefined,
+    );
     if (msg) {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
     }
+    // With inverted FlatList, offset 0 = the bottom (newest messages).
+    // Scroll there so the user always sees the message they just sent.
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
     setSending(false);
+  }
+
+  async function handleLike(message: Message) {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === message.id ? { ...m, liked: !m.liked } : m)),
+    );
+    const ok = await toggleMessageLike(message.id, !!message.liked);
+    if (!ok) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === message.id ? { ...m, liked: message.liked } : m)),
+      );
+    }
   }
 
   function handlePickExpiry() {
@@ -132,9 +169,7 @@ export function useChatScreen() {
     const applySelection = async (option: typeof EXPIRY_OPTIONS[number]) => {
       setExpiryHours(option.hours);
       if (option.hours !== null && matchId) {
-        // Retroactively stamp own messages in DB.
         applyExpiryToMatch(matchId, option.hours).catch(() => {});
-        // Apply the new expiry to all local messages so they disappear on time.
         const expiresAt = new Date(
           Date.now() + option.hours * 60 * 60 * 1000,
         ).toISOString();
@@ -142,7 +177,6 @@ export function useChatScreen() {
           prev
             .map((m) => ({
               ...m,
-              // Only shorten existing expiry, never extend it.
               expiresAt:
                 !m.expiresAt || m.expiresAt > expiresAt
                   ? expiresAt
@@ -263,14 +297,17 @@ export function useChatScreen() {
     avatarUrl,
     myUserId,
     listRef,
-    listItems: buildListItems(messages.filter((m) => !isExpired(m))),
+    listItems,
     input,
     setInput,
     expiryHours,
     sending,
     showCrisisBanner,
     setShowCrisisBanner,
+    replyTo,
+    setReplyTo,
     handleSend,
+    handleLike,
     handlePickExpiry,
     handleOptions,
     handleDeleteMessage,
