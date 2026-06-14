@@ -1,5 +1,5 @@
 import { getUnreadCounts, markMatchRead } from '@/services/social/unread';
-import { currentUserId, supabase } from '@/services/supabase';
+import { supabase } from '@/services/supabase';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 interface UnreadContextValue {
@@ -18,6 +18,21 @@ export function UnreadProvider({ children }: { children: React.ReactNode }) {
   const matchIdsRef = useRef<Set<string>>(new Set());
   const activeMatchRef = useRef<string | null>(null);
   const channelRef = useRef<ReturnType<NonNullable<typeof supabase>['channel']> | null>(null);
+  // Cached user ID — updated synchronously via onAuthStateChange so realtime
+  // callbacks never need to make an async network call to identify the user.
+  const uidRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    // Seed from the current session (fast, in-memory read).
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      uidRef.current = session?.user.id ?? null;
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      uidRef.current = session?.user.id ?? null;
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Subscribe once to all message inserts. Supabase realtime + RLS means we only
   // receive rows the user can SELECT — no need for a server-side filter here.
@@ -29,11 +44,11 @@ export function UnreadProvider({ children }: { children: React.ReactNode }) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        async (payload) => {
+        (payload) => {
           const row = payload.new as { match_id: string; sender_id: string };
-          const uid = await currentUserId();
+          const uid = uidRef.current; // synchronous — no network round-trip
           // Ignore my own messages and chats I currently have open.
-          if (row.sender_id === uid) return;
+          if (!uid || row.sender_id === uid) return;
           if (!matchIdsRef.current.has(row.match_id)) return;
           if (activeMatchRef.current === row.match_id) return;
 

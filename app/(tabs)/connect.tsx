@@ -115,15 +115,15 @@ export default function ConnectScreen() {
           </View>
         )}
 
-        <IncomingLikesSection
-          matches={incomingLikes}
-          onAccept={handleAcceptLike}
-          onDecline={handleDeclineLike}
-        />
         <ConnectionsSection
           matches={myMatches}
           unreadByMatch={unreadByMatch}
           onUnmatch={handleUnmatch}
+        />
+        <IncomingLikesSection
+          matches={incomingLikes}
+          onAccept={handleAcceptLike}
+          onDecline={handleDeclineLike}
         />
         <PendingSection matches={pendingOutgoing} onCancel={handleCancelPending} />
 

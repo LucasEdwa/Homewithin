@@ -61,11 +61,37 @@ function buildListItems(messages: Message[], initialUnread: number): ListItem[] 
 }
 
 export function useChatScreen() {
-  const { matchId, nickname, avatarUrl } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     matchId: string;
-    nickname: string;
+    nickname?: string;
     avatarUrl?: string;
   }>();
+  const matchId = params.matchId;
+
+  // nickname/avatarUrl are absent when the chat is opened via a push notification
+  // (the deep link only carries matchId). Fetch them from Supabase in that case.
+  const [nickname, setNickname] = useState(params.nickname ?? '');
+  const [avatarUrl, setAvatarUrl] = useState(params.avatarUrl ?? '');
+
+  useEffect(() => {
+    if (nickname || !matchId) return;
+    let cancelled = false;
+    getMatchPeerId(matchId).then(async (peerId) => {
+      if (cancelled || !peerId || !supabase) return;
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('nickname, avatar_url')
+        .eq('user_id', peerId)
+        .single();
+      if (!cancelled && data) {
+        setNickname(data.nickname ?? '');
+        setAvatarUrl(data.avatar_url ?? '');
+      }
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId]);
+
   const { setActiveMatch, unreadByMatch } = useUnread();
   const { messages, setMessages } = useMessages(matchId);
   const [input, setInput] = useState('');

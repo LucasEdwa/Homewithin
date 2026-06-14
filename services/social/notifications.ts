@@ -72,6 +72,20 @@ export async function registerForPushNotifications(): Promise<void> {
   }
 }
 
+// Returns the matchId from the notification that launched the app from a killed state,
+// or null if the app was launched normally. Must be called once early in startup.
+export async function getInitialNotificationMatchId(): Promise<string | null> {
+  if (!Notif) return null;
+  try {
+    const response = await Notif.getLastNotificationResponseAsync();
+    if (!response) return null;
+    const data = response.notification.request.content.data ?? {};
+    return (data.matchId as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function addNotificationResponseListener(
   onMatchId: (matchId: string) => void,
   onScreen?: (screen: string) => void,

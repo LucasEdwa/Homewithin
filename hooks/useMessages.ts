@@ -32,21 +32,20 @@ export function useMessages(matchId: string | undefined) {
           prev.map((m) => (m.id === updated.id ? { ...m, liked: updated.liked } : m)),
         );
       },
+      // When the realtime channel errors or times out, re-fetch so we don't miss
+      // messages that arrived while the connection was down.
+      () => loadMessages(),
     );
 
     const appStateSub = AppState.addEventListener("change", (state) => {
       if (state === "active") loadMessages();
     });
 
-    const purgeInterval = setInterval(() => {
-      const now = new Date();
-      setMessages((prev) => prev.filter((m) => !m.expiresAt || new Date(m.expiresAt) > now));
-    }, 60_000);
+    // Expiry purge is handled by useChatScreen (30 s interval). No duplicate needed here.
 
     return () => {
       unsub();
       appStateSub.remove();
-      clearInterval(purgeInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);

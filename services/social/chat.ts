@@ -96,18 +96,21 @@ export async function getMessages(matchId: string): Promise<Message[]> {
   if (!supabase) return [];
 
   const now = new Date().toISOString();
+  // Fetch newest 100 non-expired messages (descending so .limit keeps the right end),
+  // then reverse to chronological order for display.
   const { data, error } = await supabase
     .from("messages")
     .select("*")
     .eq("match_id", matchId)
     .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) {
     console.error("Get messages failed:", error.message);
     return [];
   }
-  return (data ?? []).map(rowToMessage);
+  return (data ?? []).reverse().map(rowToMessage);
 }
 
 export async function toggleMessageLike(
@@ -132,6 +135,7 @@ export function subscribeToMessages(
   matchId: string,
   onMessage: (msg: Message) => void,
   onMessageUpdated: (msg: Message) => void,
+  onError?: () => void,
 ): () => void {
   if (!supabase) return () => {};
 
@@ -165,12 +169,15 @@ export function subscribeToMessages(
       },
     )
     .subscribe((status) => {
-      if (status === "CHANNEL_ERROR")
-        console.warn(
-          "[chat] realtime subscription error — check messages table is in supabase_realtime publication",
-        );
-      if (status === "TIMED_OUT")
+      if (status === "CHANNEL_ERROR") {
+        console.warn("[chat] realtime subscription error — check messages table is in supabase_realtime publication");
+        // Re-fetch to catch any messages missed while the channel was down.
+        onError?.();
+      }
+      if (status === "TIMED_OUT") {
         console.warn("[chat] realtime subscription timed out");
+        onError?.();
+      }
     });
 
   return () => {
@@ -203,6 +210,33 @@ export async function applyExpiryToMatch(
     return false;
   }
   return true;
+}
+
+export async function getLastMessagesByMatchIds(
+  matchIds: string[],
+): Promise<Record<string, { body: string; createdAt: string; senderId: string }>> {
+  if (!supabase || matchIds.length === 0) return {};
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("messages")
+    .select("match_id, body, created_at, sender_id")
+    .in("match_id", matchIds)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .order("created_at", { ascending: false })
+    .limit(matchIds.length * 5);
+
+  if (error) {
+    console.error("Get last messages failed:", error.message);
+    return {};
+  }
+
+  const result: Record<string, { body: string; createdAt: string; senderId: string }> = {};
+  for (const row of data ?? []) {
+    if (!result[row.match_id]) {
+      result[row.match_id] = { body: row.body, createdAt: row.created_at, senderId: row.sender_id };
+    }
+  }
+  return result;
 }
 
 export async function deleteMessage(messageId: string): Promise<boolean> {

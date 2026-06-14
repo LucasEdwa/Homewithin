@@ -1,9 +1,9 @@
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { UnreadProvider } from '@/context/UnreadContext';
-import { addNotificationResponseListener, registerForPushNotifications } from '@/services/social/notifications';
+import { addNotificationResponseListener, getInitialNotificationMatchId, registerForPushNotifications } from '@/services/social/notifications';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { LogBox, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -36,6 +36,27 @@ class ErrorBoundary extends React.Component<
 
 function LockGate({ children }: { children: React.ReactNode }) {
   const { locked, loading, profile } = useSession();
+  // Holds a navigation target captured from a cold-start notification tap.
+  // We defer the push until the session finishes loading and the user isn't locked.
+  const pendingNav = useRef<string | null>(null);
+
+  // Check once on mount whether the app was launched by tapping a push notification
+  // (killed → notification tap → cold start). addNotificationResponseListener misses
+  // this case; only getInitialNotificationMatchId handles it.
+  useEffect(() => {
+    getInitialNotificationMatchId().then((matchId) => {
+      if (matchId) pendingNav.current = matchId;
+    });
+  }, []);
+
+  // Fire the pending cold-start navigation once the session is ready and unlocked.
+  useEffect(() => {
+    if (loading || !pendingNav.current) return;
+    if (locked && profile) return; // Still locked — wait for unlock
+    const matchId = pendingNav.current;
+    pendingNav.current = null;
+    router.push({ pathname: '/chat', params: { matchId } });
+  }, [loading, locked, profile]);
 
   useEffect(() => {
     if (!loading && locked && profile) {
@@ -48,7 +69,8 @@ function LockGate({ children }: { children: React.ReactNode }) {
     if (profile) registerForPushNotifications();
   }, [profile]);
 
-  // Navigate to the right chat when the user taps a push notification.
+  // Navigate to the right chat when the user taps a push notification while the app
+  // is running (foreground or background). Cold-start is handled above.
   useEffect(() => {
     const sub = addNotificationResponseListener(
       (matchId) => {

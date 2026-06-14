@@ -89,25 +89,26 @@ export async function findMatches(
     exclude.add(b.blocked_id);
   });
 
-  // Supabase doesn't support `not in` with a Set directly — build the array
   const excludeArr = Array.from(exclude);
 
+  // Build the filter query first (PostgrestFilterBuilder has .not()).
+  // Apply .limit() last because PostgrestTransformBuilder (the result of .limit())
+  // does not expose filter methods — calling .not() after .limit() would fail.
   let query = supabase
     .from("user_profiles")
     .select(
       "user_id, nickname, age_range, language, country, needs, intentions, avatar_url",
     )
     .eq("hide_from_search", false)
-    // Only surface peers who marked themselves open to this intention.
-    .contains("intentions", [intention])
-    .limit(limit);
+    .contains("intentions", [intention]);
 
-  // Filter out excluded users one by one (Supabase supports neq chaining)
-  excludeArr.forEach((id) => {
-    query = query.neq("user_id", id);
-  });
+  // Exclude all previously-acted-on / blocked users in a single NOT IN clause
+  // rather than chaining one .neq() per user (which generates N separate SQL conditions).
+  if (excludeArr.length > 0) {
+    query = query.not("user_id", "in", `(${excludeArr.join(",")})`);
+  }
 
-  const { data, error } = await query;
+  const { data, error } = await query.limit(limit);
   if (error) {
     console.error("Find matches failed:", error.message);
     return [];
