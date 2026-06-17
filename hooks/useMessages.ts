@@ -35,6 +35,9 @@ export function useMessages(matchId: string | undefined) {
       // When the realtime channel errors or times out, re-fetch so we don't miss
       // messages that arrived while the connection was down.
       () => loadMessages(),
+      (deletedId) => {
+        setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+      },
     );
 
     const appStateSub = AppState.addEventListener("change", (state) => {

@@ -136,6 +136,7 @@ export function subscribeToMessages(
   onMessage: (msg: Message) => void,
   onMessageUpdated: (msg: Message) => void,
   onError?: () => void,
+  onMessageDeleted?: (messageId: string) => void,
 ): () => void {
   if (!supabase) return () => {};
 
@@ -166,6 +167,19 @@ export function subscribeToMessages(
       (payload) => {
         const row = payload.new as any;
         onMessageUpdated(rowToMessage(row));
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "DELETE",
+        schema: "public",
+        table: "messages",
+        filter: `match_id=eq.${matchId}`,
+      },
+      (payload) => {
+        const id = (payload.old as any).id;
+        if (id) onMessageDeleted?.(id);
       },
     )
     .subscribe((status) => {
@@ -251,14 +265,20 @@ export async function deleteMessage(messageId: string): Promise<boolean> {
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   if (!user) return false;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("messages")
     .delete()
     .eq("id", messageId)
-    .eq("sender_id", user.id);
+    .eq("sender_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("Delete message failed:", error.message);
+    return false;
+  }
+  // Supabase delete never errors on 0 rows — verify the row was actually removed.
+  if (!data || data.length === 0) {
+    console.error("Delete message failed: no rows deleted (RLS or sender mismatch)");
     return false;
   }
   return true;
