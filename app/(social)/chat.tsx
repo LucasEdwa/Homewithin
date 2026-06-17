@@ -4,10 +4,13 @@ import { useCountdown } from '@/hooks/useCountdown';
 import { EXPIRY_OPTIONS, useChatScreen } from '@/hooks/useChatScreen';
 import type { Message } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React, { useRef } from 'react';
 import {
+  ActionSheetIOS,
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -124,18 +127,46 @@ export default function ChatScreen() {
                 </View>
               );
             }
+            const isMe = item.data.senderId === myUserId;
             return (
               <MessageBubble
                 message={item.data}
-                isMe={item.data.senderId === myUserId}
+                isMe={isMe}
                 disappearing={!!item.data.expiresAt}
                 onLike={() => handleLike(item.data)}
                 onReply={() => setReplyTo(item.data)}
-                onLongPress={
-                  item.data.senderId === myUserId
-                    ? () => handleDeleteMessage(item.data.id)
-                    : undefined
-                }
+                onLongPress={() => {
+                  if (isMe) {
+                    const options = ['Copy', 'Delete', 'Cancel'];
+                    if (Platform.OS === 'ios') {
+                      ActionSheetIOS.showActionSheetWithOptions(
+                        { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
+                        (idx) => {
+                          if (idx === 0) Clipboard.setStringAsync(item.data.body);
+                          if (idx === 1) handleDeleteMessage(item.data.id);
+                        },
+                      );
+                    } else {
+                      Alert.alert('Message', undefined, [
+                        { text: 'Copy', onPress: () => Clipboard.setStringAsync(item.data.body) },
+                        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteMessage(item.data.id) },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]);
+                    }
+                  } else {
+                    if (Platform.OS === 'ios') {
+                      ActionSheetIOS.showActionSheetWithOptions(
+                        { options: ['Copy', 'Cancel'], cancelButtonIndex: 1 },
+                        (idx) => { if (idx === 0) Clipboard.setStringAsync(item.data.body); },
+                      );
+                    } else {
+                      Alert.alert('Message', undefined, [
+                        { text: 'Copy', onPress: () => Clipboard.setStringAsync(item.data.body) },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]);
+                    }
+                  }
+                }}
               />
             );
           }}
@@ -216,7 +247,7 @@ function MessageBubble({
   disappearing: boolean;
   onLike: () => void;
   onReply: () => void;
-  onLongPress?: () => void;
+  onLongPress: () => void;
 }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const countdown = useCountdown(disappearing ? message.expiresAt : undefined);
@@ -295,7 +326,7 @@ function MessageBubble({
             onPress={handleDoubleTap}
             onLongPress={onLongPress}
             activeOpacity={0.85}
-            accessibilityLabel={isMe ? 'Your message, double-tap to like, long-press to delete' : 'Message, double-tap to like'}
+            accessibilityLabel={isMe ? 'Your message, double-tap to like, long-press to copy or delete' : 'Message, double-tap to like, long-press to copy'}
           >
             <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
               <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>

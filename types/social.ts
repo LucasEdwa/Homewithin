@@ -65,6 +65,12 @@ export interface PeerProfile {
   avatarUrl?: string;
 }
 
+export interface MatchLastMessage {
+  body: string;
+  createdAt: string;
+  senderId: string;
+}
+
 export interface Match {
   id: string;
   requesterId: string;
@@ -73,6 +79,7 @@ export interface Match {
   status: MatchStatus;
   createdAt: string;
   peer?: PeerProfile;
+  lastMessage?: MatchLastMessage;
 }
 
 export interface Message {

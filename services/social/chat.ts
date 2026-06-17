@@ -96,18 +96,21 @@ export async function getMessages(matchId: string): Promise<Message[]> {
   if (!supabase) return [];
 
   const now = new Date().toISOString();
+  // Fetch newest 100 non-expired messages (descending so .limit keeps the right end),
+  // then reverse to chronological order for display.
   const { data, error } = await supabase
     .from("messages")
     .select("*")
     .eq("match_id", matchId)
     .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) {
     console.error("Get messages failed:", error.message);
     return [];
   }
-  return (data ?? []).map(rowToMessage);
+  return (data ?? []).reverse().map(rowToMessage);
 }
 
 export async function toggleMessageLike(
@@ -132,6 +135,8 @@ export function subscribeToMessages(
   matchId: string,
   onMessage: (msg: Message) => void,
   onMessageUpdated: (msg: Message) => void,
+  onError?: () => void,
+  onMessageDeleted?: (messageId: string) => void,
 ): () => void {
   if (!supabase) return () => {};
 
@@ -164,13 +169,29 @@ export function subscribeToMessages(
         onMessageUpdated(rowToMessage(row));
       },
     )
+    .on(
+      "postgres_changes",
+      {
+        event: "DELETE",
+        schema: "public",
+        table: "messages",
+        filter: `match_id=eq.${matchId}`,
+      },
+      (payload) => {
+        const id = (payload.old as any).id;
+        if (id) onMessageDeleted?.(id);
+      },
+    )
     .subscribe((status) => {
-      if (status === "CHANNEL_ERROR")
-        console.warn(
-          "[chat] realtime subscription error — check messages table is in supabase_realtime publication",
-        );
-      if (status === "TIMED_OUT")
+      if (status === "CHANNEL_ERROR") {
+        console.warn("[chat] realtime subscription error — check messages table is in supabase_realtime publication");
+        // Re-fetch to catch any messages missed while the channel was down.
+        onError?.();
+      }
+      if (status === "TIMED_OUT") {
         console.warn("[chat] realtime subscription timed out");
+        onError?.();
+      }
     });
 
   return () => {
@@ -205,6 +226,38 @@ export async function applyExpiryToMatch(
   return true;
 }
 
+export async function getLastMessagesByMatchIds(
+  matchIds: string[],
+): Promise<Record<string, { body: string; createdAt: string; senderId: string }>> {
+  if (!supabase || matchIds.length === 0) return {};
+  const now = new Date().toISOString();
+
+  // One query per match with limit(1) guarantees we always get the correct last
+  // message regardless of activity volume — the previous heuristic limit could
+  // miss matches dominated by a single very active conversation.
+  const rows = await Promise.all(
+    matchIds.map((matchId) =>
+      supabase!
+        .from('messages')
+        .select('match_id, body, created_at, sender_id')
+        .eq('match_id', matchId)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => data),
+    ),
+  );
+
+  const result: Record<string, { body: string; createdAt: string; senderId: string }> = {};
+  for (const row of rows) {
+    if (row) {
+      result[row.match_id] = { body: row.body, createdAt: row.created_at, senderId: row.sender_id };
+    }
+  }
+  return result;
+}
+
 export async function deleteMessage(messageId: string): Promise<boolean> {
   if (!supabase) return false;
   const {
@@ -212,14 +265,20 @@ export async function deleteMessage(messageId: string): Promise<boolean> {
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   if (!user) return false;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("messages")
     .delete()
     .eq("id", messageId)
-    .eq("sender_id", user.id);
+    .eq("sender_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("Delete message failed:", error.message);
+    return false;
+  }
+  // Supabase delete never errors on 0 rows — verify the row was actually removed.
+  if (!data || data.length === 0) {
+    console.error("Delete message failed: no rows deleted (RLS or sender mismatch)");
     return false;
   }
   return true;

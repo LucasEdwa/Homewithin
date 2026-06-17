@@ -13,13 +13,28 @@ interface Props {
   onUnmatch: (match: Match) => void;
 }
 
+function formatLastMessageTime(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 export function ConnectionsSection({ matches, unreadByMatch, onUnmatch }: Props) {
   if (matches.length === 0) return null;
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>Your connections</Text>
+      <Text style={styles.title}>Connections</Text>
       {matches.map((match) => {
         const unread = unreadByMatch[match.id] ?? 0;
+        const lastMsg = match.lastMessage;
         return (
           <View key={match.id} style={styles.row}>
             <TouchableOpacity
@@ -39,18 +54,27 @@ export function ConnectionsSection({ matches, unreadByMatch, onUnmatch }: Props)
             >
               <PeerAvatar avatarUrl={match.peer?.avatarUrl} nickname={match.peer?.nickname} />
               <View style={styles.info}>
-                <Text style={[styles.name, unread > 0 && styles.nameUnread]}>
-                  {match.peer?.nickname ?? 'Someone'}
-                </Text>
-                {match.peer?.country ? <Text style={styles.meta}>{match.peer.country}</Text> : null}
+                <View style={styles.nameRow}>
+                  <Text style={[styles.name, unread > 0 && styles.nameUnread]} numberOfLines={1}>
+                    {match.peer?.nickname ?? 'Someone'}
+                  </Text>
+                  {lastMsg ? (
+                    <Text style={styles.time}>{formatLastMessageTime(lastMsg.createdAt)}</Text>
+                  ) : null}
+                </View>
+                {lastMsg ? (
+                  <Text style={[styles.preview, unread > 0 && styles.previewUnread]} numberOfLines={1}>
+                    {lastMsg.body}
+                  </Text>
+                ) : (
+                  <Text style={styles.preview}>Tap to say hello</Text>
+                )}
               </View>
               {unread > 0 ? (
                 <View style={styles.unreadBadge}>
                   <Text style={styles.unreadText}>{unread > 99 ? '99+' : unread}</Text>
                 </View>
-              ) : (
-                <Ionicons name="chatbubble-outline" size={18} color={Colors.safeBlue} />
-              )}
+              ) : null}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.unmatchBtn}
@@ -72,7 +96,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     backgroundColor: Colors.softGray,
     borderRadius: Radius.md,
     borderWidth: 1,
@@ -86,10 +110,18 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     padding: Spacing.md,
   },
-  info: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  info: { flex: 1, gap: 2 },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+  },
+  name: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
   nameUnread: { fontWeight: '700' },
-  meta: { fontSize: 12, color: Colors.textMuted },
+  time: { fontSize: 11, color: Colors.textMuted, flexShrink: 0 },
+  preview: { fontSize: 13, color: Colors.textMuted, lineHeight: 17 },
+  previewUnread: { color: Colors.textSecondary, fontWeight: '500' },
   unreadBadge: {
     minWidth: 22,
     height: 22,
@@ -98,6 +130,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
+    marginLeft: Spacing.xs,
   },
   unreadText: { fontSize: 11, fontWeight: '700', color: Colors.white },
   unmatchBtn: {

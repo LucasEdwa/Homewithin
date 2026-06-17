@@ -1,4 +1,5 @@
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { GuestBlock } from '@/components/social/GuestBlock';
 import { ConnectionsSection } from '@/components/social/ConnectionsSection';
 import { IncomingLikesSection } from '@/components/social/IncomingLikesSection';
 import { MatchCard } from '@/components/social/MatchCard';
@@ -6,11 +7,12 @@ import { PendingSection } from '@/components/social/PendingSection';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
 import { useConnectScreen } from '@/hooks/useConnectScreen';
 import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -22,6 +24,8 @@ import {
 } from 'react-native';
 
 export default function ConnectScreen() {
+  const { profile } = useSession();
+  const [activeTab, setActiveTab] = useState<'connected' | 'pending'>('connected');
   const {
     view,
     loading,
@@ -42,6 +46,18 @@ export default function ConnectScreen() {
     handleBackToIntentions,
     handleReport,
   } = useConnectScreen();
+
+  if (profile?.isAnonymous) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <GuestBlock />
+        <EmergencyButton />
+      </SafeAreaView>
+    );
+  }
+
+  const pendingCount = incomingLikes.length + pendingOutgoing.length;
+  const showTabs = myMatches.length > 0 || pendingCount > 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -96,6 +112,7 @@ export default function ConnectScreen() {
 
         {view === 'browsing' && !loading && currentPeer && (
           <MatchCard
+            key={currentPeer.userId}
             peer={currentPeer}
             remaining={candidatesCount}
             onConnect={handleConnect}
@@ -115,17 +132,88 @@ export default function ConnectScreen() {
           </View>
         )}
 
-        <IncomingLikesSection
-          matches={incomingLikes}
-          onAccept={handleAcceptLike}
-          onDecline={handleDeclineLike}
-        />
-        <ConnectionsSection
-          matches={myMatches}
-          unreadByMatch={unreadByMatch}
-          onUnmatch={handleUnmatch}
-        />
-        <PendingSection matches={pendingOutgoing} onCancel={handleCancelPending} />
+        {showTabs && (
+          <View style={styles.tabsContainer}>
+            {/* Tab bar */}
+            <View style={styles.tabBar}>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'connected' && styles.tabActive]}
+                onPress={() => setActiveTab('connected')}
+                accessibilityLabel="Connected tab"
+                accessibilityRole="tab"
+                accessibilityState={{ selected: activeTab === 'connected' }}
+              >
+                <Ionicons
+                  name="people"
+                  size={15}
+                  color={activeTab === 'connected' ? Colors.safeBlue : Colors.textMuted}
+                />
+                <Text style={[styles.tabText, activeTab === 'connected' && styles.tabTextActive]}>
+                  Connected
+                </Text>
+                {myMatches.length > 0 && (
+                  <View style={[styles.tabBadge, activeTab === 'connected' && styles.tabBadgeActive]}>
+                    <Text style={styles.tabBadgeText}>{myMatches.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'pending' && styles.tabActive]}
+                onPress={() => setActiveTab('pending')}
+                accessibilityLabel="Pending tab"
+                accessibilityRole="tab"
+                accessibilityState={{ selected: activeTab === 'pending' }}
+              >
+                <Ionicons
+                  name="time-outline"
+                  size={15}
+                  color={activeTab === 'pending' ? Colors.safeBlue : Colors.textMuted}
+                />
+                <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
+                  Pending
+                </Text>
+                {pendingCount > 0 && (
+                  <View style={[styles.tabBadge, activeTab === 'pending' && styles.tabBadgeActive]}>
+                    <Text style={styles.tabBadgeText}>{pendingCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Tab content */}
+            {activeTab === 'connected' && (
+              myMatches.length > 0
+                ? <ConnectionsSection
+                    matches={myMatches}
+                    unreadByMatch={unreadByMatch}
+                    onUnmatch={handleUnmatch}
+                  />
+                : <View style={styles.tabEmpty}>
+                    <Ionicons name="people-outline" size={36} color={Colors.textMuted} />
+                    <Text style={styles.tabEmptyTitle}>No connections yet</Text>
+                    <Text style={styles.tabEmptyText}>Like someone to start a connection.</Text>
+                  </View>
+            )}
+
+            {activeTab === 'pending' && (
+              pendingCount > 0
+                ? <View style={styles.pendingContent}>
+                    <IncomingLikesSection
+                      matches={incomingLikes}
+                      onAccept={handleAcceptLike}
+                      onDecline={handleDeclineLike}
+                    />
+                    <PendingSection matches={pendingOutgoing} onCancel={handleCancelPending} />
+                  </View>
+                : <View style={styles.tabEmpty}>
+                    <Ionicons name="time-outline" size={36} color={Colors.textMuted} />
+                    <Text style={styles.tabEmptyTitle}>Nothing pending</Text>
+                    <Text style={styles.tabEmptyText}>Likes you send or receive will appear here.</Text>
+                  </View>
+            )}
+          </View>
+        )}
 
         <TouchableOpacity
           style={styles.circlesEntry}
@@ -198,6 +286,54 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
   resetBtn: { marginTop: Spacing.sm },
   resetText: { fontSize: 14, color: Colors.safeBlue, fontWeight: '600', textDecorationLine: 'underline' },
+  tabsContainer: { gap: Spacing.md },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.lg,
+    padding: 4,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 10,
+    borderRadius: Radius.md,
+  },
+  tabActive: {
+    backgroundColor: Colors.warmWhite,
+    shadowColor: '#000',
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  tabText: { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
+  tabTextActive: { color: Colors.textPrimary },
+  tabBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  tabBadgeActive: { backgroundColor: Colors.safeBlue },
+  tabBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.white },
+  tabEmpty: {
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.xl,
+  },
+  tabEmptyTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  tabEmptyText: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
+  pendingContent: { gap: Spacing.lg },
   circlesEntry: {
     flexDirection: 'row',
     alignItems: 'center',

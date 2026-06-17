@@ -54,7 +54,7 @@ jest.mock('@/context/SessionContext', () => ({
       country: 'Brazil',
       hideFromSearch: false,
       needs: ['someone_to_talk'],
-      isAnonymous: true,
+      isAnonymous: false,
     },
   }),
 }));
