@@ -1,4 +1,5 @@
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
+import { GuestBlock } from '@/components/social/GuestBlock';
 import { ConnectionsSection } from '@/components/social/ConnectionsSection';
 import { IncomingLikesSection } from '@/components/social/IncomingLikesSection';
 import { MatchCard } from '@/components/social/MatchCard';
@@ -6,6 +7,7 @@ import { PendingSection } from '@/components/social/PendingSection';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { useSession } from '@/context/SessionContext';
 import { useConnectScreen } from '@/hooks/useConnectScreen';
 import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +24,7 @@ import {
 } from 'react-native';
 
 export default function ConnectScreen() {
+  const { profile } = useSession();
   const [activeTab, setActiveTab] = useState<'connected' | 'pending'>('connected');
   const {
     view,
@@ -43,6 +46,15 @@ export default function ConnectScreen() {
     handleBackToIntentions,
     handleReport,
   } = useConnectScreen();
+
+  if (profile?.isAnonymous) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <GuestBlock />
+        <EmergencyButton />
+      </SafeAreaView>
+    );
+  }
 
   const pendingCount = incomingLikes.length + pendingOutgoing.length;
   const showTabs = myMatches.length > 0 || pendingCount > 0;
@@ -100,6 +112,7 @@ export default function ConnectScreen() {
 
         {view === 'browsing' && !loading && currentPeer && (
           <MatchCard
+            key={currentPeer.userId}
             peer={currentPeer}
             remaining={candidatesCount}
             onConnect={handleConnect}
