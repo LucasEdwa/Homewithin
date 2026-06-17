@@ -90,9 +90,12 @@ beforeEach(() => {
   mockProfileBuilder.eq.mockReturnThis();
   mockProfileBuilder.contains.mockReturnThis();
 
-  mockMatchesBuilder.select.mockImplementation(() => ({
-    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-  }));
+  mockMatchesBuilder.select.mockImplementation((col: string) => {
+    if (col === 'target_id') {
+      return { eq: jest.fn().mockReturnValue({ not: jest.fn().mockResolvedValue({ data: [], error: null }) }) };
+    }
+    return { eq: jest.fn().mockResolvedValue({ data: [], error: null }) };
+  });
   mockBlocksBuilder.select.mockImplementation(() => ({
     or: jest.fn().mockResolvedValue({ data: [], error: null }),
   }));
@@ -107,14 +110,14 @@ beforeEach(() => {
 
 describe('findMatches', () => {
   it('returns [] when supabase is null', async () => {
-    const result = await findMatches('peer-support');
+    const result = await findMatches('first_friend');
     expect(result).toEqual([]);
   });
 
   it('returns [] when no authenticated user', async () => {
     mockCfg.enabled = true;
     mockCfg.authUser = null;
-    const result = await findMatches('peer-support');
+    const result = await findMatches('first_friend');
     expect(result).toEqual([]);
   });
 
@@ -125,12 +128,12 @@ describe('findMatches', () => {
     });
 
     it('returns [] when no profiles match', async () => {
-      const result = await findMatches('peer-support');
+      const result = await findMatches('first_friend');
       expect(result).toEqual([]);
     });
 
     it('uses NOT IN to exclude users — never chains .neq()', async () => {
-      await findMatches('peer-support');
+      await findMatches('first_friend');
 
       // Must call .not() with the NOT IN pattern.
       expect(mockNotFn).toHaveBeenCalledWith(
@@ -143,7 +146,7 @@ describe('findMatches', () => {
     });
 
     it('includes the current user in the exclusion list', async () => {
-      await findMatches('peer-support');
+      await findMatches('first_friend');
 
       const [, , exclusionArg] = mockNotFn.mock.calls[0];
       expect(exclusionArg).toContain('my-uid');
@@ -154,9 +157,11 @@ describe('findMatches', () => {
       mockMatchesBuilder.select.mockImplementation((col: string) => {
         if (col === 'target_id') {
           return {
-            eq: jest.fn().mockResolvedValue({
-              data: [{ target_id: 'acted-on-1' }, { target_id: 'acted-on-2' }],
-              error: null,
+            eq: jest.fn().mockReturnValue({
+              not: jest.fn().mockResolvedValue({
+                data: [{ target_id: 'acted-on-1' }, { target_id: 'acted-on-2' }],
+                error: null,
+              }),
             }),
           };
         }
@@ -165,7 +170,7 @@ describe('findMatches', () => {
         };
       });
 
-      await findMatches('peer-support');
+      await findMatches('first_friend');
 
       const [, , exclusionArg] = mockNotFn.mock.calls[0];
       expect(exclusionArg).toContain('my-uid');
@@ -175,12 +180,12 @@ describe('findMatches', () => {
     });
 
     it('applies the limit of 10 by default', async () => {
-      await findMatches('peer-support');
+      await findMatches('first_friend');
       expect(mockLimitFn).toHaveBeenCalledWith(10);
     });
 
     it('respects a custom limit argument', async () => {
-      await findMatches('peer-support', 5);
+      await findMatches('first_friend', 5);
       expect(mockLimitFn).toHaveBeenCalledWith(5);
     });
 
@@ -193,12 +198,12 @@ describe('findMatches', () => {
           language: 'Portuguese',
           country: 'Brazil',
           needs: ['anxiety support'],
-          intentions: ['peer-support'],
+          intentions: ['first_friend'],
           avatar_url: 'https://example.com/avatar.jpg',
         },
       ];
 
-      const result = await findMatches('peer-support');
+      const result = await findMatches('first_friend');
 
       expect(result).toEqual([
         {
@@ -222,12 +227,12 @@ describe('findMatches', () => {
           language: null,
           country: null,
           needs: null,
-          intentions: ['peer-support'],
+          intentions: ['first_friend'],
           avatar_url: null,
         },
       ];
 
-      const result = await findMatches('peer-support');
+      const result = await findMatches('first_friend');
 
       expect(result[0]).toMatchObject({
         userId: 'peer-2',

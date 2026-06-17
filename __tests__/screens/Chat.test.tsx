@@ -173,19 +173,23 @@ describe('ChatScreen', () => {
   it('own message bubble is accessible with delete label', async () => {
     render(<ChatScreen />);
     await waitFor(() => screen.getByText('Hello there!'));
-    const ownBubble = screen.getByLabelText('Your message, double-tap to like, long-press to delete');
+    const ownBubble = screen.getByLabelText('Your message, double-tap to like, long-press to copy or delete');
     expect(ownBubble).toBeTruthy();
   });
 
   it('long-pressing own message shows delete confirmation', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    // Simulate the user tapping "Delete" (index 1) from the action sheet.
+    const actionSheetSpy = jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+      .mockImplementation((_opts: any, cb: (i: number) => void) => cb(1));
     (chatService.deleteMessage as jest.Mock).mockResolvedValue(true);
     render(<ChatScreen />);
-    await waitFor(() => screen.getByLabelText('Your message, double-tap to like, long-press to delete'));
-    fireEvent(screen.getByLabelText('Your message, double-tap to like, long-press to delete'), 'longPress');
+    await waitFor(() => screen.getByLabelText('Your message, double-tap to like, long-press to copy or delete'));
+    fireEvent(screen.getByLabelText('Your message, double-tap to like, long-press to copy or delete'), 'longPress');
     await waitFor(() =>
       expect(alertSpy).toHaveBeenCalledWith('Delete message?', expect.any(String), expect.any(Array))
     );
     alertSpy.mockRestore();
+    actionSheetSpy.mockRestore();
   });
 });
