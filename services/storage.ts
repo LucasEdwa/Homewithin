@@ -120,37 +120,15 @@ export async function setDisguiseStyle(style: DisguiseStyle) {
 }
 
 export async function deleteSensitiveData() {
-  const [journalIds, checkinDates] = await Promise.all([
-    getJournalIds(),
-    getCheckinDates(),
-  ]);
+  const journalIds = await getJournalIds();
   await Promise.all([
-    // Session & onboarding
-    SecureStore.deleteItemAsync(SESSION_KEY),
-    SecureStore.deleteItemAsync(ONBOARDING_KEY),
-    // Wellness data
     SecureStore.deleteItemAsync(SAFETY_PLAN_KEY),
+    SecureStore.deleteItemAsync(SESSION_KEY),
     SecureStore.deleteItemAsync(JOURNAL_IDS_KEY),
     SecureStore.deleteItemAsync(CHECKIN_DATES_KEY),
-    // Consent flags
     SecureStore.deleteItemAsync(AI_CONSENT_KEY),
     SecureStore.deleteItemAsync(CIRCLE_AI_CONSENT_KEY),
-    // AI companion
-    SecureStore.deleteItemAsync('hw_ai_history'),
-    SecureStore.deleteItemAsync('hw_ai_timestamps'),
-    SecureStore.deleteItemAsync('hw_ai_session_id'),
-    SecureStore.deleteItemAsync('hw_ai_session_new'),
-    // Social
-    SecureStore.deleteItemAsync('hw_chosen_family'),
-    SecureStore.deleteItemAsync('hw_last_read'),
-    // Resources & security
-    SecureStore.deleteItemAsync('hw_bookmarks'),
-    SecureStore.deleteItemAsync(PIN_KEY),
-    SecureStore.deleteItemAsync(DISGUISE_ENABLED_KEY),
-    SecureStore.deleteItemAsync(DISGUISE_STYLE_KEY),
-    // Per-entry data
     ...journalIds.map((id) => SecureStore.deleteItemAsync(journalKey(id))),
-    ...checkinDates.map((date) => SecureStore.deleteItemAsync(checkinKey(date))),
   ]);
 }
 

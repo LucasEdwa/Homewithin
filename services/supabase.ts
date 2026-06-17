@@ -63,6 +63,9 @@ export async function currentUserId(): Promise<string | null> {
 export async function signOut(): Promise<void> {
   if (!supabase) return;
   await supabase.auth.signOut();
-  const { deleteSensitiveData } = await import('@/services/storage');
-  await deleteSensitiveData().catch(() => {});
+  // Clear the locally-cached profile and onboarding flag so that a stale
+  // profile in SecureStore cannot trigger the PIN lock screen on the next
+  // launch before the user has authenticated again.
+  const { clearSession } = await import('@/services/storage');
+  await clearSession().catch(() => {});
 }

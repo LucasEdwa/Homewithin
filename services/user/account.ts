@@ -1,5 +1,16 @@
+import * as SecureStore from "expo-secure-store";
 import { deleteSensitiveData } from "../storage";
 import { supabase } from "../supabase";
+
+// Keys we want to wipe in addition to whatever deleteSensitiveData() handles.
+// (deleteSensitiveData removes session, journal, safety plan, check-ins.)
+const EXTRA_LOCAL_KEYS = [
+  "hw_onboarding_complete",
+  "hw_pin",
+  "hw_disguise_enabled",
+  "hw_disguise_style",
+  "hw_bookmarks",
+];
 
 // Tables containing user-owned rows. Order matters: child rows first, then parents.
 const USER_TABLES_BY_USER_ID = ["circle_members", "user_progress", "check_ins", "journal_entries", "user_profiles"];
@@ -131,6 +142,9 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
   // 3) Local wipe.
   try {
     await deleteSensitiveData();
+    await Promise.all(
+      EXTRA_LOCAL_KEYS.map((k) => SecureStore.deleteItemAsync(k)),
+    );
     result.localCleared = true;
   } catch (e: any) {
     result.errors.push(`local: ${e?.message ?? e}`);
