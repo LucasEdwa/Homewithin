@@ -217,22 +217,27 @@ export async function getLastMessagesByMatchIds(
 ): Promise<Record<string, { body: string; createdAt: string; senderId: string }>> {
   if (!supabase || matchIds.length === 0) return {};
   const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("messages")
-    .select("match_id, body, created_at, sender_id")
-    .in("match_id", matchIds)
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("created_at", { ascending: false })
-    .limit(matchIds.length * 5);
 
-  if (error) {
-    console.error("Get last messages failed:", error.message);
-    return {};
-  }
+  // One query per match with limit(1) guarantees we always get the correct last
+  // message regardless of activity volume — the previous heuristic limit could
+  // miss matches dominated by a single very active conversation.
+  const rows = await Promise.all(
+    matchIds.map((matchId) =>
+      supabase!
+        .from('messages')
+        .select('match_id, body, created_at, sender_id')
+        .eq('match_id', matchId)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => data),
+    ),
+  );
 
   const result: Record<string, { body: string; createdAt: string; senderId: string }> = {};
-  for (const row of data ?? []) {
-    if (!result[row.match_id]) {
+  for (const row of rows) {
+    if (row) {
       result[row.match_id] = { body: row.body, createdAt: row.created_at, senderId: row.sender_id };
     }
   }

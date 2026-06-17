@@ -29,7 +29,7 @@ export function useMessages(matchId: string | undefined) {
       },
       (updated) => {
         setMessages((prev) =>
-          prev.map((m) => (m.id === updated.id ? { ...m, liked: updated.liked } : m)),
+          prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
         );
       },
       // When the realtime channel errors or times out, re-fetch so we don't miss
