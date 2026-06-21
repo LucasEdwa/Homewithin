@@ -18,9 +18,9 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { SEED_PROGRAMS } from "../data/programs";
 
-// Auto-load .env from project root (no extra packages needed)
+// Auto-load .env.server from project root (no extra packages needed)
 try {
-  const envPath = resolve(process.cwd(), ".env");
+  const envPath = resolve(process.cwd(), ".env.server");
   readFileSync(envPath, "utf8")
     .split("\n")
     .forEach((line: string) => {

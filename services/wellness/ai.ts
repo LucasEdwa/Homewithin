@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import type { AIMessage, CircleMessage } from '@/types';
-import { supabase } from '@/services/supabase';
+import { currentUserId, supabase } from '@/services/supabase';
 
 const HISTORY_KEY = 'hw_ai_history';
 const RATE_KEY = 'hw_ai_timestamps';
@@ -9,8 +9,8 @@ const SESSION_NEW_KEY = 'hw_ai_session_new'; // 'true' until first message sent
 const MAX_PER_DAY = 20;
 const MAX_HISTORY = 20;
 
-// AI endpoint — put EXPO_PUBLIC_AI_API_KEY=haven_ZGLIl6ClRzbu1SK614zC in .env
-const AI_ENDPOINT = 'https://app.second-horizon.com/chat';
+// AI requests are proxied through the haven-proxy Supabase Edge Function
+// so the API key never touches the client bundle.
 
 export const AI_DISCLAIMER =
   'AI is not a therapist or crisis counselor. If you are in danger, use the emergency button.';
@@ -111,23 +111,18 @@ async function getOrCreateSession(scope: string): Promise<{
 }
 
 async function sendToAIEndpoint(messageToSend: string, sessionId: string): Promise<string> {
-  const AI_API_KEY = process.env.EXPO_PUBLIC_AI_API_KEY ?? '';
-  if (!AI_API_KEY) {
-    throw new Error('AI companion not configured. Add EXPO_PUBLIC_AI_API_KEY to .env.');
+  if (!supabase) {
+    throw new Error('AI companion is unavailable until Supabase is configured.');
   }
 
-  const res = await fetch(AI_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': AI_API_KEY,
-    },
-    body: JSON.stringify({ session_id: sessionId, message: messageToSend }),
+  const { data, error } = await supabase.functions.invoke('haven-proxy', {
+    body: { session_id: sessionId, message: messageToSend },
   });
 
-  if (!res.ok) throw new Error(`AI endpoint error ${res.status}`);
-  const json = await res.json();
-  return json.reply ?? "I'm here with you. Could you say that again?";
+  if (error) throw new Error(error.message || 'AI endpoint error');
+  if (data?.error) throw new Error(data.error);
+
+  return data?.reply ?? "I'm here with you. Could you say that again?";
 }
 
 // ─── AI call ─────────────────────────────────────────────────────────────────
@@ -399,6 +394,13 @@ export async function sendAIMessage(
 
     await recordUsage();
 
+    // Log session to Supabase so daily notifications can detect activity (fire-and-forget)
+    if (supabase) {
+      currentUserId().then((uid) => {
+        if (uid) supabase!.from('ai_sessions').insert({ user_id: uid }).then(() => {});
+      });
+    }
+
     const assistantMessage: AIMessage = {
       id: `ai-${Date.now()}`,
       role: 'assistant',
@@ -410,8 +412,6 @@ export async function sendAIMessage(
     return { message: assistantMessage };
   } catch (err: any) {
     console.error('AI call failed:', err?.message);
-    return { message: null, error: err?.message?.includes('AI companion not configured')
-      ? err.message
-      : 'Something went wrong. Try again in a moment.' };
+    return { message: null, error: 'Something went wrong. Try again in a moment.' };
   }
 }

@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 
 export const CryptoDigestAlgorithm = {
   SHA256: "SHA256" as const,
@@ -30,4 +30,12 @@ export async function digestStringAsync(
   const nodeAlg = ALG_MAP[algorithm] ?? algorithm.toLowerCase();
   const encoding = (options?.encoding ?? "hex") as "hex" | "base64";
   return createHash(nodeAlg).update(data).digest(encoding);
+}
+
+export function getRandomBytes(byteCount: number): Uint8Array {
+  return new Uint8Array(randomBytes(byteCount));
+}
+
+export async function getRandomBytesAsync(byteCount: number): Promise<Uint8Array> {
+  return new Uint8Array(randomBytes(byteCount));
 }

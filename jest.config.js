@@ -16,6 +16,6 @@ module.exports = {
   ],
   moduleDirectories: ['node_modules', 'node_modules/expo/node_modules'],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@supabase)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@supabase|@noble)',
   ],
 };
