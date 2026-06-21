@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Invalid session" }, 401);
   const senderId = userData.user.id;
 
-  const { matchId, body, type, targetId } = await req.json().catch(() => ({}));
+  const { matchId, body, type, targetId, circleId, circleName } = await req.json().catch(() => ({}));
 
   // Use service role for cross-user reads.
   const admin = createClient(supabaseUrl, serviceKey, {
@@ -100,6 +100,67 @@ Deno.serve(async (req: Request) => {
     }
 
     return json({ sent: true }, 200);
+  }
+
+  // ── Circle message notification ───────────────────────────────────────────────
+  // Notifies every circle member except the sender when a new message is posted.
+  if (type === "circle_message") {
+    if (!circleId || !body)
+      return json({ error: "circleId and body are required for circle_message" }, 400);
+
+    const [{ data: senderProfile }, { data: members }] = await Promise.all([
+      admin
+        .from("user_profiles")
+        .select("nickname")
+        .eq("user_id", senderId)
+        .maybeSingle(),
+      admin
+        .from("circle_members")
+        .select("user_id")
+        .eq("circle_id", circleId)
+        .neq("user_id", senderId),
+    ]);
+
+    if (!members?.length)
+      return json({ skipped: "no other members in circle" }, 200);
+
+    const memberIds = members.map((m: any) => m.user_id);
+    const { data: profiles } = await admin
+      .from("user_profiles")
+      .select("push_token")
+      .in("user_id", memberIds)
+      .not("push_token", "is", null);
+
+    const tokens = (profiles ?? []).map((p: any) => p.push_token).filter(Boolean);
+    if (!tokens.length)
+      return json({ skipped: "no members with push tokens" }, 200);
+
+    const senderName = senderProfile?.nickname ?? "Someone";
+    const notifTitle = circleName ? `${circleName} 💬` : "Your support circle 💬";
+    const notifBody = `${senderName}: ${body.length > 80 ? body.slice(0, 77) + "…" : body}`;
+
+    const batch = tokens.map((token: string) => ({
+      to: token,
+      title: notifTitle,
+      body: notifBody,
+      data: { screen: "circle", circleId },
+      sound: "default",
+      channelId: "circles",
+    }));
+
+    const expoPush = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(batch),
+    });
+
+    if (!expoPush.ok) {
+      const err = await expoPush.text();
+      console.error("[send-push] Expo API error (circle_message):", err);
+      return json({ error: "Push delivery failed" }, 500);
+    }
+
+    return json({ sent: tokens.length }, 200);
   }
 
   // ── Chat message notification ────────────────────────────────────────────────

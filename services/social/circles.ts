@@ -231,6 +231,7 @@ export async function getCircleMessages(
 export async function sendCircleMessage(
   circleId: string,
   body: string,
+  circleName?: string,
 ): Promise<CircleMessage | null> {
   if (!supabase) return null;
   const uid = await currentUserId();
@@ -246,6 +247,14 @@ export async function sendCircleMessage(
     console.error("Send circle message failed:", error.message);
     return null;
   }
+
+  // Notify other circle members (fire-and-forget — don't block the UI)
+  supabase.functions
+    .invoke("send-push", {
+      body: { type: "circle_message", circleId, body, circleName },
+    })
+    .catch(() => {});
+
   return rowToMessage(data);
 }
 

@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.homewithin.app",
-      "buildNumber": "12",
+      "buildNumber": "13",
       "infoPlist": {
         "NSCameraUsageDescription": "HomeWithin uses your camera so you can take a new profile photo. For example, you can snap a selfie directly in the app and set it as your avatar. The photo is only uploaded when you tap Save.",
         "NSFaceIDUsageDescription": "HomeWithin uses Face ID to unlock the app when a PIN is enabled, so only you can access your private journal, check-ins, and messages.",

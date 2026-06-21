@@ -1,6 +1,6 @@
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { UnreadProvider } from '@/context/UnreadContext';
-import { addNotificationResponseListener, getInitialNotificationMatchId, registerForPushNotifications } from '@/services/social/notifications';
+import { addNotificationResponseListener, getInitialNotificationTap, type NotificationScreen, registerForPushNotifications } from '@/services/social/notifications';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
@@ -34,18 +34,43 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+// Stable module-level function — safe to reference inside useEffect([]) without
+// causing stale-closure issues, since it only uses the router singleton.
+function navigateToScreen(screen: NotificationScreen, meta?: { circleId?: string }) {
+  if (screen === 'circle') {
+    if (meta?.circleId) {
+      router.push({ pathname: '/(social)/circle', params: { circleId: meta.circleId } });
+    } else {
+      router.push('/(social)/circles'); // fallback when circleId is missing
+    }
+  } else if (screen === 'connect') {
+    router.push('/(tabs)/connect');
+  } else if (screen === 'checkin') {
+    router.push('/(wellness)/checkin');
+  } else if (screen === 'journal') {
+    router.push('/(wellness)/journal-entry');
+  } else if (screen === 'programs') {
+    router.push('/(content)/programs');
+  } else if (screen === 'resources') {
+    router.push('/(tabs)/resources');
+  } else if (screen === 'ai-companion') {
+    router.push('/ai-companion');
+  }
+}
+
 function LockGate({ children }: { children: React.ReactNode }) {
   const { locked, loading, profile } = useSession();
   // Holds a navigation target captured from a cold-start notification tap.
   // We defer the push until the session finishes loading and the user isn't locked.
-  const pendingNav = useRef<string | null>(null);
+  const pendingNav = useRef<{ matchId?: string; screen?: NotificationScreen; circleId?: string } | null>(null);
 
   // Check once on mount whether the app was launched by tapping a push notification
   // (killed → notification tap → cold start). addNotificationResponseListener misses
-  // this case; only getInitialNotificationMatchId handles it.
+  // this case; only getInitialNotificationTap handles it.
   useEffect(() => {
-    getInitialNotificationMatchId().then((matchId) => {
-      if (matchId) pendingNav.current = matchId;
+    getInitialNotificationTap().then((tap) => {
+      if (tap?.matchId) pendingNav.current = { matchId: tap.matchId };
+      else if (tap?.screen) pendingNav.current = { screen: tap.screen, circleId: tap.circleId };
     });
   }, []);
 
@@ -53,9 +78,13 @@ function LockGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading || !pendingNav.current) return;
     if (locked && profile) return; // Still locked — wait for unlock
-    const matchId = pendingNav.current;
+    const nav = pendingNav.current;
     pendingNav.current = null;
-    router.push({ pathname: '/chat', params: { matchId } });
+    if (nav.matchId) {
+      router.push({ pathname: '/chat', params: { matchId: nav.matchId } });
+    } else if (nav.screen) {
+      navigateToScreen(nav.screen, { circleId: nav.circleId });
+    }
   }, [loading, locked, profile]);
 
   useEffect(() => {
@@ -76,9 +105,7 @@ function LockGate({ children }: { children: React.ReactNode }) {
       (matchId) => {
         router.push({ pathname: '/chat', params: { matchId } });
       },
-      (screen) => {
-        if (screen === 'connect') router.push('/(tabs)/connect');
-      },
+      (screen, meta) => navigateToScreen(screen, meta),
     );
     return () => sub.remove();
   }, []);
