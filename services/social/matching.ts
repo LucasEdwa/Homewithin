@@ -152,6 +152,10 @@ export async function connectMatch(
       console.error("Connect (mutual) failed:", error.message);
       return { matchId: null, mutual: false };
     }
+    // Notify the original liker that it's now mutual
+    supabase.functions
+      .invoke("send-push", { body: { type: "match", targetId } })
+      .catch(() => {});
     return { matchId: pending.id, mutual: true };
   }
 
@@ -288,7 +292,7 @@ export async function getIncomingLikes(): Promise<Match[]> {
 }
 
 // Accept an incoming like → mutual match, chat unlocked
-export async function acceptIncomingLike(matchId: string): Promise<boolean> {
+export async function acceptIncomingLike(matchId: string, requesterId: string): Promise<boolean> {
   if (!supabase) return false;
   const { error } = await supabase
     .from("matches")
@@ -298,6 +302,10 @@ export async function acceptIncomingLike(matchId: string): Promise<boolean> {
     console.error("Accept like failed:", error.message);
     return false;
   }
+  // Notify the original liker that their like was accepted
+  supabase.functions
+    .invoke("send-push", { body: { type: "match", targetId: requesterId } })
+    .catch(() => {});
   return true;
 }
 

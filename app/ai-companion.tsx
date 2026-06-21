@@ -162,6 +162,23 @@ export default function AICompanionScreen() {
         .slice(0, 30)
         .map((c: { date: string; moodScore: number }) => ({ date: c.date, score: c.moodScore }));
 
+      // Full check-in history for emotional pattern matching (newest first, up to 14)
+      const checkInHistory = sortedCheckIns
+        .slice(0, 14)
+        .map((c: { date: string; anxietyScore: number; lonelinessScore: number; safetyScore: number; tags: string[]; hardestThing: string }) => ({
+          date: c.date,
+          anxiety: c.anxietyScore,
+          loneliness: c.lonelinessScore,
+          safety: c.safetyScore,
+          tags: c.tags,
+          hardestThing: c.hardestThing,
+        }));
+
+      // Today's check-in detail
+      const todayCheckIn = sortedCheckIns[0];
+      const todayISO = new Date().toISOString().split('T')[0];
+      const isTodayCheckIn = todayCheckIn?.date === todayISO;
+
       const ctx: UserContext = {
         nickname: profile?.nickname,
         country: profile?.country,
@@ -182,6 +199,14 @@ export default function AICompanionScreen() {
         chosenFamilyCount: family.length,
         journalSummaries,
         moodHistory,
+        checkInHistory,
+        ...(isTodayCheckIn && {
+          hardestThing: todayCheckIn.hardestThing || undefined,
+          anxietyScore: todayCheckIn.anxietyScore,
+          lonelinessScore: todayCheckIn.lonelinessScore,
+          checkInSafetyScore: todayCheckIn.safetyScore,
+          checkInTags: todayCheckIn.tags,
+        }),
       };
       setUserContext(ctx);
 

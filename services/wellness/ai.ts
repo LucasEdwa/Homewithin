@@ -150,9 +150,17 @@ export interface UserContext {
   connectionsCount?: number;
   chosenFamilyCount?: number;
 
+  // Today's full check-in detail
+  hardestThing?: string;
+  anxietyScore?: number;
+  lonelinessScore?: number;
+  checkInSafetyScore?: number;
+  checkInTags?: string[];
+
   // Full history for pattern matching
   journalSummaries?: { date: string; tags: string[]; snippet: string }[];
   moodHistory?: { date: string; score: number }[];
+  checkInHistory?: { date: string; anxiety: number; loneliness: number; safety: number; tags: string[]; hardestThing: string }[];
 }
 
 /** Builds the full personalized system prompt from live user data. */
@@ -180,6 +188,14 @@ export function buildSystemPrompt(ctx: UserContext): string {
   const currentMood = ctx.currentMoodScore
     ? `Today's mood: ${MOOD_LABELS[ctx.currentMoodScore] ?? ctx.currentMoodScore}/5`
     : null;
+
+  const checkInDetail = [
+    ctx.anxietyScore != null ? `Anxiety today: ${ctx.anxietyScore}/10` : null,
+    ctx.lonelinessScore != null ? `Loneliness today: ${ctx.lonelinessScore}/10` : null,
+    ctx.checkInSafetyScore != null ? `Felt safety today: ${ctx.checkInSafetyScore}/10` : null,
+    ctx.checkInTags?.length ? `Today's triggers: ${ctx.checkInTags.join(', ')}` : null,
+    ctx.hardestThing ? `What was hardest today (in their words): "${ctx.hardestThing}"` : null,
+  ].filter(Boolean).join('\n');
 
   const journalBlock = [
     ctx.journalStreak != null ? `Journal streak: ${ctx.journalStreak} day${ctx.journalStreak !== 1 ? 's' : ''}` : null,
@@ -217,6 +233,22 @@ export function buildSystemPrompt(ctx: UserContext): string {
         .join(', ')
     : null;
 
+  const checkInHistoryBlock = ctx.checkInHistory?.length
+    ? ctx.checkInHistory
+        .map((c) => {
+          const parts = [
+            `[${c.date}]`,
+            `anxiety ${c.anxiety}/10`,
+            `loneliness ${c.loneliness}/10`,
+            `safety ${c.safety}/10`,
+            c.tags.length ? `triggers: ${c.tags.join(', ')}` : null,
+            c.hardestThing ? `hardest: "${c.hardestThing.slice(0, 120)}"` : null,
+          ].filter(Boolean);
+          return parts.join(' | ');
+        })
+        .join('\n')
+    : null;
+
   return `${SYSTEM_PROMPT}
 
 ─── USER CONTEXT ───────────────────────────────
@@ -225,7 +257,7 @@ ${profileBlock || 'Anonymous user'}
 Safety level: ${safetyLabel}
 Mood: ${moodLabel}
 ${currentMood ?? ''}
-
+${checkInDetail ? `\n${checkInDetail}` : ''}
 ${journalBlock || 'No journal history yet'}
 
 Healing programs in progress:
@@ -235,6 +267,7 @@ ${connectionBlock || 'No connections yet'}
 ────────────────────────────────────────────────
 ${journalTimeline ? `\n─── JOURNAL HISTORY (newest first) ────────────\n${journalTimeline}\n────────────────────────────────────────────────` : ''}
 ${moodHistoryBlock ? `\n─── MOOD HISTORY ───────────────────────────────\n${moodHistoryBlock}\n────────────────────────────────────────────────` : ''}
+${checkInHistoryBlock ? `\n─── CHECK-IN HISTORY (newest first) ────────────\n${checkInHistoryBlock}\n────────────────────────────────────────────────` : ''}
 
 Use this context to respond in a personalized way. You do not need to state back all these facts — just let them inform your empathy and suggestions.
 

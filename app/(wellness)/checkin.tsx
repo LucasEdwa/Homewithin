@@ -6,6 +6,8 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   TouchableOpacity,
   Alert,
 } from 'react-native';
@@ -141,6 +143,10 @@ export default function CheckInScreen() {
         </Text>
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {alreadyCheckedIn && (
           <Card style={styles.doneBanner}>
@@ -229,6 +235,7 @@ export default function CheckInScreen() {
           style={styles.cta}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <EmergencyButton />
     </SafeAreaView>

@@ -3,6 +3,7 @@ import { GuestBlock } from '@/components/social/GuestBlock';
 import { ConnectionsSection } from '@/components/social/ConnectionsSection';
 import { IncomingLikesSection } from '@/components/social/IncomingLikesSection';
 import { MatchCard } from '@/components/social/MatchCard';
+import { MatchCelebration } from '@/components/social/MatchCelebration';
 import { PendingSection } from '@/components/social/PendingSection';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
@@ -36,6 +37,8 @@ export default function ConnectScreen() {
     pendingOutgoing,
     incomingLikes,
     unreadByMatch,
+    celebrationMatch,
+    dismissCelebration,
     handleSelectIntention,
     handleConnect,
     handleAcceptLike,
@@ -242,6 +245,13 @@ export default function ConnectScreen() {
         </Card>
       </ScrollView>
       <EmergencyButton />
+      {celebrationMatch && (
+        <MatchCelebration
+          peer={celebrationMatch.peer}
+          matchId={celebrationMatch.matchId}
+          onClose={dismissCelebration}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -14,11 +14,15 @@ import {
 } from '@/services/social/matching';
 import type { IntentionId, Match, PeerProfile } from '@/types';
 import { INTENTIONS } from '@/types';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActionSheetIOS, Alert, Platform } from 'react-native';
 
 export type ConnectView = 'intentions' | 'browsing' | 'empty';
+
+export interface CelebrationMatch {
+  peer: PeerProfile;
+  matchId: string;
+}
 
 export function useConnectScreen() {
   const { profile } = useSession();
@@ -28,6 +32,7 @@ export function useConnectScreen() {
   const [intention, setIntention] = useState<IntentionId | null>(null);
   const [candidates, setCandidates] = useState<PeerProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [celebrationMatch, setCelebrationMatch] = useState<CelebrationMatch | null>(null);
 
   async function handleSelectIntention(id: IntentionId) {
     if (profile?.isAnonymous) return;
@@ -46,21 +51,7 @@ export function useConnectScreen() {
 
     if (mutual && matchId) {
       await refreshMatchLists();
-      Alert.alert(
-        "It's a match! 🎉",
-        `You and ${peer.nickname} both want to connect. Say hi!`,
-        [
-          {
-            text: 'Open chat',
-            onPress: () =>
-              router.push({
-                pathname: '/chat',
-                params: { matchId, nickname: peer.nickname, avatarUrl: peer.avatarUrl ?? '' },
-              }),
-          },
-          { text: 'Later' },
-        ],
-      );
+      setCelebrationMatch({ peer, matchId });
     } else {
       await refreshMatchLists();
     }
@@ -70,28 +61,12 @@ export function useConnectScreen() {
   }
 
   async function handleAcceptLike(match: Match) {
-    const ok = await acceptIncomingLike(match.id);
+    const ok = await acceptIncomingLike(match.id, match.requesterId);
     if (ok) {
       await refreshMatchLists();
-      Alert.alert(
-        "It's a match! 🎉",
-        `You and ${match.peer?.nickname ?? 'someone'} are now connected.`,
-        [
-          {
-            text: 'Open chat',
-            onPress: () =>
-              router.push({
-                pathname: '/chat',
-                params: {
-                  matchId: match.id,
-                  nickname: match.peer?.nickname ?? 'Someone',
-                  avatarUrl: match.peer?.avatarUrl ?? '',
-                },
-              }),
-          },
-          { text: 'Later' },
-        ],
-      );
+      if (match.peer) {
+        setCelebrationMatch({ peer: match.peer, matchId: match.id });
+      }
     }
   }
 
@@ -199,6 +174,8 @@ export function useConnectScreen() {
     pendingOutgoing,
     incomingLikes,
     unreadByMatch,
+    celebrationMatch,
+    dismissCelebration: () => setCelebrationMatch(null),
     handleSelectIntention,
     handleConnect,
     handleAcceptLike,
