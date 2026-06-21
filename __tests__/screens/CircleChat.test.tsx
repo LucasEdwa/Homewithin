@@ -203,7 +203,7 @@ describe('CircleChatScreen', () => {
     fireEvent.changeText(screen.getByTestId('circle-message-input'), 'Hey everyone');
     fireEvent.press(screen.getByTestId('circle-send-btn'));
     await waitFor(() =>
-      expect(mockSend).toHaveBeenCalledWith('circle-1', 'Hey everyone')
+      expect(mockSend).toHaveBeenCalledWith('circle-1', 'Hey everyone', 'Family Rejection Survivors')
     );
   });
 
@@ -251,7 +251,7 @@ describe('CircleChatScreen', () => {
     fireEvent.press(screen.getByText('I Agree'));
 
     await waitFor(() => expect(mockGrantCircleAIConsent).toHaveBeenCalled());
-    await waitFor(() => expect(mockSend).toHaveBeenCalledWith('circle-1', '@companion can you help this group?'));
+    await waitFor(() => expect(mockSend).toHaveBeenCalledWith('circle-1', '@companion can you help this group?', 'Family Rejection Survivors'));
     await waitFor(() => expect(mockSendCircleAIMessage).toHaveBeenCalled());
   });
 

@@ -1,3 +1,4 @@
+import { useSession } from '@/context/SessionContext';
 import { useUnread } from '@/context/UnreadContext';
 import { useMatches } from '@/hooks/useMatches';
 import {
@@ -20,6 +21,7 @@ import { ActionSheetIOS, Alert, Platform } from 'react-native';
 export type ConnectView = 'intentions' | 'browsing' | 'empty';
 
 export function useConnectScreen() {
+  const { profile } = useSession();
   const { unreadByMatch } = useUnread();
   const { myMatches, pendingOutgoing, incomingLikes, refreshMatchLists } = useMatches();
   const [view, setView] = useState<ConnectView>('intentions');
@@ -28,6 +30,7 @@ export function useConnectScreen() {
   const [loading, setLoading] = useState(false);
 
   async function handleSelectIntention(id: IntentionId) {
+    if (profile?.isAnonymous) return;
     setIntention(id);
     setLoading(true);
     const results = await findMatches(id);

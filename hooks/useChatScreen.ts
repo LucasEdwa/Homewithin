@@ -133,11 +133,9 @@ export function useChatScreen() {
     if (!input.trim() || !matchId) return;
     const body = input.trim();
     const filterResult = filterContent(body);
-    if (!filterResult.ok) {
-      if (filterResult.ok === false) {
-        Alert.alert('Message blocked', filterResult.reason);
-        return;
-      }
+    if (filterResult.ok === false) {
+      Alert.alert('Message blocked', filterResult.reason);
+      return;
     }
     if (filterResult.ok === 'warn') {
       Alert.alert(
@@ -169,12 +167,16 @@ export function useChatScreen() {
     );
     if (msg) {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      // With inverted FlatList, offset 0 = the bottom (newest messages).
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      });
+    } else {
+      // Restore state so the user can retry without re-typing.
+      setInput(body);
+      setReplyTo(currentReplyTo);
+      Alert.alert('Failed to send', 'Check your connection and try again.');
     }
-    // With inverted FlatList, offset 0 = the bottom (newest messages).
-    // Scroll there so the user always sees the message they just sent.
-    requestAnimationFrame(() => {
-      listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    });
     setSending(false);
   }
 
@@ -261,19 +263,32 @@ export function useChatScreen() {
   }
 
   function promptReportMessage() {
-    Alert.prompt(
-      'Report a message',
-      'Briefly describe the issue (e.g. harassment, threats):',
-      async (reason) => {
-        if (!reason?.trim()) return;
-        const lastTheirMsg = [...messages].reverse().find((m) => m.senderId !== myUserId);
-        if (lastTheirMsg) {
-          await reportMessage(lastTheirMsg.id, lastTheirMsg.senderId, reason.trim());
-          Alert.alert('Reported', "Thank you. We'll review this shortly.");
-        }
-      },
-      'plain-text'
-    );
+    const submit = async (reason: string) => {
+      const lastTheirMsg = [...messages].reverse().find((m) => m.senderId !== myUserId);
+      if (lastTheirMsg) {
+        await reportMessage(lastTheirMsg.id, lastTheirMsg.senderId, reason);
+        Alert.alert('Reported', "Thank you. We'll review this shortly.");
+      }
+    };
+
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Report a message',
+        'Briefly describe the issue (e.g. harassment, threats):',
+        async (reason) => { if (reason?.trim()) await submit(reason.trim()); },
+        'plain-text',
+      );
+    } else {
+      const REASONS = ['Harassment or threats', 'Inappropriate content', 'Spam', 'Other concern'];
+      Alert.alert(
+        'Report a message',
+        'What is the issue?',
+        [
+          ...REASONS.map((r) => ({ text: r, onPress: () => submit(r) })),
+          { text: 'Cancel', style: 'cancel' as const },
+        ],
+      );
+    }
   }
 
   function handleOptions() {

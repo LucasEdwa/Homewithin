@@ -136,6 +136,7 @@ export function subscribeToMessages(
   onMessage: (msg: Message) => void,
   onMessageUpdated: (msg: Message) => void,
   onError?: () => void,
+  onMessageDeleted?: (messageId: string) => void,
 ): () => void {
   if (!supabase) return () => {};
 
@@ -166,6 +167,19 @@ export function subscribeToMessages(
       (payload) => {
         const row = payload.new as any;
         onMessageUpdated(rowToMessage(row));
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "DELETE",
+        schema: "public",
+        table: "messages",
+        filter: `match_id=eq.${matchId}`,
+      },
+      (payload) => {
+        const id = (payload.old as any).id;
+        if (id) onMessageDeleted?.(id);
       },
     )
     .subscribe((status) => {
@@ -217,22 +231,27 @@ export async function getLastMessagesByMatchIds(
 ): Promise<Record<string, { body: string; createdAt: string; senderId: string }>> {
   if (!supabase || matchIds.length === 0) return {};
   const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("messages")
-    .select("match_id, body, created_at, sender_id")
-    .in("match_id", matchIds)
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("created_at", { ascending: false })
-    .limit(matchIds.length * 5);
 
-  if (error) {
-    console.error("Get last messages failed:", error.message);
-    return {};
-  }
+  // One query per match with limit(1) guarantees we always get the correct last
+  // message regardless of activity volume — the previous heuristic limit could
+  // miss matches dominated by a single very active conversation.
+  const rows = await Promise.all(
+    matchIds.map((matchId) =>
+      supabase!
+        .from('messages')
+        .select('match_id, body, created_at, sender_id')
+        .eq('match_id', matchId)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => data),
+    ),
+  );
 
   const result: Record<string, { body: string; createdAt: string; senderId: string }> = {};
-  for (const row of data ?? []) {
-    if (!result[row.match_id]) {
+  for (const row of rows) {
+    if (row) {
       result[row.match_id] = { body: row.body, createdAt: row.created_at, senderId: row.sender_id };
     }
   }
@@ -246,14 +265,20 @@ export async function deleteMessage(messageId: string): Promise<boolean> {
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   if (!user) return false;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("messages")
     .delete()
     .eq("id", messageId)
-    .eq("sender_id", user.id);
+    .eq("sender_id", user.id)
+    .select("id");
 
   if (error) {
     console.error("Delete message failed:", error.message);
+    return false;
+  }
+  // Supabase delete never errors on 0 rows — verify the row was actually removed.
+  if (!data || data.length === 0) {
+    console.error("Delete message failed: no rows deleted (RLS or sender mismatch)");
     return false;
   }
   return true;

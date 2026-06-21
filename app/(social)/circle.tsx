@@ -233,7 +233,7 @@ export default function CircleChatScreen() {
 
     if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
 
-    const msg = await sendCircleMessage(circleId!, body);
+    const msg = await sendCircleMessage(circleId!, body, name);
     if (msg) {
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);

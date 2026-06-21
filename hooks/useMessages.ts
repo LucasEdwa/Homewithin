@@ -29,12 +29,15 @@ export function useMessages(matchId: string | undefined) {
       },
       (updated) => {
         setMessages((prev) =>
-          prev.map((m) => (m.id === updated.id ? { ...m, liked: updated.liked } : m)),
+          prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
         );
       },
       // When the realtime channel errors or times out, re-fetch so we don't miss
       // messages that arrived while the connection was down.
       () => loadMessages(),
+      (deletedId) => {
+        setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+      },
     );
 
     const appStateSub = AppState.addEventListener("change", (state) => {

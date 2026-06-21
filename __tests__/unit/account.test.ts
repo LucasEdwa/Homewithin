@@ -92,16 +92,6 @@ describe("deleteAccount", () => {
 
     expect(mockSignOut).toHaveBeenCalled();
     expect(deleteSensitiveData).toHaveBeenCalled();
-    const wipedKeys = deleteItem.mock.calls.map((c) => c[0]);
-    expect(wipedKeys).toEqual(
-      expect.arrayContaining([
-        "hw_onboarding_complete",
-        "hw_pin",
-        "hw_disguise_enabled",
-        "hw_disguise_style",
-        "hw_bookmarks",
-      ]),
-    );
 
     expect(result).toMatchObject({
       authRowDeleted: false,

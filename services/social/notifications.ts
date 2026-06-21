@@ -86,16 +86,52 @@ export async function getInitialNotificationMatchId(): Promise<string | null> {
   }
 }
 
+export type NotificationScreen =
+  | 'connect'
+  | 'checkin'
+  | 'journal'
+  | 'programs'
+  | 'resources'
+  | 'ai-companion'
+  | 'circle';
+
+export interface NotificationTap {
+  matchId?: string;
+  screen?: NotificationScreen;
+  circleId?: string;
+}
+
 export function addNotificationResponseListener(
   onMatchId: (matchId: string) => void,
-  onScreen?: (screen: string) => void,
+  onScreen?: (screen: NotificationScreen, meta?: { circleId?: string }) => void,
 ): { remove: () => void } {
   if (!Notif) return { remove: () => {} };
   return Notif.addNotificationResponseReceivedListener((response) => {
     const data = response.notification.request.content.data ?? {};
     const matchId = data.matchId as string | undefined;
-    const screen = data.screen as string | undefined;
+    const screen = data.screen as NotificationScreen | undefined;
+    const circleId = data.circleId as string | undefined;
     if (matchId) onMatchId(matchId);
-    else if (screen && onScreen) onScreen(screen);
+    else if (screen && onScreen) {
+      if (circleId) onScreen(screen, { circleId });
+      else onScreen(screen);
+    }
   });
+}
+
+// Returns the full tap payload from a cold-start notification (app was killed).
+export async function getInitialNotificationTap(): Promise<NotificationTap | null> {
+  if (!Notif) return null;
+  try {
+    const response = await Notif.getLastNotificationResponseAsync();
+    if (!response) return null;
+    const data = response.notification.request.content.data ?? {};
+    return {
+      matchId: data.matchId as string | undefined,
+      screen: data.screen as NotificationScreen | undefined,
+      circleId: data.circleId as string | undefined,
+    };
+  } catch {
+    return null;
+  }
 }

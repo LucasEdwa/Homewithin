@@ -15,6 +15,7 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { getResourceById, toggleBookmark, isBookmarked } from '@/services/content/resources';
+import { currentUserId, supabase } from '@/services/supabase';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
 import type { Resource } from '@/types';
 import { MarkdownBody } from '@/components/ui/MarkdownBody';
@@ -32,6 +33,17 @@ export default function ArticleScreen() {
       setArticle(res);
       setBookmarked(bm);
       setLoading(false);
+
+      // Log resource read for daily notification tracking (fire-and-forget)
+      if (supabase) {
+        const uid = await currentUserId();
+        if (uid) {
+          supabase
+            .from('resource_reads')
+            .insert({ user_id: uid, resource_id: id })
+            .then(() => {});
+        }
+      }
     })();
   }, [id]);
 

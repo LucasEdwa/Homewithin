@@ -9,9 +9,22 @@ import {
 } from "@/services/wellness/ai";
 
 jest.mock("expo-secure-store");
+
+const mockFunctionsInvoke = jest.fn();
 jest.mock("@/services/supabase", () => ({
-  supabase: null,
-  isSupabaseConfigured: false,
+  supabase: {
+    functions: {
+      invoke: (...args: unknown[]) => mockFunctionsInvoke(...args),
+    },
+    from: jest.fn().mockReturnValue({
+      insert: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
+    }),
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+    },
+  },
+  isSupabaseConfigured: true,
+  currentUserId: jest.fn().mockResolvedValue(null),
 }));
 
 const mockStore = SecureStore as jest.Mocked<typeof SecureStore>;
@@ -19,6 +32,7 @@ const mockStore = SecureStore as jest.Mocked<typeof SecureStore>;
 const store: Record<string, string> = {};
 beforeEach(() => {
   jest.restoreAllMocks();
+  mockFunctionsInvoke.mockReset();
   Object.keys(store).forEach((k) => delete store[k]);
   mockStore.getItemAsync.mockImplementation(async (key) => store[key] ?? null);
   mockStore.setItemAsync.mockImplementation(async (key, value) => {
@@ -103,36 +117,21 @@ describe("sendAIMessage", () => {
     expect(error).toMatch(/daily limit/i);
   });
 
-  it("returns config error when no API key", async () => {
-    const origEnv = process.env.EXPO_PUBLIC_AI_API_KEY;
-    delete process.env.EXPO_PUBLIC_AI_API_KEY;
-
-    const { message, error } = await sendAIMessage("Hello");
-    expect(message).toBeNull();
-    expect(error).toMatch(/not configured/i);
-
-    process.env.EXPO_PUBLIC_AI_API_KEY = origEnv;
-  });
-
   it("appends user message to history before API call", async () => {
-    const origEnv = process.env.EXPO_PUBLIC_AI_API_KEY;
-    delete process.env.EXPO_PUBLIC_AI_API_KEY;
+    mockFunctionsInvoke.mockRejectedValue(new Error("Network error"));
 
     await sendAIMessage("Test message");
     const history = await getHistory();
     expect(
       history.some((m) => m.role === "user" && m.body === "Test message"),
     ).toBe(true);
-
-    process.env.EXPO_PUBLIC_AI_API_KEY = origEnv;
   });
 
-  it("with mocked fetch: stores assistant reply in history", async () => {
-    process.env.EXPO_PUBLIC_AI_API_KEY = "test-fake-key";
-    (globalThis as any).fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ reply: "I hear you." }),
-    }) as unknown as typeof fetch;
+  it("stores assistant reply in history on success", async () => {
+    mockFunctionsInvoke.mockResolvedValue({
+      data: { reply: "I hear you." },
+      error: null,
+    });
 
     const { message, error } = await sendAIMessage("Hello there");
     expect(error).toBeUndefined();
@@ -143,22 +142,13 @@ describe("sendAIMessage", () => {
     expect(
       history.some((m) => m.role === "assistant" && m.body === "I hear you."),
     ).toBe(true);
-
-    delete process.env.EXPO_PUBLIC_AI_API_KEY;
-    jest.restoreAllMocks();
   });
 
-  it("returns error string when fetch throws", async () => {
-    process.env.EXPO_PUBLIC_AI_API_KEY = "test-fake-key";
-    (globalThis as any).fetch = jest
-      .fn()
-      .mockRejectedValue(new Error("Network error")) as unknown as typeof fetch;
+  it("returns error string when invoke throws", async () => {
+    mockFunctionsInvoke.mockRejectedValue(new Error("Network error"));
 
     const { message, error } = await sendAIMessage("Hello");
     expect(message).toBeNull();
     expect(error).toMatch(/something went wrong/i);
-
-    delete process.env.EXPO_PUBLIC_AI_API_KEY;
-    jest.restoreAllMocks();
   });
 });

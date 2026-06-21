@@ -73,7 +73,7 @@ export async function findMatches(
   // from appearing in multiple interests and creating duplicate matches.
   const [{ data: myActions }, { data: theirActions }, { data: blocked }] =
     await Promise.all([
-      supabase.from("matches").select("target_id").eq("requester_id", uid),
+      supabase.from("matches").select("target_id").eq("requester_id", uid).not("status", "in", "(passed)"),
       supabase.from("matches").select("requester_id").eq("target_id", uid),
       supabase
         .from("blocks")
@@ -155,13 +155,11 @@ export async function connectMatch(
     return { matchId: pending.id, mutual: true };
   }
 
-  // One-sided like — insert as pending; chat unlocks only when they like back
-  const { error } = await supabase.from("matches").insert({
-    requester_id: uid,
-    target_id: targetId,
-    intention,
-    status: "pending",
-  });
+  // One-sided like — upsert so re-liking a previously passed user updates the existing row
+  const { error } = await supabase.from("matches").upsert(
+    { requester_id: uid, target_id: targetId, intention, status: "pending" },
+    { onConflict: "requester_id,target_id" },
+  );
 
   if (error) {
     console.error("Connect failed:", error.message);
@@ -184,12 +182,10 @@ export async function passMatch(
   const uid = await currentUserId();
   if (!uid) return;
 
-  const { error } = await supabase.from("matches").insert({
-    requester_id: uid,
-    target_id: targetId,
-    intention,
-    status: "passed",
-  });
+  const { error } = await supabase.from("matches").upsert(
+    { requester_id: uid, target_id: targetId, intention, status: "passed" },
+    { onConflict: "requester_id,target_id" },
+  );
   if (error) console.error("Pass failed:", error.message);
 }
 
@@ -331,6 +327,26 @@ export async function cancelPendingMatch(matchId: string): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+// All users the current user has passed on or declined (status = passed), either as requester or target
+export async function getDeclinedPeers(): Promise<Match[]> {
+  if (!supabase) return [];
+  const uid = await currentUserId();
+  if (!uid) return [];
+
+  const { data, error } = await supabase
+    .from("matches")
+    .select("id, requester_id, target_id, intention, status, created_at")
+    .or(`requester_id.eq.${uid},target_id.eq.${uid}`)
+    .eq("status", "passed")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Get declined peers failed:", error.message);
+    return [];
+  }
+  return matchesWithProfiles(data ?? [], uid);
 }
 
 // Unmatch an accepted connection — either participant can do this

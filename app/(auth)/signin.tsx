@@ -41,6 +41,10 @@ export default function SignInScreen() {
       setError('Please enter your email and password.');
       return;
     }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
     setLoading(true);
     setError('');
     const { data, error: authError } = await supabase.auth.signUp({ email, password });
