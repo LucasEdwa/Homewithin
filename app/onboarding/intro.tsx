@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Animated,
   Dimensions,
@@ -30,47 +31,12 @@ type Slide = {
   features: string[];
 };
 
-const SLIDES: Slide[] = [
-  {
-    id: '1',
-    icon: 'home-outline',
-    color: Colors.softGreen,
-    title: 'Welcome to HomeWithin',
-    body: "A private, safe space built for LGBTQ+ people — especially when home isn't always safe.",
-    features: ['Anonymous by default', 'Built for Sweden', 'Always free'],
-  },
-  {
-    id: '2',
-    icon: 'heart-outline',
-    color: Colors.mutedLavender,
-    title: 'Track your wellbeing',
-    body: 'Check in daily, journal privately, and talk to an AI companion that truly listens.',
-    features: ['Mood check-ins', 'Private journal', 'AI companion'],
-  },
-  {
-    id: '3',
-    icon: 'people-outline',
-    color: Colors.safetyYellow,
-    title: 'Find your people',
-    body: 'Get matched with peers who get it. Build your chosen family. Join support circles.',
-    features: ['Anonymous peer matching', 'Chosen family', 'Group circles'],
-  },
-  {
-    id: '4',
-    icon: 'location-outline',
-    color: Colors.warmAmber,
-    title: 'Support across Sweden',
-    body: 'LGBTQ+ centers, shelters, therapists, and events — filtered to your county.',
-    features: ['All 21 counties', 'Therapists & shelters', 'Events & programs'],
-  },
-  {
-    id: '5',
-    icon: 'shield-checkmark-outline',
-    color: Colors.safeBlue,
-    title: 'Your privacy, your control',
-    body: 'PIN lock, disguise mode, and one-tap emergency access keep you safe.',
-    features: ['PIN & Face ID lock', 'Disguise mode', 'Emergency access'],
-  },
+const SLIDE_META: { icon: IoniconsName; color: string }[] = [
+  { icon: 'home-outline',             color: Colors.softGreen },
+  { icon: 'heart-outline',            color: Colors.mutedLavender },
+  { icon: 'people-outline',           color: Colors.safetyYellow },
+  { icon: 'location-outline',         color: Colors.warmAmber },
+  { icon: 'shield-checkmark-outline', color: Colors.safeBlue },
 ];
 
 function SlideItem({ item, isActive }: { item: Slide; isActive: boolean }) {
@@ -148,8 +114,20 @@ async function markIntroSeen() {
 }
 
 export default function OnboardingIntro() {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const flatRef = useRef<FlatList>(null);
+
+  const slides: Slide[] = (t('onboarding.intro.slides', { returnObjects: true }) as any[]).map(
+    (s: { title: string; body: string; features: string[] }, i: number) => ({
+      id: String(i),
+      icon: SLIDE_META[i].icon,
+      color: SLIDE_META[i].color,
+      title: s.title,
+      body: s.body,
+      features: s.features,
+    })
+  );
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -168,7 +146,7 @@ export default function OnboardingIntro() {
   }
 
   async function handleNext() {
-    if (activeIndex < SLIDES.length - 1) {
+    if (activeIndex < slides.length - 1) {
       flatRef.current?.scrollToIndex({ index: activeIndex + 1, animated: true });
     } else {
       await markIntroSeen();
@@ -176,18 +154,18 @@ export default function OnboardingIntro() {
     }
   }
 
-  const isLast = activeIndex === SLIDES.length - 1;
-  const activeColor = SLIDES[activeIndex].color;
+  const isLast = activeIndex === slides.length - 1;
+  const activeColor = slides[activeIndex]?.color ?? Colors.safeBlue;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} accessibilityLabel="Skip tour">
-        <Text style={styles.skipText}>Skip</Text>
+      <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} accessibilityLabel={t('onboarding.intro.skip')}>
+        <Text style={styles.skipText}>{t('onboarding.intro.skip')}</Text>
       </TouchableOpacity>
 
       <FlatList
         ref={flatRef}
-        data={SLIDES}
+        data={slides}
         keyExtractor={(s) => s.id}
         horizontal
         pagingEnabled
@@ -202,7 +180,7 @@ export default function OnboardingIntro() {
       />
 
       <View style={styles.dots}>
-        {SLIDES.map((s, i) => (
+        {slides.map((_, i) => (
           <View
             key={i}
             style={[
@@ -217,7 +195,7 @@ export default function OnboardingIntro() {
 
       <View style={styles.footer}>
         <Button
-          label={isLast ? 'Get Started' : 'Next'}
+          label={isLast ? t('common.getStarted') : t('common.next')}
           onPress={handleNext}
           variant="primary"
           style={styles.cta}

@@ -3,6 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -11,6 +12,7 @@ function TabIcon({ name, color }: { name: IoniconsName; color: string }) {
 }
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const { totalUnread } = useUnread();
   return (
     <Tabs
@@ -31,21 +33,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color }) => <TabIcon name="home-outline" color={color} />,
         }}
       />
       <Tabs.Screen
         name="journal"
         options={{
-          title: 'Journal',
+          title: t('tabs.journal'),
           tabBarIcon: ({ color }) => <TabIcon name="book-outline" color={color} />,
         }}
       />
       <Tabs.Screen
         name="connect"
         options={{
-          title: 'Connect',
+          title: t('tabs.connect'),
           tabBarIcon: ({ color }) => <TabIcon name="people-outline" color={color} />,
           tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
           tabBarBadgeStyle: { backgroundColor: Colors.safeBlue, fontSize: 10 },
@@ -54,14 +56,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="resources"
         options={{
-          title: 'Resources',
+          title: t('tabs.resources'),
           tabBarIcon: ({ color }) => <TabIcon name="library-outline" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => <TabIcon name="person-outline" color={color} />,
         }}
       />

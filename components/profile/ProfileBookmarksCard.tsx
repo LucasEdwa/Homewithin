@@ -2,17 +2,19 @@ import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/Spacing';
 import type { Resource } from '@/types';
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/types';
+import { CATEGORY_COLORS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export function ProfileBookmarksCard({ bookmarks }: { bookmarks: Resource[] }) {
+  const { t } = useTranslation();
   if (bookmarks.length === 0) return null;
   return (
     <Card style={styles.card}>
-      <Text style={styles.title}>Saved articles</Text>
+      <Text style={styles.title}>{t('profileCards.savedArticles')}</Text>
       {bookmarks.map((article) => {
         const color = CATEGORY_COLORS[article.category];
         return (
@@ -25,7 +27,7 @@ export function ProfileBookmarksCard({ bookmarks }: { bookmarks: Resource[] }) {
             <View style={[styles.dot, { backgroundColor: color }]} />
             <View style={styles.info}>
               <Text style={styles.bookmarkTitle} numberOfLines={1}>{article.title}</Text>
-              <Text style={styles.cat}>{CATEGORY_LABELS[article.category]}</Text>
+              <Text style={styles.cat}>{t(`resources.categoryLabels.${article.category}` as any)}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
           </TouchableOpacity>

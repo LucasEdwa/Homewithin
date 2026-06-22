@@ -14,6 +14,7 @@ import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -25,8 +26,15 @@ import {
 } from 'react-native';
 
 export default function ConnectScreen() {
+  const { t } = useTranslation();
   const { profile } = useSession();
   const [activeTab, setActiveTab] = useState<'connected' | 'pending'>('connected');
+
+  const intentions = INTENTIONS.map((item) => ({
+    ...item,
+    label: t(`intentions.${item.id}.label` as any),
+    description: t(`intentions.${item.id}.description` as any),
+  }));
   const {
     view,
     loading,
@@ -65,13 +73,13 @@ export default function ConnectScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Connect</Text>
+        <Text style={styles.title}>{t('connect.title')}</Text>
 
         {view === 'intentions' && (
           <>
-            <Text style={styles.subtitle}>Who would help most today?</Text>
+            <Text style={styles.subtitle}>{t('connect.whoHelps')}</Text>
             <View style={styles.grid}>
-              {INTENTIONS.map((item) => (
+              {intentions.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={styles.intentionCard}
@@ -96,7 +104,7 @@ export default function ConnectScreen() {
             <TouchableOpacity
               onPress={handleBackToIntentions}
               style={styles.backBtn}
-              accessibilityLabel="Change intention"
+              accessibilityLabel={t('connect.changeIntention')}
             >
               <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
             </TouchableOpacity>
@@ -104,7 +112,7 @@ export default function ConnectScreen() {
               <View style={[styles.intentionBadge, { backgroundColor: intentionObj.color + '22' }]}>
                 <Ionicons name={intentionObj.icon as any} size={14} color={intentionObj.color} />
                 <Text style={[styles.intentionBadgeText, { color: intentionObj.color }]}>
-                  {intentionObj.label}
+                  {t(`intentions.${intentionObj.id}.label` as any)}
                 </Text>
               </View>
             )}

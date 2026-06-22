@@ -3,34 +3,33 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export function GuestBlock() {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>
         <Ionicons name="lock-closed-outline" size={48} color={Colors.mutedLavender} />
       </View>
-      <Text style={styles.title}>Sign in to connect</Text>
-      <Text style={styles.body}>
-        Connecting with others is only available to signed-in members. This keeps every match
-        meaningful — real people, real intention.
-      </Text>
+      <Text style={styles.title}>{t('social.signInToConnect')}</Text>
+      <Text style={styles.body}>{t('social.signInBody')}</Text>
       <TouchableOpacity
         style={styles.primaryBtn}
         onPress={() => router.replace('/welcome')}
         activeOpacity={0.85}
-        accessibilityLabel="Sign in or create account"
+        accessibilityLabel={t('social.signInBtn')}
       >
-        <Text style={styles.primaryText}>Sign in or create account</Text>
+        <Text style={styles.primaryText}>{t('social.signInBtn')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.secondaryBtn}
         onPress={() => router.back()}
         activeOpacity={0.75}
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('common.goBack')}
       >
-        <Text style={styles.secondaryText}>Go back</Text>
+        <Text style={styles.secondaryText}>{t('common.goBack')}</Text>
       </TouchableOpacity>
     </View>
   );

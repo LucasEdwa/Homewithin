@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
@@ -19,6 +20,7 @@ import type { Program } from '@/types';
 type ProgramWithProgress = Program & { completed: number; total: number };
 
 export default function ProgramsScreen() {
+  const { t } = useTranslation();
   const [programs, setPrograms] = useState<ProgramWithProgress[]>([]);
 
   useFocusEffect(
@@ -31,12 +33,12 @@ export default function ProgramsScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+          <TouchableOpacity onPress={() => router.back()} accessibilityLabel={t('common.back')}>
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.title}>Healing Programs</Text>
+          <Text style={styles.title}>{t('programs.title')}</Text>
         </View>
-        <Text style={styles.subtitle}>Structured paths for recovery — go at your own pace.</Text>
+        <Text style={styles.subtitle}>{t('programs.subtitle')}</Text>
 
         {programs.map((program) => (
           <ProgramCard
@@ -58,6 +60,7 @@ function ProgramCard({
   program: ProgramWithProgress;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const pct = program.total > 0 ? program.completed / program.total : 0;
   const started = program.completed > 0;
   const done = program.completed === program.total;
@@ -74,7 +77,6 @@ function ProgramCard({
           </View>
           <Text style={styles.cardDesc} numberOfLines={2}>{program.description}</Text>
 
-          {/* Progress bar */}
           <View style={styles.progressRow}>
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${pct * 100}%` as any }]} />
@@ -86,13 +88,15 @@ function ProgramCard({
 
           <View style={styles.lessonMeta}>
             <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
-            <Text style={styles.lessonMetaText}>{program.total} lessons · ~{program.total * 4} min</Text>
+            <Text style={styles.lessonMetaText}>
+              {t('programs.lessonsTime', { lessons: program.total, minutes: program.total * 4 })}
+            </Text>
           </View>
         </View>
 
         <View style={[styles.cta, started && !done && styles.ctaStarted]}>
           <Text style={[styles.ctaText, started && !done && styles.ctaStartedText]}>
-            {done ? 'Review' : started ? 'Continue' : 'Start'}
+            {done ? t('programs.review') : started ? t('programs.continue') : t('programs.start')}
           </Text>
         </View>
       </Card>

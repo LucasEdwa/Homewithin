@@ -7,6 +7,7 @@ import { INTENTIONS, type IntentionId } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Alert,
     SafeAreaView,
@@ -18,6 +19,7 @@ import {
 } from 'react-native';
 
 export default function IntentionsScreen() {
+  const { t } = useTranslation();
   const { profile, setProfile } = useSession();
   const [selected, setSelected] = useState<Set<IntentionId>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -43,11 +45,11 @@ export default function IntentionsScreen() {
       const updated = { ...profile, intentions };
       await setProfile(updated);
       await syncProfile(updated);
-      Alert.alert('Saved', 'Your matching preferences are updated.', [
-        { text: 'OK', onPress: () => router.back() },
+      Alert.alert(t('intentionsScreen.savedTitle'), t('intentionsScreen.savedBody'), [
+        { text: t('common.ok'), onPress: () => router.back() },
       ]);
     } catch (e: any) {
-      Alert.alert('Could not save', e?.message ?? 'Please check your connection and try again.');
+      Alert.alert(t('intentionsScreen.couldNotSave'), e?.message ?? t('profile.privacy.tryAgain'));
     } finally {
       setSaving(false);
     }
@@ -56,18 +58,15 @@ export default function IntentionsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel={t('common.back')}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>What I'm open to</Text>
+        <Text style={styles.navTitle}>{t('intentionsScreen.title')}</Text>
         <View style={styles.navBtn} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.intro}>
-          Pick the kinds of connections you're willing to offer others. People searching
-          for one of these will be able to find you. You can change this anytime.
-        </Text>
+        <Text style={styles.intro}>{t('intentionsScreen.intro')}</Text>
 
         <View style={styles.list}>
           {INTENTIONS.map((item) => {
@@ -98,15 +97,13 @@ export default function IntentionsScreen() {
         </View>
 
         <Button
-          label={saving ? 'Saving…' : 'Save'}
+          label={saving ? t('intentionsScreen.saving') : t('intentionsScreen.save')}
           onPress={handleSave}
           loading={saving}
           style={styles.cta}
         />
 
-        <Text style={styles.hint}>
-          Leaving everything unchecked means you won't appear in anyone's matches.
-        </Text>
+        <Text style={styles.hint}>{t('intentionsScreen.hint')}</Text>
       </ScrollView>
     </SafeAreaView>
   );

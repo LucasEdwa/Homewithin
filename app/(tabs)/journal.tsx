@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
@@ -20,14 +21,16 @@ import { MOOD_LABELS, MOOD_ICONS, MOOD_COLORS, EMOTION_COLORS } from '@/types';
 import { usePinModal } from '@/hooks/usePinModal';
 import { PinModal } from '@/components/ui/PinModal';
 
-function formatDate(iso: string) {
-  return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric',
-  });
-}
-
 export default function JournalScreen() {
+  const { t, i18n } = useTranslation();
   const { todayCheckIn, recentCheckIns, recentEntries } = useCheckIns();
+
+  function formatDate(iso: string) {
+    const locale = i18n.language === 'sv' ? 'sv-SE' : 'en-US';
+    return new Date(iso + 'T12:00:00').toLocaleDateString(locale, {
+      weekday: 'short', month: 'short', day: 'numeric',
+    });
+  }
 
   const { pinModal, pinInput, setPinInput, handleOpenHidden, handlePinSubmit, closePinModal } = usePinModal(
     (entryId) => router.push({ pathname: '/journal-entry', params: { id: entryId, pinVerified: '1' } }),
@@ -36,35 +39,33 @@ export default function JournalScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Journal</Text>
+        <Text style={styles.title}>{t('journal.title')}</Text>
 
-        {/* Quick actions */}
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: Colors.safeBlue + '18' }]}
             onPress={() => router.push('/checkin')}
-            accessibilityLabel="Daily check-in"
+            accessibilityLabel={t('journal.checkInAccessibility')}
           >
             <Ionicons name="happy-outline" size={22} color={Colors.safeBlue} />
-            <Text style={[styles.actionLabel, { color: Colors.safeBlue }]}>Check in</Text>
+            <Text style={[styles.actionLabel, { color: Colors.safeBlue }]}>{t('journal.checkIn')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: Colors.mutedLavender + '18' }]}
             onPress={() => router.push('/journal-entry')}
-            accessibilityLabel="New journal entry"
+            accessibilityLabel={t('journal.newEntryAccessibility')}
           >
             <Ionicons name="create-outline" size={22} color={Colors.mutedLavender} />
-            <Text style={[styles.actionLabel, { color: Colors.mutedLavender }]}>New entry</Text>
+            <Text style={[styles.actionLabel, { color: Colors.mutedLavender }]}>{t('journal.newEntry')}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Today's check-in */}
         {todayCheckIn ? (
           <Card style={styles.todayCard}>
             <View style={styles.todayHeader}>
-              <Text style={styles.sectionTitle}>Today's mood</Text>
+              <Text style={styles.sectionTitle}>{t('journal.todaysMood')}</Text>
               <TouchableOpacity onPress={() => router.push('/checkin')}>
-                <Text style={styles.editLink}>Edit</Text>
+                <Text style={styles.editLink}>{t('journal.editLink')}</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.todayMood}>
@@ -96,8 +97,8 @@ export default function JournalScreen() {
           >
             <Ionicons name="happy-outline" size={24} color={Colors.safeBlue} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.checkinCtaTitle}>How are you feeling today?</Text>
-              <Text style={styles.checkinCtaSub}>Tap to check in — takes 1 minute.</Text>
+              <Text style={styles.checkinCtaTitle}>{t('journal.howAreYou')}</Text>
+              <Text style={styles.checkinCtaSub}>{t('journal.checkInSub')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
           </TouchableOpacity>
@@ -106,7 +107,7 @@ export default function JournalScreen() {
         {/* 7-day chart */}
         {recentCheckIns.length > 0 && (
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>Mood — last 7 days</Text>
+            <Text style={styles.sectionTitle}>{t('journal.moodLast7')}</Text>
             <MoodChart checkIns={recentCheckIns} />
           </Card>
         )}
@@ -114,17 +115,17 @@ export default function JournalScreen() {
         {/* Recent journal entries */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Journal entries</Text>
+            <Text style={styles.sectionTitle}>{t('journal.entries')}</Text>
             <TouchableOpacity onPress={() => router.push('/journal-entry')}>
-              <Text style={styles.editLink}>View all</Text>
+              <Text style={styles.editLink}>{t('journal.viewAll')}</Text>
             </TouchableOpacity>
           </View>
 
           {recentEntries.length === 0 ? (
             <Card style={styles.emptyEntries}>
-              <Text style={styles.emptyText}>No entries yet. Writing is healing.</Text>
+              <Text style={styles.emptyText}>{t('journal.noEntries')}</Text>
               <Button
-                label="Write your first entry"
+                label={t('journal.firstEntry')}
                 variant="secondary"
                 onPress={() => router.push('/journal-entry')}
               />
@@ -153,7 +154,7 @@ export default function JournalScreen() {
                     </View>
                   )}
                   <Text style={styles.entryRowPreview} numberOfLines={1}>
-                    {entry.isHidden ? '🔒 Hidden entry' : entry.body}
+                    {entry.isHidden ? t('journal.hiddenEntry') : entry.body}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />

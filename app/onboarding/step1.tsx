@@ -5,6 +5,7 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -22,6 +23,7 @@ const LANGUAGES = ['English', 'Swedish', 'Portuguese', 'Spanish', 'French', 'Ger
 const PRONOUNS = ['he/him', 'she/her', 'they/them', 'ze/zir', 'Prefer not to say'];
 
 export default function OnboardingStep1() {
+  const { t } = useTranslation();
   const { setProfile } = useSession();
   const [nickname, setNickname] = useState('');
   const [pronouns, setPronouns] = useState('');
@@ -33,9 +35,9 @@ export default function OnboardingStep1() {
 
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (!nickname.trim()) e.nickname = 'Please choose a nickname.';
-    if (!ageRange) e.ageRange = 'Please select your age range.';
-    if (!country.trim()) e.country = 'Please enter your background.';
+    if (!nickname.trim()) e.nickname = t('onboarding.step1.nicknameRequired');
+    if (!ageRange) e.ageRange = t('onboarding.step1.ageRangeRequired');
+    if (!country.trim()) e.country = t('onboarding.step1.backgroundRequired');
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -71,15 +73,13 @@ export default function OnboardingStep1() {
           <View style={styles.dot} />
         </View>
 
-        <Text style={styles.title}>Tell us a little about you</Text>
-        <Text style={styles.subtitle}>
-          No real name needed. This stays private to you.
-        </Text>
+        <Text style={styles.title}>{t('onboarding.step1.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.step1.subtitle')}</Text>
 
         <View style={styles.form}>
           <Input
-            label="Nickname"
-            placeholder="e.g. River, Sage, Alex"
+            label={t('onboarding.step1.nickname')}
+            placeholder={t('onboarding.step1.nicknamePlaceholder')}
             value={nickname}
             onChangeText={setNickname}
             error={errors.nickname}
@@ -88,7 +88,7 @@ export default function OnboardingStep1() {
           />
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Pronouns</Text>
+            <Text style={styles.fieldLabel}>{t('onboarding.step1.pronouns')}</Text>
             <View style={styles.chips}>
               {PRONOUNS.map((p) => (
                 <Chip key={p} label={p} selected={pronouns === p} onPress={() => setPronouns(p)} />
@@ -97,7 +97,9 @@ export default function OnboardingStep1() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Age range {errors.ageRange ? <Text style={styles.err}> — {errors.ageRange}</Text> : null}</Text>
+            <Text style={styles.fieldLabel}>
+              {t('onboarding.step1.ageRange')}{errors.ageRange ? <Text style={styles.err}> — {errors.ageRange}</Text> : null}
+            </Text>
             <View style={styles.chips}>
               {AGE_RANGES.map((a) => (
                 <Chip key={a} label={a} selected={ageRange === a} onPress={() => setAgeRange(a)} />
@@ -106,7 +108,7 @@ export default function OnboardingStep1() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Language</Text>
+            <Text style={styles.fieldLabel}>{t('onboarding.step1.language')}</Text>
             <View style={styles.chips}>
               {LANGUAGES.map((l) => (
                 <Chip key={l} label={l} selected={language === l} onPress={() => setLanguage(l)} />
@@ -115,8 +117,8 @@ export default function OnboardingStep1() {
           </View>
 
           <Input
-            label="Your background"
-            placeholder="e.g. Sweden, Brazil, Syria, Somalia…"
+            label={t('onboarding.step1.background')}
+            placeholder={t('onboarding.step1.backgroundPlaceholder')}
             value={country}
             onChangeText={setCountry}
             error={errors.country}
@@ -126,23 +128,23 @@ export default function OnboardingStep1() {
 
           <View style={styles.toggle}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleLabel}>Hide my profile from search</Text>
-              <Text style={styles.toggleHint}>Others won't be able to find you unless you connect first.</Text>
+              <Text style={styles.toggleLabel}>{t('onboarding.step1.hideFromSearch')}</Text>
+              <Text style={styles.toggleHint}>{t('onboarding.step1.hideFromSearchHint')}</Text>
             </View>
             <Switch
               value={hideFromSearch}
               onValueChange={setHideFromSearch}
               trackColor={{ true: Colors.safeBlue, false: Colors.border }}
               thumbColor={Colors.white}
-              accessibilityLabel="Hide profile from search"
+              accessibilityLabel={t('onboarding.step1.hideFromSearch')}
             />
           </View>
         </View>
 
-        <Button label="Continue" onPress={handleNext} style={styles.cta} />
+        <Button label={t('common.continue')} onPress={handleNext} style={styles.cta} />
 
         <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </TouchableOpacity>
       </ScrollView>
       </KeyboardAvoidingView>

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
@@ -37,6 +38,7 @@ function todayISO() {
 }
 
 export default function CheckInScreen() {
+  const { t, i18n } = useTranslation();
   const { setSafetyLevel } = useSession();
 
   const [mood, setMood] = useState<MoodLevel | null>(null);
@@ -48,6 +50,8 @@ export default function CheckInScreen() {
   const [loading, setLoading] = useState(false);
   const [alreadyCheckedIn, setAlreadyCheckedIn] = useState(false);
   const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([]);
+
+  const locale = i18n.language === 'sv' ? 'sv-SE' : 'en-US';
 
   useEffect(() => {
     async function init() {
@@ -69,13 +73,13 @@ export default function CheckInScreen() {
 
   function toggleTag(tag: TriggerTag) {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((tt) => tt !== tag) : [...prev, tag]
     );
   }
 
   async function handleSave() {
     if (!mood) {
-      Alert.alert('Select a mood', 'Please pick how you are feeling today.');
+      Alert.alert(t('checkin.alertNoMood'), t('checkin.alertNoMoodBody'));
       return;
     }
     setLoading(true);
@@ -93,7 +97,6 @@ export default function CheckInScreen() {
 
     await saveCheckIn(entry);
 
-    // Sync to Supabase if available
     if (supabase) {
       const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
       if (user) {
@@ -112,7 +115,6 @@ export default function CheckInScreen() {
       }
     }
 
-    // Update global safety level from mood
     if (mood >= 4) setSafetyLevel('green');
     else if (mood === 3) setSafetyLevel('yellow');
     else setSafetyLevel('red');
@@ -122,10 +124,10 @@ export default function CheckInScreen() {
     setLoading(false);
 
     const moodVal = mood;
-    Alert.alert('Saved', 'Your check-in has been saved.', [
-      { text: 'Done', onPress: () => router.back() },
+    Alert.alert(t('checkin.saved'), t('checkin.savedBody'), [
+      { text: t('checkin.done'), onPress: () => router.back() },
       {
-        text: 'Get a gentle reflection',
+        text: t('checkin.gentleReflection'),
         onPress: () => router.replace({ pathname: '/ai-companion', params: { moodScore: String(moodVal) } }),
       },
     ]);
@@ -134,12 +136,12 @@ export default function CheckInScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+        <TouchableOpacity onPress={() => router.back()} accessibilityLabel={t('common.back')}>
           <Ionicons name="arrow-back" size={22} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Daily Check-In</Text>
+        <Text style={styles.headerTitle}>{t('checkin.title')}</Text>
         <Text style={styles.headerDate}>
-          {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          {new Date().toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
         </Text>
       </View>
 
@@ -151,53 +153,50 @@ export default function CheckInScreen() {
         {alreadyCheckedIn && (
           <Card style={styles.doneBanner}>
             <Ionicons name="checkmark-circle" size={18} color={Colors.softGreen} />
-            <Text style={styles.doneText}>You've already checked in today. You can update it below.</Text>
+            <Text style={styles.doneText}>{t('checkin.alreadyCheckedIn')}</Text>
           </Card>
         )}
 
-        {/* Mood */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>How are you feeling?</Text>
+          <Text style={styles.sectionTitle}>{t('checkin.moodSection')}</Text>
           <MoodPicker value={mood} onChange={setMood} />
         </Card>
 
-        {/* Sliders */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>How are these today?</Text>
+          <Text style={styles.sectionTitle}>{t('checkin.slidersSection')}</Text>
           <RangeSlider
-            label="Anxiety"
+            label={t('checkin.anxiety')}
             value={anxiety}
             onValueChange={setAnxiety}
-            minLabel="Calm"
-            maxLabel="Overwhelmed"
+            minLabel={t('checkin.calm')}
+            maxLabel={t('checkin.overwhelmed')}
             color="#E8844E"
           />
           <RangeSlider
-            label="Loneliness"
+            label={t('checkin.loneliness')}
             value={loneliness}
             onValueChange={setLoneliness}
-            minLabel="Connected"
-            maxLabel="Isolated"
+            minLabel={t('checkin.connected')}
+            maxLabel={t('checkin.isolated')}
             color={Colors.mutedLavender}
           />
           <RangeSlider
-            label="Safety"
+            label={t('checkin.safetySlider')}
             value={safetySlider}
             onValueChange={setSafetySlider}
-            minLabel="Unsafe"
-            maxLabel="Safe"
+            minLabel={t('checkin.unsafe')}
+            maxLabel={t('checkin.safe')}
             color={Colors.softGreen}
           />
         </Card>
 
-        {/* Trigger tags */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>What's affecting you today?</Text>
+          <Text style={styles.sectionTitle}>{t('checkin.triggersSection')}</Text>
           <View style={styles.tags}>
             {TRIGGER_TAGS.map((tag) => (
               <Tag
                 key={tag}
-                label={tag}
+                label={t(`checkin.triggerTags.${tag}` as any)}
                 selected={selectedTags.includes(tag)}
                 onPress={() => toggleTag(tag)}
               />
@@ -205,31 +204,29 @@ export default function CheckInScreen() {
           </View>
         </Card>
 
-        {/* Text prompt */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>What has been hardest today?</Text>
+          <Text style={styles.sectionTitle}>{t('checkin.hardestSection')}</Text>
           <TextInput
             style={styles.textInput}
             value={hardestThing}
             onChangeText={setHardestThing}
-            placeholder="Write anything. This is private."
+            placeholder={t('checkin.hardestPlaceholder')}
             placeholderTextColor={Colors.textMuted}
             multiline
             textAlignVertical="top"
-            accessibilityLabel="What has been hardest today"
+            accessibilityLabel={t('checkin.hardestSection')}
           />
         </Card>
 
-        {/* 7-day chart */}
         {recentCheckIns.length > 0 && (
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>Your mood — last 7 days</Text>
+            <Text style={styles.sectionTitle}>{t('checkin.moodChart')}</Text>
             <MoodChart checkIns={recentCheckIns} />
           </Card>
         )}
 
         <Button
-          label={alreadyCheckedIn ? 'Update check-in' : 'Save check-in'}
+          label={alreadyCheckedIn ? t('checkin.updateBtn') : t('checkin.saveBtn')}
           onPress={handleSave}
           loading={loading}
           style={styles.cta}

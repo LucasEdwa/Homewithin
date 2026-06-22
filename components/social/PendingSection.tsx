@@ -3,6 +3,7 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import type { Match } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
@@ -11,10 +12,11 @@ interface Props {
 }
 
 export function PendingSection({ matches, onCancel }: Props) {
+  const { t } = useTranslation();
   if (matches.length === 0) return null;
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>Waiting for response</Text>
+      <Text style={styles.title}>{t('social.waitingForResponse')}</Text>
       {matches.map((match) => (
         <View key={match.id} style={styles.row} testID={`pending-${match.id}`}>
           <View style={styles.avatar}>
@@ -23,13 +25,13 @@ export function PendingSection({ matches, onCancel }: Props) {
             </Text>
           </View>
           <View style={styles.info}>
-            <Text style={styles.name}>{match.peer?.nickname ?? 'Someone'}</Text>
-            <Text style={styles.meta}>Waiting for them to connect back…</Text>
+            <Text style={styles.name}>{match.peer?.nickname ?? t('common.anonymous')}</Text>
+            <Text style={styles.meta}>{t('social.waitingForThem')}</Text>
           </View>
           <TouchableOpacity
             style={styles.cancelBtn}
             onPress={() => onCancel(match)}
-            accessibilityLabel="Cancel request"
+            accessibilityLabel={t('social.cancelRequest')}
             testID={`cancel-pending-${match.id}`}
           >
             <Ionicons name="close" size={18} color={Colors.textMuted} />

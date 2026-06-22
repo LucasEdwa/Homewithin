@@ -3,6 +3,7 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import type { PeerProfile } from '@/types';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
@@ -86,6 +87,7 @@ export interface MatchCelebrationProps {
 }
 
 export function MatchCelebration({ peer, matchId, onClose }: MatchCelebrationProps) {
+  const { t } = useTranslation();
   const particles = useMemo(() => buildParticles(), []);
 
   // Animated values
@@ -168,18 +170,18 @@ export function MatchCelebration({ peer, matchId, onClose }: MatchCelebrationPro
           </View>
 
           <View style={styles.textBlock}>
-            <Text style={styles.headline}>It's a match ✨</Text>
+            <Text style={styles.headline}>{t('social.itIsAMatch')}</Text>
             <Text style={styles.subtext}>
-              You and <Text style={styles.peerName}>{peer.nickname}</Text> connected.
+              {t('social.youConnected', { name: peer.nickname })}
             </Text>
           </View>
 
           <View style={styles.actions}>
             <TouchableOpacity style={styles.chatBtn} onPress={handleOpenChat} activeOpacity={0.85}>
-              <Text style={styles.chatBtnText}>Open chat</Text>
+              <Text style={styles.chatBtnText}>{t('social.openChat')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.laterBtn} onPress={handleDismiss} activeOpacity={0.7}>
-              <Text style={styles.laterBtnText}>Later</Text>
+              <Text style={styles.laterBtnText}>{t('social.later')}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

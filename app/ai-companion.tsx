@@ -19,6 +19,7 @@ import type { AIMessage } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     FlatList,
@@ -34,37 +35,37 @@ import {
     View,
 } from 'react-native';
 
-const DEFAULT_STARTERS = [
-  "I've been feeling really alone lately.",
-  'I want to talk about my family.',
-  'Can you help me with a breathing exercise?',
-  "I'm struggling with shame today.",
-];
+type TFunction = ReturnType<typeof useTranslation>['t'];
 
-function buildPersonalisedStarters(ctx: UserContext): string[] {
+function buildPersonalisedStarters(ctx: UserContext, t: TFunction): string[] {
+  const defaultStarters = [
+    t('aiCompanion.starters.alone'),
+    t('aiCompanion.starters.family'),
+    t('aiCompanion.starters.breathing'),
+    t('aiCompanion.starters.shame'),
+  ];
   const starters: string[] = [];
 
   if (ctx.safetyLevel === 'red' || ctx.safetyLevel === 'yellow') {
-    starters.push("I want to talk about feeling safe right now.");
+    starters.push(t('aiCompanion.personalizedStarters.safetyRed'));
   }
   if (ctx.moodTrend === 'declining') {
-    starters.push("I've been having a hard week. Can we talk?");
+    starters.push(t('aiCompanion.personalizedStarters.moodDeclining'));
   }
   if (ctx.recentEmotionTags?.includes('shame')) {
-    starters.push("I'm dealing with a lot of shame and I don't know what to do.");
+    starters.push(t('aiCompanion.personalizedStarters.shame'));
   }
   if (ctx.recentEmotionTags?.includes('fear')) {
-    starters.push("There's something I'm scared of and I need to talk it through.");
+    starters.push(t('aiCompanion.personalizedStarters.fear'));
   }
   if ((ctx.connectionsCount ?? 0) === 0 && (ctx.chosenFamilyCount ?? 0) === 0) {
-    starters.push("I feel really alone. I don't have anyone to talk to.");
+    starters.push(t('aiCompanion.personalizedStarters.alone'));
   }
   if ((ctx.journalStreak ?? 0) >= 3) {
-    starters.push(`I've been writing for ${ctx.journalStreak} days. I want to reflect on what I've noticed.`);
+    starters.push(t('aiCompanion.personalizedStarters.journalStreak', { count: ctx.journalStreak }));
   }
 
-  // Fill remaining slots with defaults so there are always 4 starters
-  for (const s of DEFAULT_STARTERS) {
+  for (const s of defaultStarters) {
     if (starters.length >= 4) break;
     if (!starters.includes(s)) starters.push(s);
   }
@@ -73,6 +74,7 @@ function buildPersonalisedStarters(ctx: UserContext): string[] {
 }
 
 export default function AICompanionScreen() {
+  const { t } = useTranslation();
   const { profile, safetyLevel } = useSession();
   const params = useLocalSearchParams<{ moodScore?: string; journalPreview?: string }>();
   const [messages, setMessages] = useState<AIMessage[]>([]);
@@ -81,10 +83,14 @@ export default function AICompanionScreen() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
-  const [starters, setStarters] = useState<string[]>(DEFAULT_STARTERS);
+  const [starters, setStarters] = useState<string[]>([
+    t('aiCompanion.starters.alone'),
+    t('aiCompanion.starters.family'),
+    t('aiCompanion.starters.breathing'),
+    t('aiCompanion.starters.shame'),
+  ]);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const listRef = useRef<FlatList>(null);
-  // Prevents auto-send from firing more than once per session.
   const autoSentRef = useRef(false);
 
   useEffect(() => {
@@ -210,8 +216,7 @@ export default function AICompanionScreen() {
       };
       setUserContext(ctx);
 
-      // Personalized starters based on context
-      setStarters(buildPersonalisedStarters(ctx));
+      setStarters(buildPersonalisedStarters(ctx, t));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -223,7 +228,7 @@ export default function AICompanionScreen() {
     if (showConsentModal) return;       // wait for consent
     if (autoSentRef.current) return;   // only once
     autoSentRef.current = true;
-    handleSend('I just wrote a journal entry. Can you give me an insight about it?');
+    handleSend(t('aiCompanion.autoJournalMessage'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userContext, showConsentModal]);
 
@@ -297,30 +302,22 @@ export default function AICompanionScreen() {
           <View style={styles.consentCard}>
             <View style={styles.consentHeader}>
               <Ionicons name="sparkles" size={22} color={Colors.mutedLavender} />
-              <Text style={styles.consentTitle}>AI Companion — Data Sharing</Text>
+              <Text style={styles.consentTitle}>{t('aiCompanion.consentTitle')}</Text>
             </View>
             <ScrollView style={styles.consentScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.consentBody}>
-                To personalise your conversation, the AI Companion sends certain information about you to a third-party AI service.
-              </Text>
-              <Text style={styles.consentSectionLabel}>What is shared</Text>
-              <Text style={styles.consentBody}>
-                {'• Your nickname and country (if set)\n• Your support needs and current safety level\n• Mood scores and trends from your check-ins\n• Short snippets and emotion tags from your journal entries\n• Your program progress and connection count\n• The messages you type in this chat'}
-              </Text>
-              <Text style={styles.consentSectionLabel}>Who receives it</Text>
-              <Text style={styles.consentBody}>
-                Your data is sent to <Text style={styles.consentBold}>Second Horizon</Text> (app.second-horizon.com), an AI conversation service. Second Horizon processes messages using AI language model technology to generate responses. Data is transmitted over HTTPS and is not used to train AI models.
-              </Text>
-              <Text style={styles.consentSectionLabel}>Your choices</Text>
-              <Text style={styles.consentBody}>
-                You can withdraw consent at any time by simply not using the AI Companion feature. Clearing your conversation also removes locally stored chat history. See our Privacy Policy for full details.
-              </Text>
+              <Text style={styles.consentBody}>{t('aiCompanion.consentBody')}</Text>
+              <Text style={styles.consentSectionLabel}>{t('aiCompanion.consentSharedLabel')}</Text>
+              <Text style={styles.consentBody}>{t('aiCompanion.consentSharedBody')}</Text>
+              <Text style={styles.consentSectionLabel}>{t('aiCompanion.consentWhoLabel')}</Text>
+              <Text style={styles.consentBody}>{t('aiCompanion.consentWhoBody')}</Text>
+              <Text style={styles.consentSectionLabel}>{t('aiCompanion.consentChoicesLabel')}</Text>
+              <Text style={styles.consentBody}>{t('aiCompanion.consentChoicesBody')}</Text>
             </ScrollView>
             <TouchableOpacity style={styles.consentAgreeBtn} onPress={handleGrantConsent}>
-              <Text style={styles.consentAgreeBtnText}>I Agree — Continue</Text>
+              <Text style={styles.consentAgreeBtnText}>{t('aiCompanion.consentAgree')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.consentDenyBtn} onPress={handleDenyConsent}>
-              <Text style={styles.consentDenyBtnText}>Go Back</Text>
+              <Text style={styles.consentDenyBtnText}>{t('aiCompanion.consentGoBack')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -334,7 +331,7 @@ export default function AICompanionScreen() {
           <View style={styles.navIcon}>
             <Ionicons name="sparkles" size={18} color={Colors.mutedLavender} />
           </View>
-          <Text style={styles.navTitle}>AI Companion</Text>
+          <Text style={styles.navTitle}>{t('aiCompanion.title')}</Text>
         </View>
         {messages.length > 0 && (
           <TouchableOpacity onPress={handleClear} style={styles.navBtn} accessibilityLabel="Clear conversation">
@@ -362,7 +359,7 @@ export default function AICompanionScreen() {
           ListHeaderComponent={
             showStarters ? (
               <View style={styles.starters}>
-                <Text style={styles.startersTitle}>What's on your mind?</Text>
+                <Text style={styles.startersTitle}>{t('aiCompanion.startersTitle')}</Text>
                 {starters.map((s: string) => (
                   <TouchableOpacity
                     key={s}
@@ -383,7 +380,7 @@ export default function AICompanionScreen() {
               {loading && (
                 <View style={styles.typingIndicator}>
                   <ActivityIndicator size="small" color={Colors.mutedLavender} />
-                  <Text style={styles.typingText}>Thinking…</Text>
+                  <Text style={styles.typingText}>{t('aiCompanion.thinking')}</Text>
                 </View>
               )}
               {error && (
@@ -393,7 +390,11 @@ export default function AICompanionScreen() {
                 </Card>
               )}
               {remaining !== null && remaining <= 5 && remaining > 0 && (
-                <Text style={styles.rateNote}>{remaining} message{remaining !== 1 ? 's' : ''} remaining today</Text>
+                <Text style={styles.rateNote}>
+                  {remaining === 1
+                    ? t('aiCompanion.messagesRemaining', { count: remaining })
+                    : t('aiCompanion.messagesRemaining_plural', { count: remaining })}
+                </Text>
               )}
             </>
           }
@@ -405,7 +406,7 @@ export default function AICompanionScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="Share what's on your mind…"
+            placeholder={t('aiCompanion.placeholder')}
             placeholderTextColor={Colors.textMuted}
             multiline
             maxLength={800}

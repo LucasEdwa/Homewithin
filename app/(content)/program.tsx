@@ -19,7 +19,10 @@ import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { getProgramById, getCompletedLessonIds, markLessonComplete } from '@/services/content/programs';
 import type { Program, Lesson } from '@/types';
 import { MarkdownBody } from '@/components/ui/MarkdownBody';
+import { useTranslation } from 'react-i18next';
+
 export default function ProgramScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [program, setProgram] = useState<Program | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
@@ -54,9 +57,9 @@ export default function ProgramScreen() {
       setExpandedLesson(next.id);
     } else {
       Alert.alert(
-        '🎉 Program complete!',
-        `You've finished "${program.title}". Take a moment to appreciate how far you've come.`,
-        [{ text: 'Thank you', onPress: () => router.back() }]
+        t('programs.completeTitle'),
+        t('programs.completeBody', { title: program.title }),
+        [{ text: t('programs.thankYou'), onPress: () => router.back() }]
       );
     }
   }
@@ -71,7 +74,7 @@ export default function ProgramScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+          <TouchableOpacity onPress={() => router.back()} accessibilityLabel={t('common.goBack')}>
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerRight}>
@@ -83,7 +86,7 @@ export default function ProgramScreen() {
         {/* Overall progress */}
         <Card style={styles.progressCard}>
           <View style={styles.progressRow}>
-            <Text style={styles.progressText}>{completedCount} of {program.lessons.length} lessons complete</Text>
+            <Text style={styles.progressText}>{t('programs.lessonsComplete', { completed: completedCount, total: program.lessons.length })}</Text>
             <Text style={[styles.progressPct, { color: program.color }]}>{Math.round(pct * 100)}%</Text>
           </View>
           <View style={styles.progressTrack}>
@@ -121,21 +124,21 @@ export default function ProgramScreen() {
                   <MarkdownBody body={lesson.body} fontSize={15} />
 
                   <Card style={[styles.reflectionCard, { borderLeftColor: program.color }]}>
-                    <Text style={[styles.reflectionLabel, { color: program.color }]}>Reflection</Text>
+                    <Text style={[styles.reflectionLabel, { color: program.color }]}>{t('programs.reflection')}</Text>
                     <Text style={styles.reflectionPrompt}>{lesson.reflectionPrompt}</Text>
                     <TouchableOpacity
                       style={styles.journalLink}
                       onPress={() => router.push('/journal-entry')}
-                      accessibilityLabel="Write in journal"
+                      accessibilityLabel={t('programs.writeInJournal')}
                     >
                       <Ionicons name="create-outline" size={14} color={Colors.safeBlue} />
-                      <Text style={styles.journalLinkText}>Write in journal</Text>
+                      <Text style={styles.journalLinkText}>{t('programs.writeInJournal')}</Text>
                     </TouchableOpacity>
                   </Card>
 
                   {!done && (
                     <Button
-                      label="Mark complete"
+                      label={t('programs.markComplete')}
                       onPress={() => handleComplete(lesson)}
                       loading={loading}
                       style={[styles.completeBtn, { backgroundColor: program.color }]}
