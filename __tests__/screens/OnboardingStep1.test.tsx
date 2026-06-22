@@ -39,7 +39,7 @@ describe('OnboardingStep1', () => {
 
   it('renders Hide from search toggle', () => {
     renderWithSession(<OnboardingStep1 />);
-    expect(screen.getByLabelText('Hide profile from search')).toBeTruthy();
+    expect(screen.getByLabelText('Hide my profile from search')).toBeTruthy();
   });
 
   it('shows validation error when continuing without nickname', async () => {

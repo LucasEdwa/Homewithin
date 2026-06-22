@@ -89,8 +89,8 @@ describe('ArticleScreen', () => {
 
   it('goes back on back button press', async () => {
     render(<ArticleScreen />);
-    await waitFor(() => screen.getByLabelText('Back'));
-    fireEvent.press(screen.getByLabelText('Back'));
+    await waitFor(() => screen.getByLabelText('← Back'));
+    fireEvent.press(screen.getByLabelText('← Back'));
     expect(router.back).toHaveBeenCalled();
   });
 

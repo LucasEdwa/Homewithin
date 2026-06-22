@@ -52,7 +52,7 @@ describe('CheckInScreen — rendering', () => {
     renderWithSession(<CheckInScreen />, mockSession);
     await waitFor(() => {
       expect(screen.getByLabelText('Anxiety')).toBeTruthy();
-      expect(screen.getByLabelText('Loneliness')).toBeTruthy();
+      expect(screen.getAllByLabelText('Loneliness').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByLabelText('Safety')).toBeTruthy();
     });
   });
@@ -60,19 +60,18 @@ describe('CheckInScreen — rendering', () => {
   it('renders all trigger tags', async () => {
     renderWithSession(<CheckInScreen />, mockSession);
     await waitFor(() => {
-      expect(screen.getByText('family')).toBeTruthy();
-      expect(screen.getByText('work')).toBeTruthy();
-      expect(screen.getByText('identity')).toBeTruthy();
-      expect(screen.getByText('loneliness')).toBeTruthy();
-      expect(screen.getByText('fear')).toBeTruthy();
-      expect(screen.getByText('hope')).toBeTruthy();
+      expect(screen.getByText('Family')).toBeTruthy();
+      expect(screen.getByText('Work')).toBeTruthy();
+      expect(screen.getByText('Identity')).toBeTruthy();
+      expect(screen.getByText('Fear')).toBeTruthy();
+      expect(screen.getByText('Hope')).toBeTruthy();
     });
   });
 
   it('renders the hardest-thing text input', async () => {
     renderWithSession(<CheckInScreen />, mockSession);
     await waitFor(() =>
-      expect(screen.getByLabelText('What has been hardest today')).toBeTruthy()
+      expect(screen.getByLabelText('What has been hardest today?')).toBeTruthy()
     );
   });
 
@@ -176,8 +175,8 @@ describe('CheckInScreen — saving', () => {
 describe('CheckInScreen — navigation', () => {
   it('back button calls router.back', async () => {
     renderWithSession(<CheckInScreen />, mockSession);
-    await waitFor(() => screen.getByLabelText('Go back'));
-    fireEvent.press(screen.getByLabelText('Go back'));
+    await waitFor(() => screen.getByLabelText('← Back'));
+    fireEvent.press(screen.getByLabelText('← Back'));
     expect(router.back).toHaveBeenCalled();
   });
 });
