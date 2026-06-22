@@ -8,9 +8,11 @@ import { computeSafetyScore } from '@/services/wellness/safetyScore';
 import type { SafetyAnswers, SafetyStatus } from '@/types';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
 export default function SafetyScreen() {
+  const { t } = useTranslation();
   const { setSafetyLevel, nearbyState, nearbyResources } = useSession();
   const [step, setStep] = useState(0);
   const [moodScore, setMoodScore] = useState(8);
@@ -73,7 +75,7 @@ export default function SafetyScreen() {
     setSavingPlan(true);
     await saveSafetyPlan(steps);
     setSavingPlan(false);
-    Alert.alert('Saved', 'Your safety plan is saved only on this device.');
+    Alert.alert(t('safetyAssessment.saved'), t('safetyAssessment.savedBody'));
   }
 
   if (step === 0) {

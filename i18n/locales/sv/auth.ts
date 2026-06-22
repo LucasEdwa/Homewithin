@@ -1,0 +1,36 @@
+export default {
+  welcome: {
+    tagline: 'En säker plats för HBTQ+-personer\n— när hemmet inte alltid är tryggt.',
+    pillars: {
+      safety: 'Trygghet',
+      healing: 'Läkning',
+      connection: 'Gemenskap',
+      growth: 'Tillväxt',
+    },
+    startAnonymously: 'Börja anonymt',
+    signIn: 'Logga in',
+    continueAsGuest: 'Fortsätt som gäst — inget konto behövs',
+    agreePrefix: 'Jag är 18 år eller äldre och godkänner ',
+    termsOfUse: 'Användarvillkoren',
+    and: ' och ',
+    privacyPolicy: 'Integritetspolicyn',
+    agreeSuffix: '.',
+  },
+
+  signIn: {
+    title: 'Välkommen tillbaka',
+    subtitle: 'Logga in för att komma åt din dagbok, kontakter och framsteg.',
+    email: 'E-post',
+    emailPlaceholder: 'din@epost.se',
+    password: 'Lösenord',
+    signInBtn: 'Logga in',
+    createAccount: 'Skapa konto',
+    continueAnonymously: 'Fortsätt anonymt — inget konto behövs',
+    emailPasswordRequired: 'Ange din e-post och ditt lösenord.',
+    passwordTooShort: 'Lösenordet måste vara minst 8 tecken.',
+    supabaseNotConfigured: 'Supabase inte konfigurerad',
+    supabaseBody: 'Lägg till dina projektuppgifter i {{file}} för att aktivera inloggning:',
+    checkEmail: 'Kontrollera din e-post',
+    checkEmailBody: 'Vi skickade en bekräftelse till {{email}}. Öppna den och logga sedan in.',
+  },
+};

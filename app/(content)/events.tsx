@@ -7,6 +7,7 @@ import type { LocalMeetup, Workshop, WorkshopFormat } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Linking,
@@ -31,13 +32,9 @@ const FORMAT_COLORS: Record<WorkshopFormat, string> = {
   in_person: Colors.softGreen,
   hybrid: '#B8A8E3',
 };
-const FORMAT_LABELS: Record<WorkshopFormat, string> = {
-  online: 'Online',
-  in_person: 'In Person',
-  hybrid: 'Hybrid',
-};
 
 export default function EventsScreen() {
+  const { t } = useTranslation();
   const { nearbyState, profile } = useSession();
   const [activeTab, setActiveTab] = useState<Tab>('workshops');
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -57,21 +54,19 @@ export default function EventsScreen() {
 
   const openLink = useCallback((url: string) => {
     Linking.openURL(url).catch(() =>
-      Alert.alert('Could not open link', 'Please check your internet connection.')
+      Alert.alert(t('events.couldNotOpenLink'), t('events.checkConnection'))
     );
-  }, []);
+  }, [t]);
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>Events & Circles</Text>
+        <Text style={styles.title}>{t('events.title')}</Text>
       </View>
 
-      {/* Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity
           testID="tab-workshops"
@@ -84,7 +79,7 @@ export default function EventsScreen() {
             color={activeTab === 'workshops' ? Colors.safeBlue : Colors.textMuted}
           />
           <Text style={[styles.tabText, activeTab === 'workshops' && styles.tabTextActive]}>
-            Online Circles
+            {t('events.onlineCircles')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -98,7 +93,7 @@ export default function EventsScreen() {
             color={activeTab === 'meetups' ? Colors.safeBlue : Colors.textMuted}
           />
           <Text style={[styles.tabText, activeTab === 'meetups' && styles.tabTextActive]}>
-            Local Meetups
+            {t('events.localMeetups')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -108,12 +103,12 @@ export default function EventsScreen() {
           <TouchableOpacity
             style={styles.locationRow}
             onPress={() => setShowLocationPicker((value) => !value)}
-            accessibilityLabel="Choose meetup location"
+            accessibilityLabel={t('events.usingLocation')}
             testID="events-location-picker"
           >
             <Ionicons name="location-outline" size={16} color={Colors.safeBlue} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.locationLabel}>Using your location</Text>
+              <Text style={styles.locationLabel}>{t('events.usingLocation')}</Text>
               <Text style={styles.locationValue}>{selectedLocation}</Text>
             </View>
             <Ionicons
@@ -159,7 +154,9 @@ export default function EventsScreen() {
                   }}
                 >
                   <Ionicons name="navigate-outline" size={13} color={Colors.safeBlue} />
-                  <Text style={styles.locationResetBtnText}>Use detected location ({nearbyLocation})</Text>
+                  <Text style={styles.locationResetBtnText}>
+                    {t('events.useDetected', { location: nearbyLocation })}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -176,27 +173,26 @@ export default function EventsScreen() {
   );
 }
 
-// ── Workshops list ─────────────────────────────────────────────────────────────
-
 interface WorkshopsListProps {
   workshops: Workshop[];
   onOpenLink: (url: string) => void;
 }
 
 function WorkshopsList({ workshops, onOpenLink }: WorkshopsListProps) {
+  const { t } = useTranslation();
   if (workshops.length === 0) {
     return (
       <View style={styles.empty} testID="workshops-empty">
         <Ionicons name="calendar-outline" size={48} color={Colors.textMuted} />
-        <Text style={styles.emptyText}>No circles available yet.</Text>
-        <Text style={styles.emptyHint}>Check back soon!</Text>
+        <Text style={styles.emptyText}>{t('events.noCircles')}</Text>
+        <Text style={styles.emptyHint}>{t('events.checkBackSoon')}</Text>
       </View>
     );
   }
 
   return (
     <SectionList
-      sections={[{ title: 'Upcoming & Recurring', data: workshops }]}
+      sections={[{ title: t('events.upcomingRecurring'), data: workshops }]}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
       renderSectionHeader={({ section }) => (
@@ -215,6 +211,7 @@ interface WorkshopCardProps {
 }
 
 function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
+  const { t } = useTranslation();
   const color = FORMAT_COLORS[workshop.format];
 
   return (
@@ -222,11 +219,11 @@ function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
       <View style={styles.cardTopRow}>
         <View style={[styles.formatBadge, { backgroundColor: color + '18' }]}>
           <Ionicons name={FORMAT_ICONS[workshop.format]} size={12} color={color} />
-          <Text style={[styles.formatText, { color }]}>{FORMAT_LABELS[workshop.format]}</Text>
+          <Text style={[styles.formatText, { color }]}>{t(`events.formatLabels.${workshop.format}` as any)}</Text>
         </View>
         {workshop.free && (
           <View style={styles.freeBadge}>
-            <Text style={styles.freeText}>Free</Text>
+            <Text style={styles.freeText}>{t('events.free')}</Text>
           </View>
         )}
       </View>
@@ -252,22 +249,20 @@ function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
           style={styles.joinBtnLocked}
           onPress={() =>
             Alert.alert(
-              'Available under organizations',
-              'Joining circles will be available through your organization once the feature launches. Stay tuned!',
-              [{ text: 'Got it' }]
+              t('events.comingSoon'),
+              t('events.comingSoonBody'),
+              [{ text: t('events.gotIt') }]
             )
           }
-          accessibilityLabel={`Join ${workshop.title} — available under organizations`}
+          accessibilityLabel={workshop.title}
         >
           <Ionicons name="lock-closed" size={16} color={Colors.safetyYellow} />
-          <Text style={styles.joinBtnLockedText}>Join Circle</Text>
+          <Text style={styles.joinBtnLockedText}>{t('events.joinCircle')}</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
-
-// ── Meetups list ───────────────────────────────────────────────────────────────
 
 interface MeetupsListProps {
   meetups: LocalMeetup[];
@@ -276,21 +271,20 @@ interface MeetupsListProps {
 }
 
 function MeetupsList({ meetups, country, onOpenLink }: MeetupsListProps) {
+  const { t } = useTranslation();
   if (meetups.length === 0) {
     return (
       <View style={styles.empty} testID="meetups-empty">
         <Ionicons name="map-outline" size={48} color={Colors.textMuted} />
-        <Text style={styles.emptyText}>No meetups found near you.</Text>
-        <Text style={styles.emptyHint}>
-          Check back later or explore online circles above.
-        </Text>
+        <Text style={styles.emptyText}>{t('events.noMeetups')}</Text>
+        <Text style={styles.emptyHint}>{t('events.checkBackLater')}</Text>
       </View>
     );
   }
 
   return (
     <SectionList
-      sections={[{ title: `Near ${country}`, data: meetups }]}
+      sections={[{ title: t('events.nearLocation', { location: country }), data: meetups }]}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
       renderSectionHeader={({ section }) => (
@@ -309,6 +303,7 @@ interface MeetupCardProps {
 }
 
 function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.card} testID={`meetup-${meetup.id}`}>
       <View style={styles.metaRow}>
@@ -333,10 +328,10 @@ function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
           testID={`rsvp-${meetup.id}`}
           style={[styles.joinBtn, { backgroundColor: Colors.softGreen }]}
           onPress={() => onOpenLink(meetup.link!)}
-          accessibilityLabel={`RSVP to ${meetup.title}`}
+          accessibilityLabel={meetup.title}
         >
           <Ionicons name="calendar-outline" size={16} color={Colors.white} />
-          <Text style={styles.joinBtnText}>RSVP / View</Text>
+          <Text style={styles.joinBtnText}>{t('events.rsvpView')}</Text>
         </TouchableOpacity>
       )}
     </View>

@@ -11,11 +11,11 @@ import {
   LOCAL_RESOURCE_TYPES,
   LOCAL_RESOURCE_TYPE_COLORS,
   LOCAL_RESOURCE_TYPE_ICONS,
-  LOCAL_RESOURCE_TYPE_LABELS,
 } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   FlatList,
@@ -31,6 +31,7 @@ import {
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function LocalResourcesScreen() {
+  const { t } = useTranslation();
   const { nearbyState, profile } = useSession();
   const [selectedType, setSelectedType] = useState<LocalResourceType | undefined>(undefined);
   const [selectedState, setSelectedState] = useState<string>(nearbyState ?? profile?.country ?? 'Sweden');
@@ -49,44 +50,43 @@ export default function LocalResourcesScreen() {
       setLocationGranted(true);
       if (result.state) {
         setSelectedState(result.state);
-        Alert.alert('Location detected', `Showing resources in ${result.state}.`);
+        Alert.alert(t('localResources.locationDetected'), t('localResources.locationDetectedBody', { state: result.state }));
       } else {
-        Alert.alert('Location enabled', 'Could not detect your location. Browse the list to select it.');
+        Alert.alert(t('localResources.locationEnabled'), t('localResources.locationEnabledBody'));
       }
     } else {
       Alert.alert(
-        'Location not available',
-        'Location access was denied. You can still select your state manually.',
-        [{ text: 'OK' }]
+        t('localResources.locationDenied'),
+        t('localResources.locationDeniedBody'),
+        [{ text: t('common.ok') }]
       );
     }
-  }, []);
+  }, [t]);
 
   const openLink = useCallback((url: string) => {
     Linking.openURL(url).catch(() =>
-      Alert.alert('Could not open link', 'Please check your internet connection.')
+      Alert.alert(t('localResources.couldNotOpenLink'), t('localResources.checkConnection'))
     );
-  }, []);
+  }, [t]);
 
   const callPhone = useCallback((phone: string) => {
     Linking.openURL(`tel:${phone.replace(/\s/g, '')}`).catch(() =>
-      Alert.alert('Could not make call', phone)
+      Alert.alert(t('localResources.couldNotCall'), phone)
     );
-  }, []);
+  }, [t]);
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>Local Resources</Text>
+        <Text style={styles.title}>{t('localResources.title')}</Text>
         <TouchableOpacity
           testID="location-btn"
           onPress={handleRequestLocation}
           style={styles.locationBtn}
-          accessibilityLabel="Use my location"
+          accessibilityLabel={t('localResources.useMyLocation')}
         >
           <Ionicons
             name={locationGranted ? 'location' : 'location-outline'}
@@ -96,7 +96,6 @@ export default function LocalResourcesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Location picker */}
       <TouchableOpacity
         testID="state-picker"
         style={styles.stateRow}
@@ -137,7 +136,6 @@ export default function LocalResourcesScreen() {
         </View>
       )}
 
-      {/* Type filter chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -150,7 +148,7 @@ export default function LocalResourcesScreen() {
           style={[styles.chip, !selectedType && styles.chipActive]}
           onPress={() => setSelectedType(undefined)}
         >
-          <Text style={[styles.chipText, !selectedType && styles.chipTextActive]}>All</Text>
+          <Text style={[styles.chipText, !selectedType && styles.chipTextActive]}>{t('localResources.filterAll')}</Text>
         </TouchableOpacity>
         {LOCAL_RESOURCE_TYPES.map((type) => {
           const active = selectedType === type;
@@ -169,19 +167,18 @@ export default function LocalResourcesScreen() {
                 color={active ? Colors.white : color}
               />
               <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                {LOCAL_RESOURCE_TYPE_LABELS[type]}
+                {t(`localResources.resourceTypes.${type}` as any)}
               </Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      {/* Resource list */}
       {resources.length === 0 ? (
         <View style={styles.empty} testID="empty-state">
           <Ionicons name="search-outline" size={48} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>No resources found for this filter.</Text>
-          <Text style={styles.emptyHint}>Try a different country or type.</Text>
+          <Text style={styles.emptyText}>{t('localResources.emptyTitle')}</Text>
+          <Text style={styles.emptyHint}>{t('localResources.emptyHint')}</Text>
         </View>
       ) : (
         <FlatList
@@ -208,6 +205,7 @@ interface ResourceCardProps {
 }
 
 function ResourceCard({ resource, onOpenLink, onCall }: ResourceCardProps) {
+  const { t } = useTranslation();
   const color = LOCAL_RESOURCE_TYPE_COLORS[resource.type];
   const icon = LOCAL_RESOURCE_TYPE_ICONS[resource.type] as IoniconsName;
 
@@ -220,7 +218,7 @@ function ResourceCard({ resource, onOpenLink, onCall }: ResourceCardProps) {
         <View style={styles.cardMeta}>
           <View style={[styles.typeBadge, { backgroundColor: color + '18' }]}>
             <Text style={[styles.typeBadgeText, { color }]}>
-              {LOCAL_RESOURCE_TYPE_LABELS[resource.type]}
+              {t(`localResources.resourceTypes.${resource.type}` as any)}
             </Text>
           </View>
           {resource.city && (
@@ -238,10 +236,10 @@ function ResourceCard({ resource, onOpenLink, onCall }: ResourceCardProps) {
             testID={`website-${resource.id}`}
             style={[styles.actionBtn, { borderColor: color }]}
             onPress={() => onOpenLink(resource.website!)}
-            accessibilityLabel={`Visit ${resource.name} website`}
+            accessibilityLabel={t('emergency.visitName', { name: resource.name })}
           >
             <Ionicons name="globe-outline" size={14} color={color} />
-            <Text style={[styles.actionBtnText, { color }]}>Website</Text>
+            <Text style={[styles.actionBtnText, { color }]}>{t('localResources.websiteBtn')}</Text>
           </TouchableOpacity>
         )}
         {resource.phone && (
@@ -249,7 +247,7 @@ function ResourceCard({ resource, onOpenLink, onCall }: ResourceCardProps) {
             testID={`phone-${resource.id}`}
             style={[styles.actionBtn, { borderColor: Colors.softGreen }]}
             onPress={() => onCall(resource.phone!)}
-            accessibilityLabel={`Call ${resource.name}`}
+            accessibilityLabel={t('emergency.callName', { name: resource.name })}
           >
             <Ionicons name="call-outline" size={14} color={Colors.softGreen} />
             <Text style={[styles.actionBtnText, { color: Colors.softGreen }]}>

@@ -14,8 +14,10 @@ import { Spacing, Radius } from '@/constants/Spacing';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { supabase, isSupabaseConfigured } from '@/services/supabase';
+import { useTranslation } from 'react-i18next';
 
 export default function SignInScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +26,7 @@ export default function SignInScreen() {
   async function handleSignIn() {
     if (!supabase) return;
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError(t('signIn.emailPasswordRequired'));
       return;
     }
     setLoading(true);
@@ -38,11 +40,11 @@ export default function SignInScreen() {
   async function handleSignUp() {
     if (!supabase) return;
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError(t('signIn.emailPasswordRequired'));
       return;
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError(t('signIn.passwordTooShort'));
       return;
     }
     setLoading(true);
@@ -53,13 +55,11 @@ export default function SignInScreen() {
       setError(authError.message);
       return;
     }
-    // Supabase returns a session immediately if email confirmation is disabled.
-    // If session is null, the user needs to confirm their email first.
     if (!data.session) {
       Alert.alert(
-        'Check your email',
-        'We sent a confirmation link to ' + email.trim() + '. Open it and then sign in.',
-        [{ text: 'OK' }]
+        t('signIn.checkEmail'),
+        t('signIn.checkEmailBody', { email: email.trim() }),
+        [{ text: t('common.ok') }]
       );
       return;
     }
@@ -70,19 +70,17 @@ export default function SignInScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>
-          Sign in to access your journal, connections, and progress.
-        </Text>
+        <Text style={styles.title}>{t('signIn.title')}</Text>
+        <Text style={styles.subtitle}>{t('signIn.subtitle')}</Text>
 
         {!isSupabaseConfigured && (
           <View style={styles.configBanner}>
-            <Text style={styles.configTitle}>Supabase not configured</Text>
+            <Text style={styles.configTitle}>{t('signIn.supabaseNotConfigured')}</Text>
             <Text style={styles.configBody}>
-              Add your project credentials to <Text style={styles.configCode}>.env</Text> to enable sign-in:
+              {t('signIn.supabaseBody', { file: '.env' })}
             </Text>
             <Text style={styles.configCode}>
               EXPO_PUBLIC_SUPABASE_URL=https://…{'\n'}
@@ -93,8 +91,8 @@ export default function SignInScreen() {
 
         <View style={styles.form}>
           <Input
-            label="Email"
-            placeholder="your@email.com"
+            label={t('signIn.email')}
+            placeholder={t('signIn.emailPlaceholder')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -103,7 +101,7 @@ export default function SignInScreen() {
             editable={isSupabaseConfigured}
           />
           <Input
-            label="Password"
+            label={t('signIn.password')}
             placeholder="••••••••"
             value={password}
             onChangeText={setPassword}
@@ -115,14 +113,14 @@ export default function SignInScreen() {
         </View>
 
         <Button
-          label="Sign in"
+          label={t('signIn.signInBtn')}
           onPress={handleSignIn}
           loading={loading}
           disabled={!isSupabaseConfigured}
           style={styles.cta}
         />
         <Button
-          label="Create account"
+          label={t('signIn.createAccount')}
           onPress={handleSignUp}
           variant="secondary"
           disabled={!isSupabaseConfigured}
@@ -130,7 +128,7 @@ export default function SignInScreen() {
         />
 
         <TouchableOpacity onPress={() => router.push('/onboarding/step1')} style={styles.guestRow}>
-          <Text style={styles.guestLink}>Continue anonymously — no account needed</Text>
+          <Text style={styles.guestLink}>{t('signIn.continueAnonymously')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

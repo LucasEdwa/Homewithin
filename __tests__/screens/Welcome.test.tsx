@@ -57,7 +57,7 @@ describe('WelcomeScreen', () => {
 
   it('navigates to onboarding when Start anonymously is pressed', async () => {
     render(<WelcomeScreen />);
-    fireEvent.press(screen.getByLabelText('I agree to the Terms of Use and Privacy Policy'));
+    fireEvent.press(screen.getByLabelText('I am 18 or older and agree to the Terms of Use and Privacy Policy'));
     fireEvent.press(screen.getByText('Start anonymously'));
     await waitFor(() => {
       expect(router.push).toHaveBeenCalledWith('/onboarding/step1');
@@ -66,7 +66,7 @@ describe('WelcomeScreen', () => {
 
   it('navigates to sign-in when Sign in is pressed', async () => {
     render(<WelcomeScreen />);
-    fireEvent.press(screen.getByLabelText('I agree to the Terms of Use and Privacy Policy'));
+    fireEvent.press(screen.getByLabelText('I am 18 or older and agree to the Terms of Use and Privacy Policy'));
     fireEvent.press(screen.getByText('Sign in'));
     await waitFor(() => {
       expect(router.push).toHaveBeenCalledWith('/signin');

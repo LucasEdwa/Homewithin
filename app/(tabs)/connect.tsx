@@ -3,6 +3,7 @@ import { GuestBlock } from '@/components/social/GuestBlock';
 import { ConnectionsSection } from '@/components/social/ConnectionsSection';
 import { IncomingLikesSection } from '@/components/social/IncomingLikesSection';
 import { MatchCard } from '@/components/social/MatchCard';
+import { MatchCelebration } from '@/components/social/MatchCelebration';
 import { PendingSection } from '@/components/social/PendingSection';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
@@ -13,6 +14,7 @@ import { INTENTIONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -24,8 +26,15 @@ import {
 } from 'react-native';
 
 export default function ConnectScreen() {
+  const { t } = useTranslation();
   const { profile } = useSession();
   const [activeTab, setActiveTab] = useState<'connected' | 'pending'>('connected');
+
+  const intentions = INTENTIONS.map((item) => ({
+    ...item,
+    label: t(`intentions.${item.id}.label` as any),
+    description: t(`intentions.${item.id}.description` as any),
+  }));
   const {
     view,
     loading,
@@ -36,6 +45,8 @@ export default function ConnectScreen() {
     pendingOutgoing,
     incomingLikes,
     unreadByMatch,
+    celebrationMatch,
+    dismissCelebration,
     handleSelectIntention,
     handleConnect,
     handleAcceptLike,
@@ -62,13 +73,13 @@ export default function ConnectScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Connect</Text>
+        <Text style={styles.title}>{t('connect.title')}</Text>
 
         {view === 'intentions' && (
           <>
-            <Text style={styles.subtitle}>Who would help most today?</Text>
+            <Text style={styles.subtitle}>{t('connect.whoHelps')}</Text>
             <View style={styles.grid}>
-              {INTENTIONS.map((item) => (
+              {intentions.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={styles.intentionCard}
@@ -93,7 +104,7 @@ export default function ConnectScreen() {
             <TouchableOpacity
               onPress={handleBackToIntentions}
               style={styles.backBtn}
-              accessibilityLabel="Change intention"
+              accessibilityLabel={t('connect.changeIntention')}
             >
               <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
             </TouchableOpacity>
@@ -101,7 +112,7 @@ export default function ConnectScreen() {
               <View style={[styles.intentionBadge, { backgroundColor: intentionObj.color + '22' }]}>
                 <Ionicons name={intentionObj.icon as any} size={14} color={intentionObj.color} />
                 <Text style={[styles.intentionBadgeText, { color: intentionObj.color }]}>
-                  {intentionObj.label}
+                  {t(`intentions.${intentionObj.id}.label` as any)}
                 </Text>
               </View>
             )}
@@ -124,10 +135,10 @@ export default function ConnectScreen() {
         {view === 'empty' && !loading && (
           <View style={styles.emptyState}>
             <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>No more matches right now.</Text>
-            <Text style={styles.emptyText}>Check back later — new people join every day.</Text>
+            <Text style={styles.emptyTitle}>{t('connect.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('connect.emptyBody')}</Text>
             <TouchableOpacity onPress={handleBackToIntentions} style={styles.resetBtn}>
-              <Text style={styles.resetText}>Try a different intention</Text>
+              <Text style={styles.resetText}>{t('connect.tryDifferent')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -149,7 +160,7 @@ export default function ConnectScreen() {
                   color={activeTab === 'connected' ? Colors.safeBlue : Colors.textMuted}
                 />
                 <Text style={[styles.tabText, activeTab === 'connected' && styles.tabTextActive]}>
-                  Connected
+                  {t('connect.connected')}
                 </Text>
                 {myMatches.length > 0 && (
                   <View style={[styles.tabBadge, activeTab === 'connected' && styles.tabBadgeActive]}>
@@ -171,7 +182,7 @@ export default function ConnectScreen() {
                   color={activeTab === 'pending' ? Colors.safeBlue : Colors.textMuted}
                 />
                 <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
-                  Pending
+                  {t('connect.pending')}
                 </Text>
                 {pendingCount > 0 && (
                   <View style={[styles.tabBadge, activeTab === 'pending' && styles.tabBadgeActive]}>
@@ -191,8 +202,8 @@ export default function ConnectScreen() {
                   />
                 : <View style={styles.tabEmpty}>
                     <Ionicons name="people-outline" size={36} color={Colors.textMuted} />
-                    <Text style={styles.tabEmptyTitle}>No connections yet</Text>
-                    <Text style={styles.tabEmptyText}>Like someone to start a connection.</Text>
+                    <Text style={styles.tabEmptyTitle}>{t('connect.noConnections')}</Text>
+                    <Text style={styles.tabEmptyText}>{t('connect.noConnectionsBody')}</Text>
                   </View>
             )}
 
@@ -208,8 +219,8 @@ export default function ConnectScreen() {
                   </View>
                 : <View style={styles.tabEmpty}>
                     <Ionicons name="time-outline" size={36} color={Colors.textMuted} />
-                    <Text style={styles.tabEmptyTitle}>Nothing pending</Text>
-                    <Text style={styles.tabEmptyText}>Likes you send or receive will appear here.</Text>
+                    <Text style={styles.tabEmptyTitle}>{t('connect.nothingPending')}</Text>
+                    <Text style={styles.tabEmptyText}>{t('connect.nothingPendingBody')}</Text>
                   </View>
             )}
           </View>
@@ -226,22 +237,25 @@ export default function ConnectScreen() {
             <Ionicons name="people" size={22} color={Colors.mutedLavender} />
           </View>
           <View style={styles.circlesEntryText}>
-            <Text style={styles.circlesEntryTitle}>Support circles</Text>
-            <Text style={styles.circlesEntrySub}>
-              Small groups of 4–8 people. Safer than public feeds.
-            </Text>
+            <Text style={styles.circlesEntryTitle}>{t('connect.supportCircles')}</Text>
+            <Text style={styles.circlesEntrySub}>{t('connect.supportCirclesSub')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
         </TouchableOpacity>
 
         <Card style={styles.safetyNote}>
           <Ionicons name="shield-checkmark-outline" size={18} color={Colors.softGreen} />
-          <Text style={styles.safetyText}>
-            All connections are anonymous. You can block or report anyone at any time.
-          </Text>
+          <Text style={styles.safetyText}>{t('connect.safetyNote')}</Text>
         </Card>
       </ScrollView>
       <EmergencyButton />
+      {celebrationMatch && (
+        <MatchCelebration
+          peer={celebrationMatch.peer}
+          matchId={celebrationMatch.matchId}
+          onClose={dismissCelebration}
+        />
+      )}
     </SafeAreaView>
   );
 }

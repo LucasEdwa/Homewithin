@@ -10,19 +10,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export function ProfileDangerZone() {
+  const { t } = useTranslation();
   const { profile, reset, unlock } = useSession();
   const [deleting, setDeleting] = useState(false);
 
   function handleSignOut() {
     Alert.alert(
-      'Sign out?',
-      "You'll need to sign in again to access your account.",
+      t('profile.danger.signOutTitle'),
+      t('profile.danger.signOutBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Sign out',
+          text: t('profile.danger.signOutBtn'),
           style: 'destructive',
           onPress: async () => {
             await signOut().catch(() => {});
@@ -39,12 +41,12 @@ export function ProfileDangerZone() {
   function handleDeleteAccount() {
     if (deleting) return;
     Alert.alert(
-      'Delete account & all data?',
-      'This permanently removes your profile, matches, messages, journal entries, check-ins, safety plan, bookmarks, PIN and disguise settings. This cannot be undone.',
+      t('profile.danger.deleteAccountTitle'),
+      t('profile.danger.deleteAccountBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete everything',
+          text: t('profile.danger.deleteEverything'),
           style: 'destructive',
           onPress: async () => {
             setDeleting(true);
@@ -52,15 +54,15 @@ export function ProfileDangerZone() {
               const result = await deleteAccount();
               if (!result.authRowDeleted && result.errors.length > 0) {
                 Alert.alert(
-                  'Could not delete account',
-                  result.errors.join('\n') + '\n\nYour local data was cleared. Contact support if the account persists.',
-                  [{ text: 'OK', onPress: () => { reset(); router.replace('/welcome'); } }],
+                  t('profile.danger.couldNotDelete'),
+                  result.errors.join('\n') + '\n\n' + t('profile.danger.couldNotDeleteBody'),
+                  [{ text: t('common.ok'), onPress: () => { reset(); router.replace('/welcome'); } }],
                 );
                 setDeleting(false);
                 return;
               }
             } catch (e: any) {
-              Alert.alert('Delete failed', e?.message ?? 'Something went wrong. Please try again.');
+              Alert.alert(t('profile.danger.deleteFailed'), e?.message ?? 'Something went wrong. Please try again.');
               reset();
               setDeleting(false);
               router.replace('/welcome');
@@ -77,12 +79,12 @@ export function ProfileDangerZone() {
   function handleDeleteGuestData() {
     if (deleting) return;
     Alert.alert(
-      'Delete my data & leave?',
-      'This will permanently delete everything tied to this guest session — your profile, matches, journal entries, check-ins, and settings.\n\nThis cannot be undone.',
+      t('profile.danger.deleteGuestTitle'),
+      t('profile.danger.deleteGuestBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete everything',
+          text: t('profile.danger.deleteEverything'),
           style: 'destructive',
           onPress: async () => {
             setDeleting(true);
@@ -101,19 +103,17 @@ export function ProfileDangerZone() {
       <>
         <View style={styles.guestWarning}>
           <Ionicons name="warning-outline" size={18} color="#92610A" style={{ marginTop: 1 }} />
-          <Text style={styles.guestWarningText}>
-            You're in guest mode. Your data exists only in this session — leaving or deleting permanently removes everything.
-          </Text>
+          <Text style={styles.guestWarningText}>{t('profile.danger.guestWarning')}</Text>
         </View>
         <View style={styles.danger}>
           <Button
-            label={deleting ? 'Deleting…' : 'Delete my data & leave'}
+            label={deleting ? t('profile.danger.deleting') : t('profile.danger.deleteGuestBtn')}
             variant="danger"
             onPress={handleDeleteGuestData}
             loading={deleting}
             disabled={deleting}
           />
-          <Text style={styles.dangerHint}>Permanently deletes your profile, matches, journal, and all session data.</Text>
+          <Text style={styles.dangerHint}>{t('profile.danger.deleteGuestHint')}</Text>
         </View>
       </>
     );
@@ -121,28 +121,27 @@ export function ProfileDangerZone() {
 
   return (
     <>
-      <Button label="Sign out" variant="secondary" onPress={handleSignOut} />
+      <Button label={t('profile.danger.signOutBtn')} variant="secondary" onPress={handleSignOut} />
       <View style={styles.danger}>
         <Button
-          label={deleting ? 'Deleting…' : 'Delete account & all data'}
+          label={deleting ? t('profile.danger.deleting') : t('profile.danger.deleteAccountBtn')}
           variant="danger"
           onPress={handleDeleteAccount}
           loading={deleting}
           disabled={deleting}
         />
-        <Text style={styles.dangerHint}>This will permanently wipe all your data and sign you out.</Text>
+        <Text style={styles.dangerHint}>{t('profile.danger.deleteAccountHint')}</Text>
       </View>
     </>
   );
 }
 
 export function ProfilePrivacyNote() {
+  const { t } = useTranslation();
   return (
     <Card style={styles.privacyNote}>
-      <Text style={styles.privacyTitle}>You control your visibility.</Text>
-      <Text style={styles.privacyText}>
-        HomeWithin stores as little data as possible. Your journal and safety plan live only on your device unless you choose to back them up. You can leave or delete everything at any time.
-      </Text>
+      <Text style={styles.privacyTitle}>{t('profile.privacyNote.title')}</Text>
+      <Text style={styles.privacyText}>{t('profile.privacyNote.body')}</Text>
     </Card>
   );
 }

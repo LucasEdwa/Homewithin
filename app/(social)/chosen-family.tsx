@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/Colors';
@@ -38,6 +39,7 @@ type EditState = {
 };
 
 export default function ChosenFamilyScreen() {
+  const { t } = useTranslation();
   const [people, setPeople] = useState<SupportPerson[]>([]);
   const [acceptedMatches, setAcceptedMatches] = useState<Match[]>([]);
   const [joinedCircles, setJoinedCircles] = useState<Circle[]>([]);
@@ -81,7 +83,7 @@ export default function ChosenFamilyScreen() {
   }
 
   function selectMatch(match: Match) {
-    setNickname(match.peer?.nickname ?? 'App user');
+    setNickname(match.peer?.nickname ?? t('common.anonymous'));
     setSelectedMatchId(match.id);
     setSelectedMatchUserId(match.peer?.userId ?? null);
     setSelectedCircleId(null);
@@ -106,7 +108,7 @@ export default function ChosenFamilyScreen() {
   async function handleSave() {
     if (!editState) return;
     if (!nickname.trim()) {
-      Alert.alert('Name required', 'Please enter a nickname for this person.');
+      Alert.alert(t('chosenFamily.nameRequired'), t('chosenFamily.nameRequiredBody'));
       return;
     }
     setSaving(true);
@@ -137,20 +139,20 @@ export default function ChosenFamilyScreen() {
 
     if (wasFirst && updated.length === 1) {
       Alert.alert(
-        'Your first trusted person',
-        `You've added ${nickname.trim()} to your chosen family. You deserve people who show up for you.`
+        t('chosenFamily.firstPersonTitle'),
+        t('chosenFamily.firstPersonBody', { name: nickname.trim() })
       );
     }
   }
 
   async function handleRemove(person: SupportPerson) {
     Alert.alert(
-      'Remove from your family?',
-      `This will remove ${person.nickname} from your support map.`,
+      t('chosenFamily.removeTitle'),
+      t('chosenFamily.removeBody', { name: person.nickname }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          text: t('chosenFamily.remove'),
           style: 'destructive',
           onPress: async () => {
             await removeSupportPerson(person.id);
@@ -170,7 +172,7 @@ export default function ChosenFamilyScreen() {
     if (ok) {
       Linking.openURL(url);
     } else {
-      Alert.alert('Cannot open', 'Unable to open this contact method on your device.');
+      Alert.alert(t('chosenFamily.cannotOpen'), t('chosenFamily.cannotOpenBody'));
     }
   }
 
@@ -187,32 +189,32 @@ export default function ChosenFamilyScreen() {
   const filledCount = people.length;
   const nextSuggestion = getNextSuggestedRole(people);
 
+  const roleLabel = (roleId: string) => t(`chosenFamily.roles.${roleId}.label` as any);
+  const roleDescription = (roleId: string) => t(`chosenFamily.roles.${roleId}.description` as any);
+
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Nav */}
       <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Go back">
+        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel={t('common.back')}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Chosen Family</Text>
+        <Text style={styles.navTitle}>{t('chosenFamily.title')}</Text>
         <View style={styles.navBtn} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Hub — You */}
         <View style={styles.hub}>
           <View style={styles.youOrb}>
             <Ionicons name="person" size={28} color={Colors.safeBlue} />
           </View>
-          <Text style={styles.youLabel}>You</Text>
+          <Text style={styles.youLabel}>{t('chosenFamily.you')}</Text>
           <Text style={styles.hubSub}>
             {filledCount === 0
-              ? 'Start building your support network'
-              : `${filledCount} of ${SUPPORT_ROLES.length} roles filled`}
+              ? t('chosenFamily.startBuilding')
+              : t('chosenFamily.rolesFilled', { count: filledCount, total: SUPPORT_ROLES.length })}
           </Text>
         </View>
 
-        {/* Progress bar */}
         <View style={styles.progressTrack}>
           <View
             style={[
@@ -222,28 +224,29 @@ export default function ChosenFamilyScreen() {
           />
         </View>
 
-        {/* Next step suggestion */}
         {nextSuggestion && (
           <Card style={[styles.suggestion, { borderLeftColor: nextSuggestion.color }]}>
             <Ionicons name="bulb-outline" size={16} color={nextSuggestion.color} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.suggestionTitle}>Next step</Text>
+              <Text style={styles.suggestionTitle}>{t('chosenFamily.nextStep')}</Text>
               <Text style={styles.suggestionBody}>
-                Add a <Text style={{ fontWeight: '700', color: nextSuggestion.color }}>{nextSuggestion.label}</Text> — {nextSuggestion.description.toLowerCase()}.
+                {t('chosenFamily.nextStepBody', {
+                  role: roleLabel(nextSuggestion.id),
+                  description: roleDescription(nextSuggestion.id).toLowerCase(),
+                })}
               </Text>
             </View>
             <TouchableOpacity
               onPress={() => openAdd(nextSuggestion, null)}
               style={[styles.suggestionBtn, { backgroundColor: nextSuggestion.color }]}
-              accessibilityLabel={`Add ${nextSuggestion.label}`}
+              accessibilityLabel={t('chosenFamily.addBtn')}
               testID="suggestion-add-btn"
             >
-              <Text style={styles.suggestionBtnText}>Add</Text>
+              <Text style={styles.suggestionBtnText}>{t('chosenFamily.addBtn')}</Text>
             </TouchableOpacity>
           </Card>
         )}
 
-        {/* Role cards */}
         {SUPPORT_ROLES.map((roleMeta) => {
           const person = people.find((p) => p.role === roleMeta.id) ?? null;
           return (
@@ -262,7 +265,6 @@ export default function ChosenFamilyScreen() {
         })}
       </ScrollView>
 
-      {/* Add / Edit modal */}
       <Modal visible={editState !== null} transparent animationType="slide">
         <KeyboardAvoidingView
           style={styles.modalWrap}
@@ -276,20 +278,21 @@ export default function ChosenFamilyScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.modalTitle}>
-                  {editState?.existing ? `Edit ${editState.role.label}` : `Add ${editState?.role.label}`}
+                  {editState?.existing
+                    ? t('chosenFamily.editRole', { role: roleLabel(editState.role.id) })
+                    : t('chosenFamily.addRole', { role: roleLabel(editState?.role.id ?? '') })}
                 </Text>
-                <Text style={styles.modalSub}>{editState?.role.description}</Text>
+                <Text style={styles.modalSub}>{roleDescription(editState?.role.id ?? '')}</Text>
               </View>
-              <TouchableOpacity onPress={closeModal} accessibilityLabel="Close">
+              <TouchableOpacity onPress={closeModal} accessibilityLabel={t('common.cancel')}>
                 <Ionicons name="close" size={22} color={Colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.fields}>
-              {/* Circles picker — only for community_group role when adding */}
               {!editState?.existing && editState?.role.id === 'community_group' && joinedCircles.length > 0 && (
                 <View>
-                  <Text style={styles.fieldLabel}>From your circles</Text>
+                  <Text style={styles.fieldLabel}>{t('chosenFamily.fromCircles')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.matchScroll}>
                     {joinedCircles.map((circle) => {
                       const isSelected = selectedCircleId === circle.id;
@@ -298,7 +301,7 @@ export default function ChosenFamilyScreen() {
                           key={circle.id}
                           style={[styles.matchChip, isSelected && styles.matchChipSelected]}
                           onPress={() => isSelected ? clearCircleSelection() : selectCircle(circle)}
-                          accessibilityLabel={`Select ${circle.name}`}
+                          accessibilityLabel={circle.name}
                           testID={`circle-chip-${circle.id}`}
                         >
                           <View style={styles.matchChipAvatar}>
@@ -306,7 +309,11 @@ export default function ChosenFamilyScreen() {
                           </View>
                           <View>
                             <Text style={[styles.matchChipName, isSelected && styles.matchChipNameSelected]}>{circle.name}</Text>
-                            <Text style={styles.matchChipSub}>{circle.memberCount} member{circle.memberCount !== 1 ? 's' : ''}</Text>
+                            <Text style={styles.matchChipSub}>
+                              {circle.memberCount === 1
+                                ? t('chosenFamily.members', { count: circle.memberCount })
+                                : t('chosenFamily.members_plural', { count: circle.memberCount })}
+                            </Text>
                           </View>
                           {isSelected && <Ionicons name="checkmark-circle" size={16} color={Colors.safeBlue} />}
                         </TouchableOpacity>
@@ -315,27 +322,26 @@ export default function ChosenFamilyScreen() {
                   </ScrollView>
                   <View style={styles.orDivider}>
                     <View style={styles.orLine} />
-                    <Text style={styles.orText}>or enter manually</Text>
+                    <Text style={styles.orText}>{t('chosenFamily.orManually')}</Text>
                     <View style={styles.orLine} />
                   </View>
                 </View>
               )}
 
-              {/* Matches picker — only shown when adding a non-community_group person */}
               {!editState?.existing && editState?.role.id !== 'community_group' && acceptedMatches.length > 0 && (
                 <View>
-                  <Text style={styles.fieldLabel}>From your support matches</Text>
+                  <Text style={styles.fieldLabel}>{t('chosenFamily.fromMatches')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.matchScroll}>
                     {acceptedMatches.map((match) => {
                       const isSelected = selectedMatchId === match.id;
-                      const peerNick = match.peer?.nickname ?? 'App user';
+                      const peerNick = match.peer?.nickname ?? t('common.anonymous');
                       const peerCountry = match.peer?.country;
                       return (
                         <TouchableOpacity
                           key={match.id}
                           style={[styles.matchChip, isSelected && styles.matchChipSelected]}
                           onPress={() => isSelected ? clearMatchSelection() : selectMatch(match)}
-                          accessibilityLabel={`Select ${peerNick}`}
+                          accessibilityLabel={peerNick}
                           testID={`match-chip-${match.id}`}
                         >
                           <View style={styles.matchChipAvatar}>
@@ -352,29 +358,31 @@ export default function ChosenFamilyScreen() {
                   </ScrollView>
                   <View style={styles.orDivider}>
                     <View style={styles.orLine} />
-                    <Text style={styles.orText}>or add manually</Text>
+                    <Text style={styles.orText}>{t('chosenFamily.orAddManually')}</Text>
                     <View style={styles.orLine} />
                   </View>
                 </View>
               )}
 
-              <Text style={styles.fieldLabel}>Nickname *</Text>
+              <Text style={styles.fieldLabel}>{t('chosenFamily.nicknameStar')}</Text>
               <TextInput
                 style={styles.fieldInput}
                 value={nickname}
                 onChangeText={(v) => { setNickname(v); if (selectedMatchId) clearMatchSelection(); }}
-                placeholder="What do you call them?"
+                placeholder={t('chosenFamily.nicknamePlaceholder')}
                 placeholderTextColor={Colors.textMuted}
                 autoFocus={acceptedMatches.length === 0 || !!editState?.existing}
                 maxLength={40}
-                accessibilityLabel="Nickname"
+                accessibilityLabel={t('chosenFamily.nicknameStar')}
                 testID="cf-nickname-input"
               />
 
               {editState?.role.contactType !== 'none' && (
                 <>
                   <Text style={styles.fieldLabel}>
-                    {editState?.role.contactType === 'phone' ? 'Phone number' : 'Phone / SMS'} (optional)
+                    {editState?.role.contactType === 'phone'
+                      ? t('chosenFamily.phoneLabel')
+                      : t('chosenFamily.phoneOrSms')}
                   </Text>
                   <TextInput
                     style={styles.fieldInput}
@@ -384,29 +392,29 @@ export default function ChosenFamilyScreen() {
                     placeholderTextColor={Colors.textMuted}
                     keyboardType="phone-pad"
                     maxLength={20}
-                    accessibilityLabel="Contact info"
+                    accessibilityLabel={t('chosenFamily.phoneOrSms')}
                     testID="cf-contact-input"
                   />
                 </>
               )}
 
-              <Text style={styles.fieldLabel}>Notes (optional)</Text>
+              <Text style={styles.fieldLabel}>{t('chosenFamily.notes')}</Text>
               <TextInput
                 style={[styles.fieldInput, styles.notesInput]}
                 value={notes}
                 onChangeText={setNotes}
-                placeholder="Anything to remember about them…"
+                placeholder={t('chosenFamily.notesSplaceholder')}
                 placeholderTextColor={Colors.textMuted}
                 multiline
                 maxLength={200}
                 textAlignVertical="top"
-                accessibilityLabel="Notes"
+                accessibilityLabel={t('chosenFamily.notes')}
                 testID="cf-notes-input"
               />
             </View>
 
             <Button
-              label={editState?.existing ? 'Save changes' : 'Add to my family'}
+              label={editState?.existing ? t('chosenFamily.saveChanges') : t('chosenFamily.addToFamily')}
               onPress={handleSave}
               loading={saving}
               testID="cf-save-btn"
@@ -439,15 +447,18 @@ function RoleCard({
   onChat: () => void;
   onOpenCircle: () => void;
 }) {
+  const { t } = useTranslation();
   const filled = person !== null;
   const isAppUser = filled && !!person!.matchId;
   const isLinkedCircle = filled && !!person!.circleId;
+  const label = t(`chosenFamily.roles.${roleMeta.id}.label` as any);
+  const description = t(`chosenFamily.roles.${roleMeta.id}.description` as any);
 
   return (
     <TouchableOpacity
       onPress={filled ? onEdit : onAdd}
       activeOpacity={0.8}
-      accessibilityLabel={filled ? `Edit ${roleMeta.label}: ${person?.nickname}` : `Add ${roleMeta.label}`}
+      accessibilityLabel={filled ? `${label}: ${person?.nickname}` : label}
       testID={`role-card-${roleMeta.id}`}
     >
       <View style={[styles.roleCard, filled ? styles.roleCardFilled : styles.roleCardEmpty, { borderLeftColor: roleMeta.color }]}>
@@ -457,18 +468,18 @@ function RoleCard({
 
         <View style={styles.roleBody}>
           <View style={styles.roleLabelRow}>
-            <Text style={styles.roleLabel}>{roleMeta.label}</Text>
+            <Text style={styles.roleLabel}>{label}</Text>
             {isAppUser && (
               <View style={styles.appUserBadge}>
                 <Ionicons name="people-outline" size={10} color={Colors.safeBlue} />
-                <Text style={styles.appUserBadgeText}>App</Text>
+                <Text style={styles.appUserBadgeText}>{t('chosenFamily.appBadge')}</Text>
               </View>
             )}
           </View>
           {filled ? (
             <Text style={styles.roleName}>{person!.nickname}</Text>
           ) : (
-            <Text style={styles.roleEmpty}>{roleMeta.description}</Text>
+            <Text style={styles.roleEmpty}>{description}</Text>
           )}
           {filled && person!.notes ? (
             <Text style={styles.roleNotes} numberOfLines={1}>{person!.notes}</Text>
@@ -480,7 +491,7 @@ function RoleCard({
             <TouchableOpacity
               onPress={(e) => { e.stopPropagation?.(); onOpenCircle(); }}
               style={[styles.contactBtn, { backgroundColor: Colors.mutedLavender + '22' }]}
-              accessibilityLabel={`Open ${person?.nickname} circle`}
+              accessibilityLabel={person?.nickname}
               testID={`circle-btn-${roleMeta.id}`}
             >
               <Ionicons name="people-outline" size={16} color={Colors.mutedLavender} />
@@ -489,7 +500,7 @@ function RoleCard({
             <TouchableOpacity
               onPress={(e) => { e.stopPropagation?.(); onChat(); }}
               style={[styles.contactBtn, { backgroundColor: Colors.safeBlue + '18' }]}
-              accessibilityLabel={`Chat with ${person?.nickname}`}
+              accessibilityLabel={person?.nickname}
               testID={`chat-btn-${roleMeta.id}`}
             >
               <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.safeBlue} />
@@ -498,7 +509,7 @@ function RoleCard({
             <TouchableOpacity
               onPress={(e) => { e.stopPropagation?.(); onContact(); }}
               style={[styles.contactBtn, { backgroundColor: roleMeta.color + '18' }]}
-              accessibilityLabel={`Contact ${person?.nickname}`}
+              accessibilityLabel={person?.nickname}
               testID={`contact-btn-${roleMeta.id}`}
             >
               <Ionicons
@@ -512,7 +523,7 @@ function RoleCard({
             <TouchableOpacity
               onPress={(e) => { e.stopPropagation?.(); onRemove(); }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel={`Remove ${person?.nickname}`}
+              accessibilityLabel={t('chosenFamily.remove')}
               testID={`remove-btn-${roleMeta.id}`}
             >
               <Ionicons name="trash-outline" size={16} color={Colors.textMuted} />
@@ -520,7 +531,7 @@ function RoleCard({
           ) : (
             <View style={[styles.addChip, { borderColor: roleMeta.color }]}>
               <Ionicons name="add" size={14} color={roleMeta.color} />
-              <Text style={[styles.addChipText, { color: roleMeta.color }]}>Add</Text>
+              <Text style={[styles.addChipText, { color: roleMeta.color }]}>{t('chosenFamily.addBtn')}</Text>
             </View>
           )}
         </View>
@@ -641,7 +652,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
   },
   appUserBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.safeBlue, textTransform: 'uppercase' },
-  // Matches picker
   matchScroll: { marginBottom: Spacing.xs },
   matchChip: {
     flexDirection: 'row',
@@ -674,7 +684,6 @@ const styles = StyleSheet.create({
   orDivider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginVertical: Spacing.sm },
   orLine: { flex: 1, height: 1, backgroundColor: Colors.border },
   orText: { fontSize: 11, color: Colors.textMuted, fontWeight: '500' },
-  // Modal
   modalWrap: {
     flex: 1,
     justifyContent: 'flex-end',

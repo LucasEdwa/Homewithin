@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Animated,
@@ -23,11 +24,11 @@ import {
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-const PILLARS: { icon: IoniconsName; label: string; color: string }[] = [
-  { icon: 'shield-checkmark-outline', label: 'Safety',     color: Colors.safeBlue },
-  { icon: 'leaf-outline',             label: 'Healing',    color: Colors.softGreen },
-  { icon: 'people-outline',           label: 'Connection', color: Colors.mutedLavender },
-  { icon: 'star-outline',             label: 'Growth',     color: Colors.safetyYellow },
+const PILLAR_META: { icon: IoniconsName; key: string; color: string }[] = [
+  { icon: 'shield-checkmark-outline', key: 'safety',     color: Colors.safeBlue },
+  { icon: 'leaf-outline',             key: 'healing',    color: Colors.softGreen },
+  { icon: 'people-outline',           key: 'connection', color: Colors.mutedLavender },
+  { icon: 'star-outline',             key: 'growth',     color: Colors.safetyYellow },
 ];
 
 const RING_COUNT = 3;
@@ -37,6 +38,7 @@ const RING_DURATION = 2200;
 const GUEST_NAMES = ['Sage', 'River', 'Quinn', 'Wren', 'Sky', 'Ash', 'Reed', 'Nova', 'Fern', 'Bay'];
 
 export default function WelcomeScreen() {
+  const { t } = useTranslation();
   const { setProfile, completeOnboarding } = useSession();
   const [guestLoading, setGuestLoading] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
@@ -135,17 +137,17 @@ export default function WelcomeScreen() {
               contentFit="contain"
             />
           </View>
-          <Text style={styles.tagline}>A safe space for LGBTQ+ people{"\n"}— when home isn't always safe.</Text>
+          <Text style={styles.tagline}>{t('welcome.tagline')}</Text>
         </View>
 
         {/* Pillars */}
         <View style={styles.pillars}>
-          {PILLARS.map((p) => (
-            <View key={p.label} style={styles.pillar}>
+          {PILLAR_META.map((p) => (
+            <View key={p.key} style={styles.pillar}>
               <View style={[styles.pillarIconBg, { backgroundColor: p.color + '20' }]}>
                 <Ionicons name={p.icon} size={22} color={p.color} />
               </View>
-              <Text style={styles.pillarLabel}>{p.label}</Text>
+              <Text style={styles.pillarLabel}>{t(`welcome.pillars.${p.key}` as any)}</Text>
             </View>
           ))}
         </View>
@@ -153,14 +155,14 @@ export default function WelcomeScreen() {
         {/* CTAs */}
         <View style={styles.ctas}>
           <Button
-            label="Start anonymously"
+            label={t('welcome.startAnonymously')}
             onPress={handleStartAnonymously}
             variant="primary"
             style={styles.ctaBtn}
             disabled={!termsAgreed}
           />
           <Button
-            label="Sign in"
+            label={t('welcome.signIn')}
             onPress={() => router.push('/signin')}
             variant="secondary"
             style={styles.ctaBtn}
@@ -168,12 +170,12 @@ export default function WelcomeScreen() {
           />
           <TouchableOpacity
             onPress={handleContinueAsGuest}
-            accessibilityLabel="Continue as guest"
+            accessibilityLabel={t('welcome.continueAsGuest')}
             disabled={guestLoading || !termsAgreed}
           >
             {guestLoading
               ? <ActivityIndicator size="small" color={Colors.textMuted} />
-              : <Text style={[styles.guestLink, !termsAgreed && styles.guestLinkDisabled]}>Continue as guest — no account needed</Text>
+              : <Text style={[styles.guestLink, !termsAgreed && styles.guestLinkDisabled]}>{t('welcome.continueAsGuest')}</Text>
             }
           </TouchableOpacity>
           <TouchableOpacity
@@ -182,16 +184,17 @@ export default function WelcomeScreen() {
             activeOpacity={0.7}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: termsAgreed }}
-            accessibilityLabel="I agree to the Terms of Use and Privacy Policy"
+            accessibilityLabel={t('welcome.agreePrefix') + t('welcome.termsOfUse') + t('welcome.and') + t('welcome.privacyPolicy')}
           >
             <View style={[styles.checkbox, termsAgreed && styles.checkboxChecked]}>
               {termsAgreed && <Ionicons name="checkmark" size={14} color={Colors.white} />}
             </View>
             <Text style={styles.checkboxLabel}>
-              I am 18 or older and agree to the{' '}
-              <Text style={styles.legalLink} onPress={() => router.push('/terms')}>Terms of Use</Text>
-              {' '}and{' '}
-              <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>Privacy Policy</Text>.
+              {t('welcome.agreePrefix')}
+              <Text style={styles.legalLink} onPress={() => router.push('/terms')}>{t('welcome.termsOfUse')}</Text>
+              {t('welcome.and')}
+              <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>{t('welcome.privacyPolicy')}</Text>
+              {t('welcome.agreeSuffix')}
             </Text>
           </TouchableOpacity>
         </View>

@@ -4,6 +4,7 @@ import type { Match } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PeerAvatar } from './PeerAvatar';
 
@@ -28,10 +29,11 @@ function formatLastMessageTime(isoString: string): string {
 }
 
 export function ConnectionsSection({ matches, unreadByMatch, onUnmatch }: Props) {
+  const { t } = useTranslation();
   if (matches.length === 0) return null;
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>Connections</Text>
+      <Text style={styles.title}>{t('social.connections')}</Text>
       {matches.map((match) => {
         const unread = unreadByMatch[match.id] ?? 0;
         const lastMsg = match.lastMessage;
@@ -67,7 +69,7 @@ export function ConnectionsSection({ matches, unreadByMatch, onUnmatch }: Props)
                     {lastMsg.body}
                   </Text>
                 ) : (
-                  <Text style={styles.preview}>Tap to say hello</Text>
+                  <Text style={styles.preview}>{t('social.tapToSayHello')}</Text>
                 )}
               </View>
               {unread > 0 ? (
@@ -79,7 +81,7 @@ export function ConnectionsSection({ matches, unreadByMatch, onUnmatch }: Props)
             <TouchableOpacity
               style={styles.unmatchBtn}
               onPress={() => onUnmatch(match)}
-              accessibilityLabel="Unmatch"
+              accessibilityLabel={t('social.unmatch')}
               testID={`unmatch-${match.id}`}
             >
               <Ionicons name="close" size={16} color={Colors.textMuted} />

@@ -72,7 +72,7 @@ describe('JournalEntryScreen — list mode', () => {
   it('shows emotion tag chips on list entries', async () => {
     mockGetEntries.mockResolvedValue([sampleEntry]);
     render(<JournalEntryScreen />);
-    await waitFor(() => expect(screen.getByText('hope')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Hope')).toBeTruthy());
   });
 
   it('shows lock icon text for hidden entries', async () => {
@@ -86,8 +86,8 @@ describe('JournalEntryScreen — list mode', () => {
   it('calls exportJournalAsText and Share when export pressed', async () => {
     const shareSpy = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
     render(<JournalEntryScreen />);
-    await waitFor(() => screen.getByLabelText('Export journal'));
-    fireEvent.press(screen.getByLabelText('Export journal'));
+    await waitFor(() => screen.getByLabelText('My Journal'));
+    fireEvent.press(screen.getByLabelText('My Journal'));
     await waitFor(() => expect(mockExport).toHaveBeenCalled());
     expect(shareSpy).toHaveBeenCalledWith({ message: 'My exported journal', title: 'My Journal' });
     shareSpy.mockRestore();
@@ -97,8 +97,8 @@ describe('JournalEntryScreen — list mode', () => {
     mockGetEntries.mockResolvedValue([sampleEntry]);
     const alertSpy = jest.spyOn(Alert, 'alert');
     render(<JournalEntryScreen />);
-    await waitFor(() => screen.getByLabelText('Delete entry'));
-    fireEvent.press(screen.getByLabelText('Delete entry'));
+    await waitFor(() => screen.getByLabelText('Delete entry?'));
+    fireEvent.press(screen.getByLabelText('Delete entry?'));
     expect(alertSpy).toHaveBeenCalledWith('Delete entry?', expect.any(String), expect.any(Array));
   });
 
@@ -109,8 +109,8 @@ describe('JournalEntryScreen — list mode', () => {
       deleteBtn?.onPress?.();
     });
     render(<JournalEntryScreen />);
-    await waitFor(() => screen.getByLabelText('Delete entry'));
-    fireEvent.press(screen.getByLabelText('Delete entry'));
+    await waitFor(() => screen.getByLabelText('Delete entry?'));
+    fireEvent.press(screen.getByLabelText('Delete entry?'));
     await waitFor(() => expect(mockDeleteEntry).toHaveBeenCalledWith('je-1'));
   });
 });
@@ -132,18 +132,18 @@ describe('JournalEntryScreen — write mode', () => {
   it('renders all five emotion tags', async () => {
     await openWriteMode();
     await waitFor(() => {
-      expect(screen.getByText('fear')).toBeTruthy();
-      expect(screen.getByText('shame')).toBeTruthy();
-      expect(screen.getByText('hope')).toBeTruthy();
-      expect(screen.getByText('anger')).toBeTruthy();
-      expect(screen.getByText('relief')).toBeTruthy();
+      expect(screen.getByText('Fear')).toBeTruthy();
+      expect(screen.getByText('Shame')).toBeTruthy();
+      expect(screen.getByText('Hope')).toBeTruthy();
+      expect(screen.getByText('Anger')).toBeTruthy();
+      expect(screen.getByText('Relief')).toBeTruthy();
     });
   });
 
   it('renders the body text input', async () => {
     await openWriteMode();
     await waitFor(() =>
-      expect(screen.getByLabelText('Journal entry body')).toBeTruthy()
+      expect(screen.getByLabelText('Journal')).toBeTruthy()
     );
   });
 
@@ -163,12 +163,12 @@ describe('JournalEntryScreen — write mode', () => {
 
   it('calls saveJournalEntry with body and selected tags', async () => {
     await openWriteMode();
-    await waitFor(() => screen.getByLabelText('Journal entry body'));
+    await waitFor(() => screen.getByLabelText('Journal'));
     fireEvent.changeText(
-      screen.getByLabelText('Journal entry body'),
+      screen.getByLabelText('Journal'),
       'Today I felt something shift.'
     );
-    fireEvent.press(screen.getByText('hope'));
+    fireEvent.press(screen.getByText('Hope'));
     fireEvent.press(screen.getByText('Save entry'));
     await waitFor(() => expect(mockSaveEntry).toHaveBeenCalledTimes(1));
     expect(mockSaveEntry.mock.calls[0][0]).toMatchObject({
@@ -181,9 +181,9 @@ describe('JournalEntryScreen — write mode', () => {
   it('toggles "Hide behind PIN" correctly', async () => {
     mockHasPin.mockResolvedValue(true); // PIN already set — toggle works directly
     await openWriteMode();
-    await waitFor(() => screen.getByLabelText('Hide this entry behind PIN'));
-    fireEvent.press(screen.getByLabelText('Hide this entry behind PIN'));
-    const toggle = screen.getByLabelText('Hide this entry behind PIN');
+    await waitFor(() => screen.getByLabelText('Hide behind PIN'));
+    fireEvent.press(screen.getByLabelText('Hide behind PIN'));
+    const toggle = screen.getByLabelText('Hide behind PIN');
     await waitFor(() =>
       expect(toggle.props.accessibilityState).toEqual({ checked: true })
     );
@@ -191,8 +191,8 @@ describe('JournalEntryScreen — write mode', () => {
 
   it('goes back to list after saving', async () => {
     await openWriteMode();
-    await waitFor(() => screen.getByLabelText('Journal entry body'));
-    fireEvent.changeText(screen.getByLabelText('Journal entry body'), 'A new thought.');
+    await waitFor(() => screen.getByLabelText('Journal'));
+    fireEvent.changeText(screen.getByLabelText('Journal'), 'A new thought.');
     fireEvent.press(screen.getByText('Save entry'));
     await waitFor(() => expect(screen.getByText('Journal')).toBeTruthy());
   });

@@ -102,6 +102,53 @@ Deno.serve(async (req: Request) => {
     return json({ sent: true }, 200);
   }
 
+  // ── Match notification (like was accepted / mutual) ───────────────────────────
+  if (type === "match") {
+    if (!targetId)
+      return json({ error: "targetId is required for match notifications" }, 400);
+
+    const [{ data: senderProfile }, { data: recipientProfile }] =
+      await Promise.all([
+        admin
+          .from("user_profiles")
+          .select("nickname")
+          .eq("user_id", senderId)
+          .maybeSingle(),
+        admin
+          .from("user_profiles")
+          .select("push_token")
+          .eq("user_id", targetId)
+          .maybeSingle(),
+      ]);
+
+    const pushToken = recipientProfile?.push_token;
+    if (!pushToken)
+      return json({ skipped: "recipient has no push token" }, 200);
+
+    const senderName = senderProfile?.nickname ?? "Someone";
+
+    const expoPush = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        to: pushToken,
+        title: "It's a match ✨",
+        body: `${senderName} accepted your connection`,
+        data: { screen: "connect" },
+        sound: "default",
+        channelId: "chat",
+      }),
+    });
+
+    if (!expoPush.ok) {
+      const err = await expoPush.text();
+      console.error("[send-push] Expo API error (match):", err);
+      return json({ error: "Push delivery failed" }, 500);
+    }
+
+    return json({ sent: true }, 200);
+  }
+
   // ── Circle message notification ───────────────────────────────────────────────
   // Notifies every circle member except the sender when a new message is posted.
   if (type === "circle_message") {

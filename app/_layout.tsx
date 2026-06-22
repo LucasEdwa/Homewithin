@@ -1,5 +1,7 @@
+import '@/i18n';
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { UnreadProvider } from '@/context/UnreadContext';
+import { useLanguage } from '@/hooks/useLanguage';
 import { addNotificationResponseListener, getInitialNotificationTap, type NotificationScreen, registerForPushNotifications } from '@/services/social/notifications';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -60,6 +62,7 @@ function navigateToScreen(screen: NotificationScreen, meta?: { circleId?: string
 
 function LockGate({ children }: { children: React.ReactNode }) {
   const { locked, loading, profile } = useSession();
+  useLanguage();
   // Holds a navigation target captured from a cold-start notification tap.
   // We defer the push until the session finishes loading and the user isn't locked.
   const pendingNav = useRef<{ matchId?: string; screen?: NotificationScreen; circleId?: string } | null>(null);

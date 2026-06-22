@@ -3,11 +3,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const BTN = 64;
 
 export function EmergencyButton() {
+  const { t } = useTranslation();
   const ring1 = useRef(new Animated.Value(0)).current;
   const ring2 = useRef(new Animated.Value(0)).current;
   const btnScale = useRef(new Animated.Value(1)).current;
@@ -82,9 +84,9 @@ export function EmergencyButton() {
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        accessibilityLabel="Emergency support"
+        accessibilityLabel={t('emergency.buttonLabel')}
         accessibilityRole="button"
-        accessibilityHint="Opens emergency help and crisis resources"
+        accessibilityHint={t('emergency.buttonHint')}
       >
         <Animated.View style={[styles.btn, { transform: [{ scale: btnScale }] }]}>
           {/* inner glow ring */}

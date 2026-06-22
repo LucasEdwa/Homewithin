@@ -1,0 +1,80 @@
+export default {
+  home: {
+    greeting: {
+      morning: 'Good morning',
+      afternoon: 'Good afternoon',
+      evening: 'Good evening',
+    },
+    goToProfile: 'Go to profile',
+    safety: {
+      safe: 'Safe',
+      someConcern: 'Some concern',
+      reachOutNow: 'Reach out now',
+    },
+    sections: {
+      today: 'Today',
+      dailyPractice: 'Daily practice',
+      safetySupport: 'Safety & support',
+      community: 'Community',
+      growth: 'Growth',
+    },
+    rows: {
+      dailyCheckIn: { title: 'Daily Check-in', subtitle: 'Track your mood and feelings' },
+      journal: { title: 'Journal', subtitle: 'Your private space to express' },
+      myProgress: { title: 'My Progress', subtitle: 'Streaks, milestones, mood trends' },
+      safetyAssessment: {
+        title: 'Safety Assessment',
+        subtitle: 'Check in on your safety',
+        statusPrefix: 'Status — ',
+      },
+      aiCompanion: { title: 'AI Companion', subtitle: "Talk through what's on your mind" },
+      localResources: { title: 'Local Resources', subtitle: 'LGBTQ+ centers, shelters, legal aid' },
+      supportMatches: { title: 'Support Matches', subtitle: 'Find people who understand' },
+      chosenFamily: { title: 'Chosen Family', subtitle: 'Map your support network' },
+      eventsCircles: { title: 'Events & Circles', subtitle: 'Workshops, meetups, online circles' },
+      resources: { title: 'Resources', subtitle: 'Guides, articles, and tools' },
+      healingPrograms: { title: 'Healing Programs', subtitle: 'Structured paths for recovery' },
+    },
+    affirmation:
+      '"You deserve safety, connection, and belonging — at home, at school, and everywhere you go."',
+    moodInsight: {
+      title: "Today's Mood",
+      feeling: 'FEELING {{mood}}',
+      noCheckIn: 'No check-in yet today',
+      noCheckInBody: 'Start a daily check-in to see your mood trend here.',
+      axisHigh: 'Great',
+      axisMid: 'Okay',
+      axisLow: 'Low',
+      now: 'Now',
+      moodLabels: {
+        1: 'Terrible',
+        2: 'Bad',
+        3: 'Okay',
+        4: 'Good',
+        5: 'Great',
+      },
+      headlines: {
+        1: 'You deserve support right now',
+        2: 'A difficult stretch',
+        3: 'Holding steady today',
+        4: 'Things are looking good',
+        5: "You're doing really well",
+      },
+      body: {
+        1: "This is a hard place to be. You're not alone. Reaching out matters.",
+        2: 'Your mood is lower than usual. Small things can help — journaling, a check-in, or talking to someone.',
+        3: "Middle ground — not your best, not your worst. Check in on what might shift this.",
+        4: 'Above average today. Small positive patterns are adding up.',
+        5: "Your mood is above your usual range. Take a moment to notice what's been helping.",
+      },
+    },
+  },
+
+  tabs: {
+    home: 'Home',
+    journal: 'Journal',
+    connect: 'Connect',
+    resources: 'Resources',
+    profile: 'Profile',
+  },
+};

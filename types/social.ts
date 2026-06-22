@@ -4,6 +4,7 @@ export const INTENTION_IDS = [
   "mentor",
   "listener",
   "support_group",
+  "religious_trauma",
 ] as const;
 export type IntentionId = (typeof INTENTION_IDS)[number];
 
@@ -50,6 +51,13 @@ export const INTENTIONS: IntentionOption[] = [
     description: "A circle I can belong to",
     icon: "people-outline",
     color: "#E8844E",
+  },
+  {
+    id: "religious_trauma",
+    label: "Survived religious trauma",
+    description: "Left a faith community, found my way out",
+    icon: "leaf-outline",
+    color: "#A0845C",
   },
 ];
 

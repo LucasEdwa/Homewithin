@@ -16,8 +16,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export function ProfileIdentityCard() {
+  const { t } = useTranslation();
   const { profile, setProfile } = useSession();
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
@@ -28,7 +30,7 @@ export function ProfileIdentityCard() {
     if (avatarUploading) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Allow photo access in Settings to set a profile photo.', [{ text: 'OK' }]);
+      Alert.alert(t('profile.identity.permissionNeeded'), t('profile.identity.photoPermission'), [{ text: t('common.ok') }]);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -54,7 +56,7 @@ export function ProfileIdentityCard() {
       }
     } catch (e: any) {
       if (profile) await setProfile({ ...profile, avatarUrl: previousAvatarUrl });
-      Alert.alert('Upload failed', e?.message ?? 'Could not save your photo. Please try again.');
+      Alert.alert(t('profile.identity.uploadFailed'), e?.message ?? t('profile.identity.couldNotSavePhoto'));
     } finally {
       setAvatarUploading(false);
     }
@@ -63,16 +65,16 @@ export function ProfileIdentityCard() {
   function handleChangeNickname() {
     if (!profile) return;
     Alert.prompt(
-      'Change nickname',
-      'Enter a new anonymous nickname (no real names).',
+      t('profile.identity.changeNickname'),
+      t('profile.identity.changeNicknameBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Save',
+          text: t('common.save'),
           onPress: async (text: string | undefined) => {
             const trimmed = text?.trim();
-            if (!trimmed || trimmed.length < 2) { Alert.alert('Too short', 'Nickname must be at least 2 characters.'); return; }
-            if (trimmed.length > 30) { Alert.alert('Too long', 'Nickname must be 30 characters or fewer.'); return; }
+            if (!trimmed || trimmed.length < 2) { Alert.alert(t('profile.identity.tooShort'), t('profile.identity.nicknameTooShort')); return; }
+            if (trimmed.length > 30) { Alert.alert(t('profile.identity.tooLong'), t('profile.identity.nicknameTooLong')); return; }
             const updated = { ...profile, nickname: trimmed };
             await setProfile(updated);
             await syncProfile(updated).catch(() => {});
@@ -89,7 +91,7 @@ export function ProfileIdentityCard() {
       <TouchableOpacity
         onPress={handlePickAvatar}
         activeOpacity={0.8}
-        accessibilityLabel="Change profile photo"
+        accessibilityLabel={t('profile.identity.changePhoto')}
         accessibilityRole="button"
         style={styles.avatarWrapper}
       >
@@ -114,8 +116,8 @@ export function ProfileIdentityCard() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={handleChangeNickname} accessibilityLabel="Change nickname" accessibilityRole="button">
-        <Text style={styles.nickname}>{profile?.nickname ?? 'Anonymous'}</Text>
-        <Text style={styles.nicknameHint}>Tap to change nickname</Text>
+        <Text style={styles.nickname}>{profile?.nickname ?? t('common.anonymous')}</Text>
+        <Text style={styles.nicknameHint}>{t('profile.identity.tapToChangeNickname')}</Text>
       </TouchableOpacity>
       {profile?.pronouns ? <Text style={styles.pronouns}>{profile.pronouns}</Text> : null}
       <Text style={styles.meta}>{profile?.country ?? ''} · {profile?.ageRange ?? ''}</Text>

@@ -4,10 +4,11 @@ import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import type { LocalResource, SafetyStatus } from '@/types';
-import { LOCAL_RESOURCE_TYPE_COLORS, LOCAL_RESOURCE_TYPE_ICONS, LOCAL_RESOURCE_TYPE_LABELS } from '@/types';
+import { LOCAL_RESOURCE_TYPE_COLORS, LOCAL_RESOURCE_TYPE_ICONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     KeyboardAvoidingView,
     Linking,
@@ -21,7 +22,6 @@ import {
     View
 } from 'react-native';
 import type { IoniconsName } from './safetyData';
-import { PLAN_PROMPTS } from './safetyData';
 
 interface ResultsViewProps {
   status: SafetyStatus;
@@ -44,8 +44,11 @@ export default function ResultsView({
   nearbyResources,
   onGoHome,
 }: ResultsViewProps) {
+  const { t } = useTranslation();
+  const planPromptCount = 4;
+
   return (
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Colors.warmWhite }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Colors.warmWhite }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           {status === 'green' && <GreenState />}
@@ -53,23 +56,23 @@ export default function ResultsView({
           {status === 'red' && <RedState nearbyState={nearbyState} nearbyResources={nearbyResources} />}
 
           <Card style={styles.planCard}>
-            <Text style={styles.planTitle}>Your safety plan</Text>
-            <Text style={styles.planHint}>Saved only on this device. Fill in what feels right for you.</Text>
-            {PLAN_PROMPTS.map((prompt, i) => (
+            <Text style={styles.planTitle}>{t('safetyAssessment.planTitle')}</Text>
+            <Text style={styles.planHint}>{t('safetyAssessment.planHint')}</Text>
+            {Array.from({ length: planPromptCount }, (_, i) => (
               <View key={i} style={styles.planRow}>
-                <Text style={styles.planPrompt}>{prompt}</Text>
+                <Text style={styles.planPrompt}>{t(`safetyAssessment.planPrompts.${i}` as any)}</Text>
                 <TextInput
                   style={styles.planInput}
                   value={safetyPlanLines[i]}
                   onChangeText={(v) => onPlanLineChange(i, v)}
-                  placeholder="Write here…"
+                  placeholder={t('safetyAssessment.planPlaceholder')}
                   placeholderTextColor={Colors.textMuted}
                   maxLength={120}
                 />
               </View>
             ))}
             <Button
-              label={savingPlan ? 'Saving…' : 'Save safety plan'}
+              label={savingPlan ? t('safetyAssessment.savingPlan') : t('safetyAssessment.savePlanBtn')}
               onPress={onSavePlan}
               variant="secondary"
               loading={savingPlan}
@@ -77,7 +80,7 @@ export default function ResultsView({
             />
           </Card>
 
-          <Button label="Go to home" onPress={onGoHome} />
+          <Button label={t('safetyAssessment.goHome')} onPress={onGoHome} />
         </ScrollView>
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -85,37 +88,35 @@ export default function ResultsView({
 }
 
 function GreenState() {
+  const { t } = useTranslation();
   return (
     <Card style={[styles.statusCard, { borderColor: Colors.softGreen }]}>
       <Ionicons name="checkmark-circle" size={44} color={Colors.softGreen} />
-      <Text style={[styles.statusTitle, { color: Colors.softGreen }]}>You seem to be in a safe place.</Text>
-      <Text style={styles.statusBody}>
-        That's good to hear. HomeWithin is here whenever you want connection, healing, or someone to talk to — on your own timeline.
-      </Text>
+      <Text style={[styles.statusTitle, { color: Colors.softGreen }]}>{t('safetyAssessment.greenTitle')}</Text>
+      <Text style={styles.statusBody}>{t('safetyAssessment.greenBody')}</Text>
     </Card>
   );
 }
 
 function YellowState() {
+  const { t } = useTranslation();
   return (
     <Card style={[styles.statusCard, { borderColor: Colors.safetyYellow }]}>
       <Ionicons name="alert-circle" size={44} color={Colors.safetyYellow} />
-      <Text style={[styles.statusTitle, { color: '#7A5E00' }]}>Some things are weighing on you.</Text>
-      <Text style={styles.statusBody}>
-        What you're going through is real and it makes sense that it's heavy. Reaching out to a peer, writing in your journal, or reading a resource can help right now.
-      </Text>
+      <Text style={[styles.statusTitle, { color: '#7A5E00' }]}>{t('safetyAssessment.yellowTitle')}</Text>
+      <Text style={styles.statusBody}>{t('safetyAssessment.yellowBody')}</Text>
       <View style={styles.yellowActions}>
         <TouchableOpacity style={styles.yellowAction} onPress={() => router.push('/(tabs)/connect' as any)}>
           <Ionicons name="people-outline" size={18} color={Colors.safeBlue} />
-          <Text style={styles.yellowActionText}>Talk to a peer</Text>
+          <Text style={styles.yellowActionText}>{t('safetyAssessment.yellowTalkToPeer')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.yellowAction} onPress={() => router.push('/ai-companion' as any)}>
           <Ionicons name="sparkles-outline" size={18} color={Colors.mutedLavender} />
-          <Text style={styles.yellowActionText}>AI companion</Text>
+          <Text style={styles.yellowActionText}>{t('safetyAssessment.yellowAI')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.yellowAction} onPress={() => router.push('/(tabs)/resources' as any)}>
           <Ionicons name="book-outline" size={18} color={Colors.softGreen} />
-          <Text style={styles.yellowActionText}>Resources</Text>
+          <Text style={styles.yellowActionText}>{t('safetyAssessment.yellowResources')}</Text>
         </TouchableOpacity>
       </View>
     </Card>
@@ -129,24 +130,23 @@ function RedState({
   nearbyState: string | null;
   nearbyResources: LocalResource[];
 }) {
+  const { t } = useTranslation();
   const { refreshLocation } = useSession();
   return (
     <Card style={[styles.statusCard, { borderColor: Colors.alertRed }]}>
       <Ionicons name="heart" size={44} color={Colors.alertRed} />
-      <Text style={[styles.statusTitle, { color: Colors.alertRed }]}>You need support right now.</Text>
-      <Text style={styles.statusBody}>
-        What you're carrying is too much to carry alone. This is not your fault. Please reach out — someone is ready to listen, right now, with no judgment.
-      </Text>
+      <Text style={[styles.statusTitle, { color: Colors.alertRed }]}>{t('safetyAssessment.redTitle')}</Text>
+      <Text style={styles.statusBody}>{t('safetyAssessment.redBody')}</Text>
 
       <TouchableOpacity onPress={() => router.push('/emergency' as any)} style={styles.emergencyLink}>
         <Ionicons name="shield-outline" size={15} color={Colors.alertRed} />
-        <Text style={styles.emergencyLinkText}>Open emergency screen</Text>
+        <Text style={styles.emergencyLinkText}>{t('safetyAssessment.openEmergency')}</Text>
       </TouchableOpacity>
 
       <View style={styles.localHelpDivider} />
       <View style={styles.localHelpHeader}>
         <Ionicons name="location-outline" size={18} color={Colors.safeBlue} />
-        <Text style={styles.localHelpTitle}>Local help centers near you</Text>
+        <Text style={styles.localHelpTitle}>{t('safetyAssessment.localHelp')}</Text>
       </View>
 
       {nearbyState && nearbyResources.length > 0 ? (
@@ -163,13 +163,13 @@ function RedState({
               </View>
               <View style={styles.resourceInfo}>
                 <Text style={styles.resourceName}>{r.name}</Text>
-                <Text style={styles.resourceType}>{LOCAL_RESOURCE_TYPE_LABELS[r.type]}</Text>
+                <Text style={styles.resourceType}>{t(`localResources.resourceTypes.${r.type}` as any)}</Text>
               </View>
               <View style={styles.resourceActions}>
                 {r.phone && (
                   <TouchableOpacity
                     onPress={() => Linking.openURL(`tel:${r.phone!.replace(/\s/g, '')}`)}
-                    accessibilityLabel={`Call ${r.name}`}
+                    accessibilityLabel={t('emergency.callName', { name: r.name })}
                     style={styles.resourceActionBtn}
                   >
                     <Ionicons name="call-outline" size={18} color={Colors.safeBlue} />
@@ -178,7 +178,7 @@ function RedState({
                 {r.website && (
                   <TouchableOpacity
                     onPress={() => Linking.openURL(r.website!)}
-                    accessibilityLabel={`Visit ${r.name} website`}
+                    accessibilityLabel={t('emergency.visitName', { name: r.name })}
                     style={styles.resourceActionBtn}
                   >
                     <Ionicons name="globe-outline" size={18} color={Colors.safeBlue} />
@@ -192,14 +192,14 @@ function RedState({
             style={styles.seeAllBtn}
             onPress={() => router.push('/local-resources' as any)}
           >
-            <Text style={styles.seeAllText}>See all resources in {nearbyState}</Text>
+            <Text style={styles.seeAllText}>{t('safetyAssessment.seeAll', { state: nearbyState })}</Text>
             <Ionicons name="arrow-forward-outline" size={14} color={Colors.safeBlue} />
           </TouchableOpacity>
         </>
       ) : (
         <TouchableOpacity style={styles.locationPrompt} onPress={refreshLocation} activeOpacity={0.7}>
           <Ionicons name="location-outline" size={16} color={Colors.safeBlue} />
-          <Text style={styles.locationPromptText}>Allow location to show centers near you</Text>
+          <Text style={styles.locationPromptText}>{t('safetyAssessment.allowLocation')}</Text>
           <Ionicons name="chevron-forward" size={14} color={Colors.safeBlue} />
         </TouchableOpacity>
       )}
@@ -229,7 +229,6 @@ const styles = StyleSheet.create({
   localHelpDivider: { height: 1, backgroundColor: Colors.alertRed + '30', marginTop: Spacing.md, marginBottom: Spacing.sm },
   localHelpHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   localHelpTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
-  localHelpDesc: { fontSize: 14, color: Colors.textSecondary, lineHeight: 21 },
   locationPrompt: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: Colors.safeBlue + '12', borderRadius: Radius.md,

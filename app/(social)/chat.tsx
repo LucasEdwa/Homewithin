@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { useTranslation } from 'react-i18next';
 import { useCountdown } from '@/hooks/useCountdown';
 import { EXPIRY_OPTIONS, useChatScreen } from '@/hooks/useChatScreen';
 import type { Message } from '@/types';
@@ -33,6 +34,7 @@ const CRISIS_HOTLINE = 'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Lin
 const REPLY_THRESHOLD = 64;
 
 export default function ChatScreen() {
+  const { t } = useTranslation();
   const {
     nickname,
     avatarUrl,
@@ -79,7 +81,7 @@ export default function ChatScreen() {
       {/* Safety banner */}
       <View style={styles.safetyBanner}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.softGreen} />
-        <Text style={styles.safetyText}>You can block or report anytime.</Text>
+        <Text style={styles.safetyText}>{t('chat.safetyBanner')}</Text>
       </View>
 
       {/* Crisis banner */}
@@ -121,7 +123,7 @@ export default function ChatScreen() {
                 <View style={styles.unreadSep}>
                   <View style={styles.unreadSepLine} />
                   <Text style={styles.unreadSepText}>
-                    {item.count === 1 ? '1 unread message' : `${item.count} unread messages`}
+                    {item.count === 1 ? t('chat.unreadOne') : t('chat.unreadMany', { count: item.count })}
                   </Text>
                   <View style={styles.unreadSepLine} />
                 </View>
@@ -137,7 +139,7 @@ export default function ChatScreen() {
                 onReply={() => setReplyTo(item.data)}
                 onLongPress={() => {
                   if (isMe) {
-                    const options = ['Copy', 'Delete', 'Cancel'];
+                    const options = [t('chat.copy'), t('common.delete'), t('common.cancel')];
                     if (Platform.OS === 'ios') {
                       ActionSheetIOS.showActionSheetWithOptions(
                         { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
@@ -147,22 +149,22 @@ export default function ChatScreen() {
                         },
                       );
                     } else {
-                      Alert.alert('Message', undefined, [
-                        { text: 'Copy', onPress: () => Clipboard.setStringAsync(item.data.body) },
-                        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteMessage(item.data.id) },
-                        { text: 'Cancel', style: 'cancel' },
+                      Alert.alert(t('chat.options'), undefined, [
+                        { text: t('chat.copy'), onPress: () => Clipboard.setStringAsync(item.data.body) },
+                        { text: t('common.delete'), style: 'destructive', onPress: () => handleDeleteMessage(item.data.id) },
+                        { text: t('common.cancel'), style: 'cancel' },
                       ]);
                     }
                   } else {
                     if (Platform.OS === 'ios') {
                       ActionSheetIOS.showActionSheetWithOptions(
-                        { options: ['Copy', 'Cancel'], cancelButtonIndex: 1 },
+                        { options: [t('chat.copy'), t('common.cancel')], cancelButtonIndex: 1 },
                         (idx) => { if (idx === 0) Clipboard.setStringAsync(item.data.body); },
                       );
                     } else {
-                      Alert.alert('Message', undefined, [
-                        { text: 'Copy', onPress: () => Clipboard.setStringAsync(item.data.body) },
-                        { text: 'Cancel', style: 'cancel' },
+                      Alert.alert(t('chat.options'), undefined, [
+                        { text: t('chat.copy'), onPress: () => Clipboard.setStringAsync(item.data.body) },
+                        { text: t('common.cancel'), style: 'cancel' },
                       ]);
                     }
                   }
@@ -171,7 +173,7 @@ export default function ChatScreen() {
             );
           }}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No messages yet. Say hello!</Text>
+            <Text style={styles.emptyText}>{t('chat.noMessages')}</Text>
           }
         />
 
@@ -179,7 +181,7 @@ export default function ChatScreen() {
         <TouchableOpacity
           style={[styles.disappearToggle, expiryHours != null && styles.disappearToggleActive]}
           onPress={handlePickExpiry}
-          accessibilityLabel={expiryHours != null ? `Auto-delete: ${EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.label ?? 'on'}` : 'Auto-delete messages off'}
+          accessibilityLabel={expiryHours != null ? `Auto-delete: ${t(EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.labelKey ?? '')}` : t('chat.autoDeleteOff')}
         >
           <Ionicons
             name={expiryHours != null ? 'timer' : 'timer-outline'}
@@ -188,8 +190,8 @@ export default function ChatScreen() {
           />
           <Text style={[styles.disappearText, expiryHours != null && styles.disappearTextActive]}>
             {expiryHours != null
-              ? `${EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.label ?? ''} · on`
-              : 'Auto-delete off'}
+              ? `${t(EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.labelKey ?? '')} · on`
+              : t('chat.autoDeleteOff')}
           </Text>
         </TouchableOpacity>
 
@@ -210,7 +212,7 @@ export default function ChatScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="Message…"
+            placeholder={t('chat.inputPlaceholder')}
             placeholderTextColor={Colors.textMuted}
             multiline
             maxLength={1000}

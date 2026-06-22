@@ -16,8 +16,10 @@ import {
     Text,
     View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export function ProfilePrivacyCard() {
+  const { t } = useTranslation();
   const { profile, setProfile, pinEnabled, disguiseEnabled } = useSession();
   const [hidingPending, setHidingPending] = useState(false);
 
@@ -31,7 +33,7 @@ export function ProfilePrivacyCard() {
       await syncProfile(optimistic);
     } catch {
       await setProfile({ ...profile, hideFromSearch: profile.hideFromSearch });
-      Alert.alert('Could not update', 'Please check your connection and try again.');
+      Alert.alert(t('profile.privacy.couldNotUpdate'), t('profile.privacy.tryAgain'));
     } finally {
       setHidingPending(false);
     }
@@ -39,7 +41,7 @@ export function ProfilePrivacyCard() {
 
   function handlePinRow() {
     if (!pinEnabled) { router.push({ pathname: '/pin', params: { mode: 'setup' } }); return; }
-    const options = ['Change PIN', 'Remove PIN', 'Cancel'];
+    const options = ['Change PIN', 'Remove PIN', t('common.cancel')];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
@@ -49,17 +51,17 @@ export function ProfilePrivacyCard() {
         },
       );
     } else {
-      Alert.alert('PIN lock', undefined, [
+      Alert.alert(t('profile.privacy.pinLock'), undefined, [
         { text: 'Change PIN', onPress: () => router.push({ pathname: '/pin', params: { mode: 'change' } }) },
         { text: 'Remove PIN', style: 'destructive', onPress: () => router.push({ pathname: '/pin', params: { mode: 'remove' } }) },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
       ]);
     }
   }
 
   return (
     <Card style={styles.card}>
-      <Text style={styles.title}>Privacy</Text>
+      <Text style={styles.title}>{t('profile.privacy.title')}</Text>
       <Pressable
         onPress={() => handleToggleHideFromSearch(!profile?.hideFromSearch)}
         disabled={!profile || hidingPending}
@@ -68,16 +70,16 @@ export function ProfilePrivacyCard() {
         accessibilityState={{ checked: !!profile?.hideFromSearch, disabled: !profile || hidingPending }}
       >
         <View style={styles.toggleInfo} pointerEvents="none">
-          <Text style={styles.rowLabel}>Hide from search</Text>
+          <Text style={styles.rowLabel}>{t('profile.privacy.hideFromSearch')}</Text>
           <Text style={styles.toggleHint}>
             {profile?.hideFromSearch
-              ? "You won't appear in anyone's matches. Existing chats stay open."
-              : 'People searching for an intention you offer can find you.'}
+              ? t('profile.privacy.hideFromSearchOn')
+              : t('profile.privacy.hideFromSearchOff')}
           </Text>
         </View>
         <View pointerEvents="none">
           <Switch
-            accessibilityLabel="Hide from search"
+            accessibilityLabel={t('profile.privacy.hideFromSearch')}
             value={!!profile?.hideFromSearch}
             onValueChange={handleToggleHideFromSearch}
             disabled={!profile || hidingPending}
@@ -87,9 +89,9 @@ export function ProfilePrivacyCard() {
           />
         </View>
       </Pressable>
-      <SettingRow label="PIN lock" value={pinEnabled ? 'On' : 'Set up'} onPress={handlePinRow} />
-      <SettingRow label="App disguise mode" value={disguiseEnabled ? 'On' : 'Off'} onPress={() => router.push('/disguise')} />
-      <SettingRow label="Blocked users" value="" onPress={() => router.push('/blocked-users')} />
+      <SettingRow label={t('profile.privacy.pinLock')} value={pinEnabled ? t('common.on') : t('common.setUp')} onPress={handlePinRow} />
+      <SettingRow label={t('profile.privacy.disguiseMode')} value={disguiseEnabled ? t('common.on') : t('common.off')} onPress={() => router.push('/disguise')} />
+      <SettingRow label={t('profile.privacy.blockedUsers')} value="" onPress={() => router.push('/blocked-users')} />
     </Card>
   );
 }

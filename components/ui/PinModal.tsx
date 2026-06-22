@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { Card } from '@/components/ui/Card';
@@ -16,29 +17,30 @@ interface Props {
 }
 
 export function PinModal({ visible, mode, value, onChange, onSubmit, onCancel }: Props) {
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <Card style={styles.card}>
           <Ionicons name="lock-closed" size={32} color={Colors.mutedLavender} />
           <Text style={styles.title}>
-            {mode === 'set' ? 'Set a PIN for hidden entries' : 'Enter PIN to unlock'}
+            {mode === 'set' ? t('pin.setTitle') : t('pin.enterTitle')}
           </Text>
           <TextInput
             style={styles.input}
             value={value}
             onChangeText={onChange}
-            placeholder="Enter PIN"
+            placeholder={t('pin.placeholder')}
             placeholderTextColor={Colors.textMuted}
             secureTextEntry
             keyboardType="number-pad"
             maxLength={8}
             autoFocus
-            accessibilityLabel="PIN input"
+            accessibilityLabel={t('pin.placeholder')}
           />
           <View style={styles.buttons}>
-            <Button label="Cancel" variant="ghost" onPress={onCancel} style={{ flex: 1 }} />
-            <Button label="Confirm" onPress={onSubmit} style={{ flex: 1 }} />
+            <Button label={t('common.cancel')} variant="ghost" onPress={onCancel} style={{ flex: 1 }} />
+            <Button label={t('pin.confirm')} onPress={onSubmit} style={{ flex: 1 }} />
           </View>
         </Card>
       </View>

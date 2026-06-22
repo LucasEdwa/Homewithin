@@ -6,12 +6,12 @@ import { getBookmarks, getResources } from '@/services/content/resources';
 import type { Resource, ResourceCategory } from '@/types';
 import {
   CATEGORY_COLORS,
-  CATEGORY_LABELS,
   RESOURCE_CATEGORY_IDS,
 } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -27,6 +27,7 @@ const ALL = 'all' as const;
 type Filter = ResourceCategory | typeof ALL;
 
 export default function ResourcesScreen() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>(ALL);
   const [articles, setArticles] = useState<Resource[]>([]);
@@ -63,34 +64,39 @@ export default function ResourcesScreen() {
         keyboardShouldPersistTaps="handled"
         stickyHeaderIndices={[0]}
       >
-        {/* Sticky header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Resources</Text>
+          <Text style={styles.title}>{t('resources.title')}</Text>
           <View style={styles.searchRow}>
             <Ionicons name="search-outline" size={18} color={Colors.textMuted} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search articles…"
+              placeholder={t('resources.searchPlaceholder')}
               placeholderTextColor={Colors.textMuted}
               value={search}
               onChangeText={setSearch}
               returnKeyType="search"
-              accessibilityLabel="Search resources"
+              accessibilityLabel={t('resources.searchPlaceholder')}
               testID="search-input"
             />
             {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel="Clear search">
+              <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel={t('common.cancel')}>
                 <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabs} contentContainerStyle={styles.tabsContent}>
-            <FilterTab label="All" value={ALL} active={filter === ALL} onPress={() => setFilter(ALL)} color={Colors.safeBlue} />
+            <FilterTab
+              label={t('resources.filterAll')}
+              value={ALL}
+              active={filter === ALL}
+              onPress={() => setFilter(ALL)}
+              color={Colors.safeBlue}
+            />
             {RESOURCE_CATEGORY_IDS.map((cat) => (
               <FilterTab
                 key={cat}
-                label={CATEGORY_LABELS[cat]}
+                label={t(`resources.categoryLabels.${cat}` as any)}
                 value={cat}
                 active={filter === cat}
                 onPress={() => setFilter(cat)}
@@ -100,13 +106,12 @@ export default function ResourcesScreen() {
           </ScrollView>
         </View>
 
-        {/* Content */}
         {loading ? (
           <ActivityIndicator color={Colors.safeBlue} style={styles.loader} />
         ) : filtered.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="document-text-outline" size={40} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No articles found.</Text>
+            <Text style={styles.emptyText}>{t('resources.noArticles')}</Text>
           </View>
         ) : (
           filtered.map((article) => (
@@ -157,19 +162,22 @@ function ArticleCard({
   bookmarked: boolean;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const catColor = CATEGORY_COLORS[article.category];
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} accessibilityLabel={article.title} testID={`article-${article.id}`}>
       <Card elevated style={styles.card}>
         <View style={[styles.categoryBadge, { backgroundColor: catColor + '22', borderColor: catColor }]}>
-          <Text style={[styles.categoryText, { color: catColor }]}>{CATEGORY_LABELS[article.category]}</Text>
+          <Text style={[styles.categoryText, { color: catColor }]}>
+            {t(`resources.categoryLabels.${article.category}` as any)}
+          </Text>
         </View>
         <Text style={styles.cardTitle}>{article.title}</Text>
         <Text style={styles.cardSummary} numberOfLines={2}>{article.summary}</Text>
         <View style={styles.cardMeta}>
           <View style={styles.readTime}>
             <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
-            <Text style={styles.metaText}>{article.readTime} min read</Text>
+            <Text style={styles.metaText}>{t('resources.minRead', { count: article.readTime })}</Text>
           </View>
           {bookmarked && (
             <Ionicons name="bookmark" size={16} color={Colors.safeBlue} />

@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/Colors';
@@ -40,13 +41,10 @@ function todayISO() {
   return new Date().toISOString().split('T')[0];
 }
 
-function formatDate(iso: string) {
-  return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric',
-  });
-}
-
 export default function JournalEntryScreen() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === 'sv' ? 'sv-SE' : 'en-US';
+
   const { id, pinVerified } = useLocalSearchParams<{ id?: string; pinVerified?: string }>();
 
   const [body, setBody] = useState('');
@@ -56,11 +54,8 @@ export default function JournalEntryScreen() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [showList, setShowList] = useState(true);
   const [editingId, setEditingId] = useState<string | undefined>(id);
-  // Keep unlockedIds in component state (not the hook) so handleSave's setState
-  // calls are all direct component setters — guaranteed to batch in one render.
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
 
-  // openEntry is a function declaration below — hoisted so it can be passed as callback
   const { pinModal, pinInput, setPinInput, handleOpenHidden, openPinForLock, handlePinSubmit, closePinModal } = usePinModal(
     (entryId) => {
       setUnlockedIds((prev) => new Set([...prev, entryId]));
@@ -81,7 +76,6 @@ export default function JournalEntryScreen() {
       const existing = all.find((e) => e.id === id);
       if (existing) {
         if (existing.isHidden && pinVerified !== '1') {
-          // PIN-protected — stay in list mode and prompt for PIN.
           await handleOpenHidden(existing.id);
         } else {
           setBody(existing.body);
@@ -95,13 +89,19 @@ export default function JournalEntryScreen() {
 
   function toggleTag(tag: EmotionTag) {
     setEmotionTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((tt) => tt !== tag) : [...prev, tag]
     );
+  }
+
+  function formatDate(iso: string) {
+    return new Date(iso + 'T12:00:00').toLocaleDateString(locale, {
+      weekday: 'short', month: 'short', day: 'numeric',
+    });
   }
 
   async function handleSave() {
     if (!body.trim()) {
-      Alert.alert('Empty entry', 'Write something before saving.');
+      Alert.alert(t('journal.emptyEntry'), t('journal.emptyEntryBody'));
       return;
     }
     setLoading(true);
@@ -116,7 +116,6 @@ export default function JournalEntryScreen() {
     };
     await saveJournalEntry(entry);
 
-    // Sync to Supabase if authenticated
     if (supabase) {
       const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
       if (user) {
@@ -135,9 +134,6 @@ export default function JournalEntryScreen() {
     }
 
     const preview = entry.body.slice(0, 200);
-    // Reload entries and apply ALL state changes in one synchronous block so
-    // React batches them into a single render. Splitting across awaits would
-    // let an interim render show the entry as unlocked.
     const all = await getJournalEntries();
     setEntries(all);
     setLoading(false);
@@ -155,10 +151,10 @@ export default function JournalEntryScreen() {
     setEditingId(undefined);
 
     if (!entry.isHidden) {
-      Alert.alert('Saved', 'Your journal entry has been saved.', [
-        { text: 'Done' },
+      Alert.alert(t('journal.saved'), t('journal.savedBody'), [
+        { text: t('common.done') },
         {
-          text: 'Get an AI insight',
+          text: t('journal.aiInsight'),
           onPress: () => router.push({ pathname: '/ai-companion', params: { journalPreview: preview } }),
         },
       ]);
@@ -166,10 +162,10 @@ export default function JournalEntryScreen() {
   }
 
   async function handleDelete(entryId: string) {
-    Alert.alert('Delete entry?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('journal.deleteTitle'), t('journal.deleteBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           await deleteJournalEntry(entryId);
@@ -181,7 +177,7 @@ export default function JournalEntryScreen() {
 
   async function handleExport() {
     const text = await exportJournalAsText();
-    await Share.share({ message: text, title: 'My Journal' });
+    await Share.share({ message: text, title: t('journal.shareTitle') });
   }
 
   function openEntry(entryId: string) {
@@ -208,12 +204,14 @@ export default function JournalEntryScreen() {
         <TouchableOpacity onPress={() => {
           if (!showList) { setShowList(true); setBody(''); setEmotionTags([]); }
           else router.back();
-        }} accessibilityLabel="Go back">
+        }} accessibilityLabel={t('common.back')}>
           <Ionicons name="arrow-back" size={22} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{showList ? 'Journal' : (editingId ? 'Edit Entry' : 'New Entry')}</Text>
+        <Text style={styles.headerTitle}>
+          {showList ? t('journal.title') : (editingId ? t('journal.editTitle') : t('journal.newTitle'))}
+        </Text>
         {showList ? (
-          <TouchableOpacity onPress={handleExport} accessibilityLabel="Export journal">
+          <TouchableOpacity onPress={handleExport} accessibilityLabel={t('journal.shareTitle')}>
             <Ionicons name="share-outline" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
         ) : (
@@ -222,14 +220,13 @@ export default function JournalEntryScreen() {
       </View>
 
       {showList ? (
-        /* ─── Entry list ─── */
         <ScrollView contentContainerStyle={styles.scroll}>
-          <Button label="+ New entry" onPress={startNewEntry} variant="secondary" style={styles.newBtn} />
+          <Button label={t('journal.newBtn')} onPress={startNewEntry} variant="secondary" style={styles.newBtn} />
 
           {entries.length === 0 && (
             <Card style={styles.emptyCard}>
               <Ionicons name="book-outline" size={40} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>Your journal is empty.{'\n'}Start writing — it's just for you.</Text>
+              <Text style={styles.emptyText}>{t('journal.empty')}</Text>
             </Card>
           )}
 
@@ -246,7 +243,7 @@ export default function JournalEntryScreen() {
                   } else openEntry(entry.id);
                 }}
                 activeOpacity={0.75}
-                accessibilityLabel={`Journal entry from ${entry.date}`}
+                accessibilityLabel={`${t('journal.title')} ${entry.date}`}
               >
                 <View style={styles.entryMeta}>
                   <Text style={styles.entryDate}>{formatDate(entry.date)}</Text>
@@ -256,21 +253,23 @@ export default function JournalEntryScreen() {
                 </View>
                 {entry.emotionTags.length > 0 && (
                   <View style={styles.entryTags}>
-                    {entry.emotionTags.map((t) => (
-                      <View key={t} style={[styles.entryTag, { backgroundColor: EMOTION_COLORS[t] + '20' }]}>
-                        <Text style={[styles.entryTagText, { color: EMOTION_COLORS[t] }]}>{t}</Text>
+                    {entry.emotionTags.map((tag) => (
+                      <View key={tag} style={[styles.entryTag, { backgroundColor: EMOTION_COLORS[tag] + '20' }]}>
+                        <Text style={[styles.entryTagText, { color: EMOTION_COLORS[tag] }]}>
+                          {t(`journal.emotionTags.${tag}` as any)}
+                        </Text>
                       </View>
                     ))}
                   </View>
                 )}
                 <Text style={styles.entryPreview} numberOfLines={isLocked ? 1 : 2}>
-                  {isLocked ? '🔒 Hidden — tap to unlock' : entry.body}
+                  {isLocked ? t('journal.hiddenPreview') : entry.body}
                 </Text>
                 <TouchableOpacity
                   style={styles.deleteBtn}
                   onPress={() => handleDelete(entry.id)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityLabel="Delete entry"
+                  accessibilityLabel={t('journal.deleteTitle')}
                 >
                   <Ionicons name="trash-outline" size={16} color={Colors.alertRed} />
                 </TouchableOpacity>
@@ -279,7 +278,6 @@ export default function JournalEntryScreen() {
           })}
         </ScrollView>
       ) : (
-        /* ─── Write / edit ─── */
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -289,7 +287,7 @@ export default function JournalEntryScreen() {
               {EMOTION_TAGS.map((tag) => (
                 <Tag
                   key={tag}
-                  label={tag}
+                  label={t(`journal.emotionTags.${tag}` as any)}
                   selected={emotionTags.includes(tag)}
                   onPress={() => toggleTag(tag)}
                 />
@@ -300,26 +298,25 @@ export default function JournalEntryScreen() {
               style={styles.bodyInput}
               value={body}
               onChangeText={setBody}
-              placeholder="Write anything. This is private."
+              placeholder={t('journal.placeholder')}
               placeholderTextColor={Colors.textMuted}
               multiline
               autoFocus
               textAlignVertical="top"
-              accessibilityLabel="Journal entry body"
+              accessibilityLabel={t('journal.title')}
             />
 
             <TouchableOpacity
               style={styles.hiddenToggle}
               onPress={async () => {
                 if (!isHidden) {
-                  // Toggling ON — ensure a PIN exists first.
                   const modalShown = await openPinForLock();
-                  if (modalShown) return; // hook will call onLockSet → setIsHidden(true)
+                  if (modalShown) return;
                 }
                 setIsHidden((v) => !v);
               }}
               accessibilityRole="checkbox"
-              accessibilityLabel="Hide this entry behind PIN"
+              accessibilityLabel={t('journal.hidePinToggle')}
               accessibilityState={{ checked: isHidden }}
             >
               <Ionicons
@@ -328,11 +325,11 @@ export default function JournalEntryScreen() {
                 color={isHidden ? Colors.mutedLavender : Colors.textMuted}
               />
               <Text style={[styles.hiddenLabel, isHidden && { color: Colors.mutedLavender }]}>
-                {isHidden ? 'Hidden — PIN required to open' : 'Hide behind PIN'}
+                {isHidden ? t('journal.hidePinActive') : t('journal.hidePinToggle')}
               </Text>
             </TouchableOpacity>
 
-            <Button label="Save entry" onPress={handleSave} loading={loading} style={styles.cta} />
+            <Button label={t('journal.saveBtn')} onPress={handleSave} loading={loading} style={styles.cta} />
           </ScrollView>
         </KeyboardAvoidingView>
       )}
@@ -397,5 +394,4 @@ const styles = StyleSheet.create({
   hiddenToggle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   hiddenLabel: { fontSize: 14, color: Colors.textMuted },
   cta: { marginTop: Spacing.sm },
-
 });

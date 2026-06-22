@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { useTranslation } from 'react-i18next';
 import { grantCircleAIConsent, hasCircleAIConsent } from '@/services/storage';
 import { containsCrisisKeywords } from '@/services/social/chat';
 import {
@@ -58,7 +59,7 @@ function dayKey(date: Date) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-function formatDayLabel(date: Date): string {
+function formatDayLabel(date: Date, t: (key: string) => string): string {
   const now = new Date();
   const todayKey = dayKey(now);
   const msgKey = dayKey(date);
@@ -66,19 +67,19 @@ function formatDayLabel(date: Date): string {
     new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
     new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const diffDays = Math.round(diffMs / 86_400_000);
-  if (msgKey === todayKey) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
+  if (msgKey === todayKey) return t('circle.today');
+  if (diffDays === 1) return t('circle.yesterday');
   return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function buildListItems(messages: CircleMessage[]): ListItem[] {
+function buildListItems(messages: CircleMessage[], t: (key: string) => string): ListItem[] {
   const items: ListItem[] = [];
   let lastKey = '';
   for (const msg of messages) {
     const date = new Date(msg.createdAt);
     const key = dayKey(date);
     if (key !== lastKey) {
-      items.push({ type: 'date', label: formatDayLabel(date), key: `date-${key}` });
+      items.push({ type: 'date', label: formatDayLabel(date, t), key: `date-${key}` });
       lastKey = key;
     }
     items.push({ type: 'message', data: msg });
@@ -97,6 +98,7 @@ function mentionValueForName(name: string): string {
 }
 
 export default function CircleChatScreen() {
+  const { t } = useTranslation();
   const { circleId, name } = useLocalSearchParams<{ circleId: string; name: string }>();
   const [messages, setMessages] = useState<CircleMessage[]>([]);
   const [input, setInput] = useState('');
@@ -209,16 +211,16 @@ export default function CircleChatScreen() {
 
     const filterResult = filterContent(body);
     if (filterResult.ok === false) {
-      Alert.alert('Message blocked', filterResult.reason);
+      Alert.alert(t('circle.messageBlocked'), filterResult.reason);
       return;
     }
     if (filterResult.ok === 'warn') {
       Alert.alert(
-        'Strong language',
+        t('circle.strongLanguage'),
         filterResult.reason,
         [
-          { text: 'Edit message', style: 'cancel' },
-          { text: 'Send anyway', onPress: () => doSend(body) },
+          { text: t('circle.editMessage'), style: 'cancel' },
+          { text: t('circle.sendAnyway'), onPress: () => doSend(body) },
         ],
       );
       return;
@@ -242,11 +244,11 @@ export default function CircleChatScreen() {
 
     if (wantsAI) {
       if (members.length <= 1) {
-        Alert.alert('AI Companion unavailable', 'AI Companion responds in circles with at least two members.');
+        Alert.alert(t('circle.aiUnavailable'), t('circle.aiUnavailableMembers'));
         return;
       }
       if (!msg) {
-        Alert.alert('AI Companion unavailable', 'Your message could not be sent, so AI Companion could not reply.');
+        Alert.alert(t('circle.aiUnavailable'), t('circle.aiUnavailableSend'));
         return;
       }
       await handleCompanionReply(msg.id);
@@ -261,7 +263,7 @@ export default function CircleChatScreen() {
     setAiLoading(false);
 
     if (error) {
-      Alert.alert('AI Companion unavailable', error);
+      Alert.alert(t('circle.aiUnavailable'), error);
       return;
     }
 
@@ -293,7 +295,7 @@ export default function CircleChatScreen() {
   }
 
   function handleOptions() {
-    const options = ['Report this circle', 'Leave circle', 'Cancel'];
+    const options = [t('circle.reportCircle'), t('circle.leaveCircle'), t('common.cancel')];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
@@ -303,10 +305,10 @@ export default function CircleChatScreen() {
         },
       );
     } else {
-      Alert.alert('Options', undefined, [
-        { text: 'Report this circle', onPress: promptReportCircle },
-        { text: 'Leave circle', style: 'destructive', onPress: confirmLeave },
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('circle.options'), undefined, [
+        { text: t('circle.reportCircle'), onPress: promptReportCircle },
+        { text: t('circle.leaveCircle'), style: 'destructive', onPress: confirmLeave },
+        { text: t('common.cancel'), style: 'cancel' },
       ]);
     }
   }
@@ -314,13 +316,13 @@ export default function CircleChatScreen() {
   async function handleBlockMember(member: CircleMember) {
     const ok = await blockUser(member.userId);
     if (!ok) {
-      Alert.alert('Block failed', 'Please check your connection and try again.');
+      Alert.alert(t('circle.blockFailed'), t('circle.connectionError'));
       return;
     }
 
     blockedUserIdsRef.current = new Set([...blockedUserIdsRef.current, member.userId]);
     setMessages((prev) => prev.filter((message) => message.senderId !== member.userId));
-    Alert.alert('Blocked', 'You will no longer see this member\'s messages.');
+    Alert.alert(t('circle.blocked'), t('circle.blockedBody'));
   }
 
   async function handleReportMember(member: CircleMember) {
@@ -328,12 +330,12 @@ export default function CircleChatScreen() {
 
     if (Platform.OS === 'ios') {
       Alert.prompt(
-        'Report this member',
-        'Briefly describe the issue (harassment, spam, unsafe behavior):',
+        t('circle.reportMember'),
+        t('circle.reportMemberPrompt'),
         async (reason) => {
           if (!reason?.trim()) return;
           await reportInCircle(circleId, reason.trim(), { reportedUserId: member.userId });
-          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+          Alert.alert(t('circle.reported'), t('circle.reportedBody'));
         },
         'plain-text',
       );
@@ -341,17 +343,17 @@ export default function CircleChatScreen() {
     }
 
     Alert.alert(
-      'Report this member',
-      'This will send the member to our moderation team.',
+      t('circle.reportMember'),
+      t('circle.reportMemberBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Report',
+          text: t('circle.report'),
           onPress: async () => {
             await reportInCircle(circleId, 'Reported from member list', {
               reportedUserId: member.userId,
             });
-            Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+            Alert.alert(t('circle.reported'), t('circle.reportedBody'));
           },
         },
       ]
@@ -362,24 +364,21 @@ export default function CircleChatScreen() {
     if (!circleId) return;
 
     Alert.alert(
-      `Remove ${member.nickname} from this circle?`,
-      'This will remove them from the circle for everyone.',
+      t('circle.removeMember', { name: member.nickname }),
+      t('circle.removeMemberBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Remove member',
+          text: t('circle.removeMemberBtn'),
           style: 'destructive',
           onPress: async () => {
             const ok = await kickCircleMember(circleId, member.userId);
             if (!ok) {
-              Alert.alert(
-                'Could not remove member',
-                'Only a circle moderator can remove members.',
-              );
+              Alert.alert(t('circle.removeMemberFailed'), t('circle.removeMemberFailedBody'));
               return;
             }
             setMembers((prev) => prev.filter((item) => item.userId !== member.userId));
-            Alert.alert('Removed', 'The member has been removed from the circle.');
+            Alert.alert(t('circle.removed'), t('circle.removedBody'));
           },
         },
       ]
@@ -388,18 +387,18 @@ export default function CircleChatScreen() {
 
   function confirmLeave() {
     Alert.alert(
-      'Leave this circle?',
-      'You won\'t receive new messages. You can rejoin later if there\'s space.',
+      t('circle.leaveTitle'),
+      t('circle.leaveBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Leave',
+          text: t('circle.leave'),
           style: 'destructive',
           onPress: async () => {
             if (!circleId) return;
             const ok = await leaveCircle(circleId);
             if (!ok) {
-              Alert.alert('Could not leave', 'Please try again.');
+              Alert.alert(t('circle.couldNotLeave'), t('circle.tryAgain'));
               return;
             }
             router.back();
@@ -414,25 +413,25 @@ export default function CircleChatScreen() {
 
     if (Platform.OS === 'ios') {
       Alert.prompt(
-        'Report this circle',
-        'Briefly describe the issue (e.g. harassment, unsafe content):',
+        t('circle.reportCircle'),
+        t('circle.reportCirclePrompt'),
         async (reason) => {
           if (!reason?.trim()) return;
           await reportInCircle(circleId, reason.trim());
-          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+          Alert.alert(t('circle.reported'), t('circle.reportedBody'));
         },
         'plain-text',
       );
       return;
     }
 
-    Alert.alert('Report this circle', 'This will send the circle to our moderation team.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('circle.reportCircle'), t('circle.reportCircleBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Report',
+        text: t('circle.report'),
         onPress: async () => {
           await reportInCircle(circleId, 'Reported from circle options');
-          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+          Alert.alert(t('circle.reported'), t('circle.reportedBody'));
         },
       },
     ]);
@@ -440,19 +439,19 @@ export default function CircleChatScreen() {
 
   function promptDeleteMessage(message: CircleMessage) {
     Alert.alert(
-      'Delete message?',
-      'This will remove your message for everyone in the circle.',
+      t('circle.deleteMessage'),
+      t('circle.deleteMessageBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             const ok = await deleteCircleMessage(message.id);
             if (ok) {
               setMessages((prev) => prev.filter((m) => m.id !== message.id));
             } else {
-              Alert.alert('Delete failed', 'Please check your connection and try again.');
+              Alert.alert(t('circle.deleteFailed'), t('circle.connectionError'));
             }
           },
         },
@@ -466,7 +465,7 @@ export default function CircleChatScreen() {
     const doBlock = async () => {
       const ok = await blockUser(message.senderId);
       if (!ok) {
-        Alert.alert('Block failed', 'Please check your connection and try again.');
+        Alert.alert(t('circle.blockFailed'), t('circle.connectionError'));
         return;
       }
       if (circleId) {
@@ -475,39 +474,39 @@ export default function CircleChatScreen() {
           reportedUserId: message.senderId,
         });
       }
-      Alert.alert('Blocked', 'This member has been blocked. You will no longer see their messages.');
+      Alert.alert(t('circle.blocked'), t('circle.blockedFullBody'));
     };
 
     const doReport = () => {
       if (Platform.OS === 'ios') {
         Alert.prompt(
-          'Report this message',
-          'Briefly describe the issue:',
+          t('circle.reportMessage'),
+          t('circle.reportMessagePrompt'),
           async (reason) => {
             if (!reason?.trim() || !circleId) return;
             await reportInCircle(circleId, reason.trim(), {
               messageId: message.id,
               reportedUserId: message.senderId,
             });
-            Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+            Alert.alert(t('circle.reported'), t('circle.reportedBody'));
           },
           'plain-text',
         );
       } else {
         Alert.alert(
-          'Report this message',
-          'This message will be reviewed by our team.',
+          t('circle.reportMessage'),
+          t('circle.reportMessageBody'),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('common.cancel'), style: 'cancel' },
             {
-              text: 'Report',
+              text: t('circle.report'),
               onPress: async () => {
                 if (!circleId) return;
                 await reportInCircle(circleId, 'Reported from circle', {
                   messageId: message.id,
                   reportedUserId: message.senderId,
                 });
-                Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
+                Alert.alert(t('circle.reported'), t('circle.reportedBody'));
               },
             },
           ],
@@ -515,7 +514,7 @@ export default function CircleChatScreen() {
       }
     };
 
-    const options = ['Block this member', 'Report message', 'Cancel'];
+    const options = [t('circle.blockMember'), t('circle.reportMsg'), t('common.cancel')];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options, destructiveButtonIndex: 0, cancelButtonIndex: 2 },
@@ -525,10 +524,10 @@ export default function CircleChatScreen() {
         },
       );
     } else {
-      Alert.alert('Options', undefined, [
-        { text: 'Block this member', style: 'destructive', onPress: doBlock },
-        { text: 'Report message', onPress: doReport },
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('circle.options'), undefined, [
+        { text: t('circle.blockMember'), style: 'destructive', onPress: doBlock },
+        { text: t('circle.reportMsg'), onPress: doReport },
+        { text: t('common.cancel'), style: 'cancel' },
       ]);
     }
   }
@@ -546,26 +545,20 @@ export default function CircleChatScreen() {
           <View style={styles.consentCard}>
             <View style={styles.consentHeader}>
               <Ionicons name="sparkles" size={20} color={Colors.mutedLavender} />
-              <Text style={styles.consentTitle}>AI Companion in Support Circles</Text>
+              <Text style={styles.consentTitle}>{t('circle.aiConsentTitle')}</Text>
             </View>
             <ScrollView style={styles.consentScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.consentBody}>
-                When you mention AI Companion in this circle, your message and the circle conversation are sent to our AI provider to generate a reply for the group.
-              </Text>
-              <Text style={styles.consentSectionLabel}>What is shared</Text>
-              <Text style={styles.consentBody}>
-                {'• The messages in this support circle\n• The circle title and theme\n• Your message that mentions AI Companion\n• Safety signals needed for moderation and crisis guidance'}
-              </Text>
-              <Text style={styles.consentSectionLabel}>Important</Text>
-              <Text style={styles.consentBody}>
-                AI Companion is not a therapist or emergency service. If there is an immediate safety concern, the app may show crisis resources and moderation flows.
-              </Text>
+              <Text style={styles.consentBody}>{t('circle.aiConsentBody')}</Text>
+              <Text style={styles.consentSectionLabel}>{t('circle.aiConsentWhatShared')}</Text>
+              <Text style={styles.consentBody}>{t('circle.aiConsentSharedItems')}</Text>
+              <Text style={styles.consentSectionLabel}>{t('circle.aiConsentImportant')}</Text>
+              <Text style={styles.consentBody}>{t('circle.aiConsentDisclaimer')}</Text>
             </ScrollView>
             <TouchableOpacity style={styles.consentAgreeBtn} onPress={handleGrantAIConsent}>
-              <Text style={styles.consentAgreeBtnText}>I Agree</Text>
+              <Text style={styles.consentAgreeBtnText}>{t('circle.aiConsentAgree')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.consentDenyBtn} onPress={handleDenyAIConsent}>
-              <Text style={styles.consentDenyBtnText}>Not now</Text>
+              <Text style={styles.consentDenyBtnText}>{t('circle.aiConsentDeny')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -587,7 +580,7 @@ export default function CircleChatScreen() {
               {circleTitle}
             </Text>
             {members.length > 0 && (
-              <Text style={styles.navMemberCount}>{members.length} members</Text>
+              <Text style={styles.navMemberCount}>{t('circle.memberCount', { count: members.length })}</Text>
             )}
           </View>
         </TouchableOpacity>
@@ -598,13 +591,13 @@ export default function CircleChatScreen() {
 
       <View style={styles.safetyBanner}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.softGreen} />
-        <Text style={styles.safetyText}>Use the member menu to block, report, or remove people. Long-press messages to moderate them too.</Text>
+        <Text style={styles.safetyText}>{t('circle.safetyBanner')}</Text>
       </View>
 
       <View style={styles.aiBanner}>
         <Ionicons name="sparkles-outline" size={14} color={Colors.mutedLavender} />
         <Text style={styles.aiBannerText}>
-          Mention @companion to ask AI Companion about this circle. {AI_DISCLAIMER}
+          {t('circle.aiBanner')} {AI_DISCLAIMER}
         </Text>
       </View>
 
@@ -627,7 +620,7 @@ export default function CircleChatScreen() {
       >
         <FlatList
           ref={listRef}
-          data={buildListItems(messages)}
+          data={buildListItems(messages, t)}
           keyExtractor={(item) => item.type === 'date' ? item.key : item.data.id}
           contentContainerStyle={styles.messageList}
           renderItem={({ item }) => {
@@ -648,13 +641,13 @@ export default function CircleChatScreen() {
             );
           }}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No messages yet. Be the first to share.</Text>
+            <Text style={styles.emptyText}>{t('circle.noMessages')}</Text>
           }
           ListFooterComponent={
             aiLoading ? (
               <View style={styles.aiThinkingRow}>
                 <ActivityIndicator size="small" color={Colors.mutedLavender} />
-                <Text style={styles.aiThinkingText}>AI Companion is thinking…</Text>
+                <Text style={styles.aiThinkingText}>{t('circle.aiThinking')}</Text>
               </View>
             ) : null
           }
@@ -665,7 +658,7 @@ export default function CircleChatScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="Share with the circle…"
+            placeholder={t('circle.inputPlaceholder')}
             placeholderTextColor={Colors.textMuted}
             multiline
             maxLength={1000}
@@ -722,7 +715,7 @@ export default function CircleChatScreen() {
           <View style={styles.membersSheet}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Members</Text>
+              <Text style={styles.modalTitle}>{t('circle.membersTitle')}</Text>
               <View style={styles.memberCountBadge}>
                 <Text style={styles.memberCountText}>{members.length}</Text>
               </View>
@@ -745,11 +738,11 @@ export default function CircleChatScreen() {
                         </View>
                       )}
                     </View>
-                    {item.isMe && <Text style={styles.memberMeta}>You</Text>}
+                    {item.isMe && <Text style={styles.memberMeta}>{t('circle.youLabel')}</Text>}
                   </View>
                   {item.isMe ? (
                     <View style={styles.youBadge}>
-                      <Text style={styles.youBadgeText}>you</Text>
+                      <Text style={styles.youBadgeText}>{t('circle.youBadge')}</Text>
                     </View>
                   ) : (
                     <TouchableOpacity
@@ -757,8 +750,8 @@ export default function CircleChatScreen() {
                       onPress={() => {
                         const canKick = members.some((m) => m.isMe && m.role === 'moderator');
                         const options = canKick
-                          ? ['Block member', 'Report member', 'Remove from circle', 'Cancel']
-                          : ['Block member', 'Report member', 'Cancel'];
+                          ? [t('circle.blockMember'), t('circle.reportMember'), t('circle.removeMemberBtn'), t('common.cancel')]
+                          : [t('circle.blockMember'), t('circle.reportMember'), t('common.cancel')];
                         const cancelButtonIndex = options.length - 1;
                         const destructiveButtonIndex = 0;
 
@@ -778,13 +771,13 @@ export default function CircleChatScreen() {
                             onSelect,
                           );
                         } else {
-                          Alert.alert('Member options', undefined, [
-                            { text: 'Block member', style: 'destructive', onPress: () => handleBlockMember(item) },
-                            { text: 'Report member', onPress: () => handleReportMember(item) },
+                          Alert.alert(t('circle.memberOptions'), undefined, [
+                            { text: t('circle.blockMember'), style: 'destructive', onPress: () => handleBlockMember(item) },
+                            { text: t('circle.reportMember'), onPress: () => handleReportMember(item) },
                             ...(canKick
-                              ? [{ text: 'Remove from circle', style: 'destructive' as const, onPress: () => handleKickMember(item) }]
+                              ? [{ text: t('circle.removeMemberBtn'), style: 'destructive' as const, onPress: () => handleKickMember(item) }]
                               : []),
-                            { text: 'Cancel', style: 'cancel' },
+                            { text: t('common.cancel'), style: 'cancel' },
                           ]);
                         }
                       }}

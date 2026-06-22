@@ -3,6 +3,7 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import type { Match } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PeerAvatar } from './PeerAvatar';
 
@@ -13,11 +14,12 @@ interface Props {
 }
 
 export function IncomingLikesSection({ matches, onAccept, onDecline }: Props) {
+  const { t } = useTranslation();
   if (matches.length === 0) return null;
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.title}>People who liked you</Text>
+        <Text style={styles.title}>{t('social.likedYou')}</Text>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{matches.length}</Text>
         </View>
@@ -44,7 +46,7 @@ export function IncomingLikesSection({ matches, onAccept, onDecline }: Props) {
             testID={`accept-${match.id}`}
           >
             <Ionicons name="heart" size={16} color={Colors.white} />
-            <Text style={styles.acceptText}>Connect</Text>
+            <Text style={styles.acceptText}>{t('social.connect')}</Text>
           </TouchableOpacity>
         </View>
       ))}
