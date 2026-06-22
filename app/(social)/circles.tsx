@@ -16,6 +16,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const CIRCLE_ACCENTS = [
   Colors.mutedLavender,
@@ -29,7 +30,7 @@ function accentFor(name: string): string {
   return CIRCLE_ACCENTS[sum % CIRCLE_ACCENTS.length];
 }
 
-function CapacityDots({ count, cap, color }: { count: number; cap: number; color: string }) {
+function CapacityDots({ count, cap, color, label }: { count: number; cap: number; color: string; label: string }) {
   return (
     <View style={styles.dotsRow}>
       {Array.from({ length: cap }).map((_, i) => (
@@ -38,12 +39,13 @@ function CapacityDots({ count, cap, color }: { count: number; cap: number; color
           style={[styles.dot, { backgroundColor: i < count ? color : 'rgba(255,255,255,0.1)' }]}
         />
       ))}
-      <Text style={styles.dotsLabel}>{count} / {cap} members</Text>
+      <Text style={styles.dotsLabel}>{label}</Text>
     </View>
   );
 }
 
 export default function CirclesScreen() {
+  const { t } = useTranslation();
   const [circles, setCircles] = useState<Circle[]>([]);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
@@ -68,11 +70,11 @@ export default function CirclesScreen() {
 
     if (!res.ok) {
       if (res.reason === 'full') {
-        Alert.alert('Circle is full', 'This circle has reached its member limit. Try another one — small spaces stay safer.');
+        Alert.alert(t('circles.isFullTitle'), t('circles.isFullBody'));
       } else if (res.reason === 'auth') {
-        Alert.alert('Sign in needed', 'Please sign in to join a circle.');
+        Alert.alert(t('circles.signInNeeded'), t('circles.signInNeededBody'));
       } else {
-        Alert.alert('Could not join', 'Please check your connection and try again.');
+        Alert.alert(t('circles.couldNotJoin'), t('circles.couldNotJoinBody'));
       }
       return;
     }
@@ -118,13 +120,13 @@ export default function CirclesScreen() {
             {c.isMember && (
               <View style={[styles.statusBadge, { backgroundColor: Colors.softGreen + '20' }]}>
                 <Ionicons name="checkmark-circle" size={12} color={Colors.softGreen} />
-                <Text style={[styles.statusBadgeText, { color: Colors.softGreen }]}>Joined</Text>
+                <Text style={[styles.statusBadgeText, { color: Colors.softGreen }]}>{t('circles.joined')}</Text>
               </View>
             )}
             {isFull && !c.isMember && (
               <View style={[styles.statusBadge, { backgroundColor: Colors.textMuted + '30' }]}>
                 <Ionicons name="lock-closed" size={11} color={Colors.textMuted} />
-                <Text style={[styles.statusBadgeText, { color: Colors.textMuted }]}>Full</Text>
+                <Text style={[styles.statusBadgeText, { color: Colors.textMuted }]}>{t('circles.full')}</Text>
               </View>
             )}
           </View>
@@ -133,7 +135,7 @@ export default function CirclesScreen() {
           <Text style={styles.cardDesc}>{c.description}</Text>
 
           {/* capacity dots */}
-          <CapacityDots count={c.memberCount} cap={c.memberCap} color={accent} />
+          <CapacityDots count={c.memberCount} cap={c.memberCap} color={accent} label={t('circles.membersCount', { count: c.memberCount, cap: c.memberCap })} />
 
           {/* action button */}
           {c.isMember ? (
@@ -144,7 +146,7 @@ export default function CirclesScreen() {
               testID={`open-circle-${c.slug}`}
             >
               <Ionicons name="chatbubbles-outline" size={16} color={accent} />
-              <Text style={[styles.actionBtnText, { color: accent }]}>Open circle</Text>
+              <Text style={[styles.actionBtnText, { color: accent }]}>{t('circles.openCircle')}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -169,7 +171,7 @@ export default function CirclesScreen() {
                     color={isFull ? Colors.textMuted : accent}
                   />
                   <Text style={[styles.actionBtnText, { color: isFull ? Colors.textMuted : accent }]}>
-                    {isFull ? 'Circle full' : 'Join circle'}
+                    {isFull ? t('circles.circleFull') : t('circles.joinCircle')}
                   </Text>
                 </>
               )}
@@ -186,14 +188,12 @@ export default function CirclesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Support Circles</Text>
+        <Text style={styles.navTitle}>{t('circles.title')}</Text>
         <View style={styles.navBtn} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.intro}>
-          Small group spaces — 4 to 8 people — that feel safer than large public feeds.
-        </Text>
+        <Text style={styles.intro}>{t('circles.intro')}</Text>
 
         {loading && (
           <ActivityIndicator color={Colors.mutedLavender} style={{ marginTop: Spacing.xl }} />
@@ -202,27 +202,27 @@ export default function CirclesScreen() {
         {!loading && circles.length === 0 && (
           <View style={styles.empty}>
             <Ionicons name="people-outline" size={42} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No circles available right now.</Text>
+            <Text style={styles.emptyText}>{t('circles.noCircles')}</Text>
           </View>
         )}
 
         {!loading && joined.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>YOUR CIRCLES</Text>
+            <Text style={styles.sectionLabel}>{t('circles.sectionYours').toUpperCase()}</Text>
             {joined.map(renderCard)}
           </>
         )}
 
         {!loading && available.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>AVAILABLE</Text>
+            <Text style={styles.sectionLabel}>{t('circles.sectionAvailable').toUpperCase()}</Text>
             {available.map(renderCard)}
           </>
         )}
 
         {!loading && full.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>FULL</Text>
+            <Text style={styles.sectionLabel}>{t('circles.sectionFull').toUpperCase()}</Text>
             {full.map(renderCard)}
           </>
         )}
@@ -230,9 +230,7 @@ export default function CirclesScreen() {
         {!loading && circles.length > 0 && (
           <View style={styles.safetyNote}>
             <Ionicons name="shield-checkmark-outline" size={16} color={Colors.softGreen} />
-            <Text style={styles.safetyText}>
-              Circles are small on purpose. You can leave or report anytime.
-            </Text>
+            <Text style={styles.safetyText}>{t('circles.safetyNote')}</Text>
           </View>
         )}
       </ScrollView>

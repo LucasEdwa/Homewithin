@@ -16,8 +16,10 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function CircleIntroScreen() {
+  const { t } = useTranslation();
   const { circleId } = useLocalSearchParams<{ circleId: string }>();
   const [circle, setCircle] = useState<Circle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ export default function CircleIntroScreen() {
   if (!circle) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.error}>Circle not found.</Text>
+        <Text style={styles.error}>{t('circles.notFound')}</Text>
       </SafeAreaView>
     );
   }
@@ -70,7 +72,7 @@ export default function CircleIntroScreen() {
         >
           <Ionicons name="close" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Welcome</Text>
+        <Text style={styles.navTitle}>{t('circles.welcome')}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -81,7 +83,7 @@ export default function CircleIntroScreen() {
           </View>
           <Text style={styles.title}>{circle.name}</Text>
           <Text style={styles.subtitle}>
-            {circle.memberCount} / {circle.memberCap} members
+            {t('circles.membersCount', { count: circle.memberCount, cap: circle.memberCap })}
           </Text>
         </View>
 
@@ -90,7 +92,7 @@ export default function CircleIntroScreen() {
         <Card style={styles.rulesCard}>
           <View style={styles.rulesHeader}>
             <Ionicons name="heart-outline" size={18} color={Colors.safeBlue} />
-            <Text style={styles.rulesTitle}>Circle agreements</Text>
+            <Text style={styles.rulesTitle}>{t('circles.agreements')}</Text>
           </View>
           {rules.map((rule, i) => (
             <Text key={i} style={styles.rule}>
@@ -101,15 +103,13 @@ export default function CircleIntroScreen() {
 
         <Card style={styles.safetyNote}>
           <Ionicons name="shield-checkmark-outline" size={18} color={Colors.softGreen} />
-          <Text style={styles.safetyText}>
-            You can block a member, leave, or report anyone in this circle at any time. Blocking a member will also remove you from the circle.
-          </Text>
+          <Text style={styles.safetyText}>{t('circles.safetyAgreement')}</Text>
         </Card>
 
         <Button
-          label="Enter circle"
+          label={t('circles.enterCircle')}
           onPress={handleEnter}
-          accessibilityLabel="Enter circle"
+          accessibilityLabel={t('circles.enterCircle')}
         />
       </ScrollView>
     </SafeAreaView>

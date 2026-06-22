@@ -8,13 +8,14 @@ import type { Message } from '@/types';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, FlatList, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-export const EXPIRY_OPTIONS: { label: string; hours: number | null }[] = [
-  { label: 'Off',      hours: null },
-  { label: '1 hour',   hours: 1   },
-  { label: '6 hours',  hours: 6   },
-  { label: '24 hours', hours: 24  },
-  { label: '7 days',   hours: 168 },
+export const EXPIRY_OPTIONS: { labelKey: string; hours: number | null }[] = [
+  { labelKey: 'chat.expiryOff',  hours: null },
+  { labelKey: 'chat.expiry1h',   hours: 1   },
+  { labelKey: 'chat.expiry6h',   hours: 6   },
+  { labelKey: 'chat.expiry24h',  hours: 24  },
+  { labelKey: 'chat.expiry7d',   hours: 168 },
 ];
 
 export type ListItem =
@@ -26,12 +27,12 @@ function isExpired(msg: Message) {
   return !!msg.expiresAt && new Date(msg.expiresAt) < new Date();
 }
 
-function formatDateLabel(date: Date): string {
+function formatDateLabel(date: Date, t: (key: string) => string): string {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  if (date.toDateString() === today.toDateString()) return t('circle.today');
+  if (date.toDateString() === yesterday.toDateString()) return t('circle.yesterday');
   return date.toLocaleDateString([], {
     day: 'numeric',
     month: 'short',
@@ -39,7 +40,7 @@ function formatDateLabel(date: Date): string {
   });
 }
 
-function buildListItems(messages: Message[], initialUnread: number): ListItem[] {
+function buildListItems(messages: Message[], initialUnread: number, t: (key: string) => string): ListItem[] {
   const items: ListItem[] = [];
   let lastDateStr = '';
   const unreadStartIdx = initialUnread > 0 ? Math.max(0, messages.length - initialUnread) : -1;
@@ -48,7 +49,7 @@ function buildListItems(messages: Message[], initialUnread: number): ListItem[] 
     const dateStr = new Date(msg.createdAt).toDateString();
     if (dateStr !== lastDateStr) {
       lastDateStr = dateStr;
-      items.push({ type: 'dateHeader', label: formatDateLabel(new Date(msg.createdAt)), key: `dh-${dateStr}` });
+      items.push({ type: 'dateHeader', label: formatDateLabel(new Date(msg.createdAt), t), key: `dh-${dateStr}` });
     }
     if (i === unreadStartIdx) {
       items.push({ type: 'unreadSeparator', key: 'unread-sep', count: initialUnread });
@@ -61,6 +62,7 @@ function buildListItems(messages: Message[], initialUnread: number): ListItem[] 
 }
 
 export function useChatScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{
     matchId: string;
     nickname?: string;
@@ -106,7 +108,8 @@ export function useChatScreen() {
   const initialUnreadCount = useRef(matchId ? (unreadByMatch[matchId] ?? 0) : 0);
 
   const listItems = useMemo(
-    () => buildListItems(messages.filter((m) => !isExpired(m)), initialUnreadCount.current),
+    () => buildListItems(messages.filter((m) => !isExpired(m)), initialUnreadCount.current, t),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [messages],
   );
 
@@ -134,16 +137,16 @@ export function useChatScreen() {
     const body = input.trim();
     const filterResult = filterContent(body);
     if (filterResult.ok === false) {
-      Alert.alert('Message blocked', filterResult.reason);
+      Alert.alert(t('chat.messageBlocked'), filterResult.reason);
       return;
     }
     if (filterResult.ok === 'warn') {
       Alert.alert(
-        'Strong language',
+        t('chat.strongLanguage'),
         filterResult.reason,
         [
-          { text: 'Edit message', style: 'cancel' },
-          { text: 'Send anyway', onPress: () => doSend(body) },
+          { text: t('chat.editMessage'), style: 'cancel' },
+          { text: t('chat.sendAnyway'), onPress: () => doSend(body) },
         ],
       );
       return;
@@ -175,7 +178,7 @@ export function useChatScreen() {
       // Restore state so the user can retry without re-typing.
       setInput(body);
       setReplyTo(currentReplyTo);
-      Alert.alert('Failed to send', 'Check your connection and try again.');
+      Alert.alert(t('chat.failedToSend'), t('chat.failedToSendBody'));
     }
     setSending(false);
   }
@@ -193,7 +196,7 @@ export function useChatScreen() {
   }
 
   function handlePickExpiry() {
-    const labels = [...EXPIRY_OPTIONS.map((o) => o.label), 'Cancel'];
+    const labels = [...EXPIRY_OPTIONS.map((o) => t(o.labelKey)), t('common.cancel')];
     const applySelection = async (option: typeof EXPIRY_OPTIONS[number]) => {
       setExpiryHours(option.hours);
       if (option.hours !== null && matchId) {
@@ -216,29 +219,29 @@ export function useChatScreen() {
     };
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: labels, cancelButtonIndex: labels.length - 1, title: 'Auto-delete messages after…' },
+        { options: labels, cancelButtonIndex: labels.length - 1, title: t('chat.autoDeleteTitle') },
         (idx) => { if (idx < EXPIRY_OPTIONS.length) applySelection(EXPIRY_OPTIONS[idx]); }
       );
     } else {
-      Alert.alert('Auto-delete after…', undefined, [
-        ...EXPIRY_OPTIONS.map((o) => ({ text: o.label, onPress: () => applySelection(o) })),
-        { text: 'Cancel', style: 'cancel' as const },
+      Alert.alert(t('chat.autoDeleteAndroid'), undefined, [
+        ...EXPIRY_OPTIONS.map((o) => ({ text: t(o.labelKey), onPress: () => applySelection(o) })),
+        { text: t('common.cancel'), style: 'cancel' as const },
       ]);
     }
   }
 
   function confirmBlock() {
     Alert.alert(
-      'Block this person?',
-      "They won't be able to contact you. This cannot be undone.",
+      t('chat.blockTitle'),
+      t('chat.blockBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Block',
+          text: t('chat.block'),
           style: 'destructive',
           onPress: async () => {
             if (!matchId) {
-              Alert.alert('Block failed', 'Missing match info. Please try again.');
+              Alert.alert(t('chat.blockFailed'), t('chat.blockFailedMissing'));
               return;
             }
             let targetId = await getMatchPeerId(matchId);
@@ -247,12 +250,12 @@ export function useChatScreen() {
               targetId = theirMsg?.senderId ?? null;
             }
             if (!targetId) {
-              Alert.alert('Block failed', 'Could not identify the other user.');
+              Alert.alert(t('chat.blockFailed'), t('chat.blockFailedUnknown'));
               return;
             }
             const ok = await blockUser(targetId, matchId);
             if (!ok) {
-              Alert.alert('Block failed', 'Please check your connection and try again.');
+              Alert.alert(t('chat.blockFailed'), t('chat.blockFailedConnection'));
               return;
             }
             router.back();
@@ -267,32 +270,32 @@ export function useChatScreen() {
       const lastTheirMsg = [...messages].reverse().find((m) => m.senderId !== myUserId);
       if (lastTheirMsg) {
         await reportMessage(lastTheirMsg.id, lastTheirMsg.senderId, reason);
-        Alert.alert('Reported', "Thank you. We'll review this shortly.");
+        Alert.alert(t('chat.reported'), t('chat.reportedBody'));
       }
     };
 
     if (Platform.OS === 'ios') {
       Alert.prompt(
-        'Report a message',
-        'Briefly describe the issue (e.g. harassment, threats):',
+        t('chat.reportTitle'),
+        t('chat.reportPrompt'),
         async (reason) => { if (reason?.trim()) await submit(reason.trim()); },
         'plain-text',
       );
     } else {
-      const REASONS = ['Harassment or threats', 'Inappropriate content', 'Spam', 'Other concern'];
+      const REASONS = [t('chat.reportHarassment'), t('chat.reportInappropriate'), t('chat.reportSpam'), t('chat.reportOther')];
       Alert.alert(
-        'Report a message',
-        'What is the issue?',
+        t('chat.reportTitle'),
+        t('chat.reportWhatIsIssue'),
         [
           ...REASONS.map((r) => ({ text: r, onPress: () => submit(r) })),
-          { text: 'Cancel', style: 'cancel' as const },
+          { text: t('common.cancel'), style: 'cancel' as const },
         ],
       );
     }
   }
 
   function handleOptions() {
-    const options = ['Block & report user', 'Report a message', 'Cancel'];
+    const options = [t('chat.blockReport'), t('chat.reportMessage'), t('common.cancel')];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options, destructiveButtonIndex: 0, cancelButtonIndex: 2 },
@@ -302,29 +305,29 @@ export function useChatScreen() {
         }
       );
     } else {
-      Alert.alert('Options', undefined, [
-        { text: 'Block & report user', style: 'destructive', onPress: confirmBlock },
-        { text: 'Report a message', onPress: promptReportMessage },
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('chat.options'), undefined, [
+        { text: t('chat.blockReport'), style: 'destructive', onPress: confirmBlock },
+        { text: t('chat.reportMessage'), onPress: promptReportMessage },
+        { text: t('common.cancel'), style: 'cancel' },
       ]);
     }
   }
 
   function handleDeleteMessage(messageId: string) {
     Alert.alert(
-      'Delete message?',
-      'This will remove the message for everyone in this chat.',
+      t('chat.deleteMessage'),
+      t('chat.deleteMessageBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             const ok = await deleteMessage(messageId);
             if (ok) {
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             } else {
-              Alert.alert('Delete failed', 'Please check your connection and try again.');
+              Alert.alert(t('chat.deleteFailed'), t('chat.deleteFailedBody'));
             }
           },
         },

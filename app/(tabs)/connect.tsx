@@ -135,10 +135,10 @@ export default function ConnectScreen() {
         {view === 'empty' && !loading && (
           <View style={styles.emptyState}>
             <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>No more matches right now.</Text>
-            <Text style={styles.emptyText}>Check back later — new people join every day.</Text>
+            <Text style={styles.emptyTitle}>{t('connect.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('connect.emptyBody')}</Text>
             <TouchableOpacity onPress={handleBackToIntentions} style={styles.resetBtn}>
-              <Text style={styles.resetText}>Try a different intention</Text>
+              <Text style={styles.resetText}>{t('connect.tryDifferent')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -160,7 +160,7 @@ export default function ConnectScreen() {
                   color={activeTab === 'connected' ? Colors.safeBlue : Colors.textMuted}
                 />
                 <Text style={[styles.tabText, activeTab === 'connected' && styles.tabTextActive]}>
-                  Connected
+                  {t('connect.connected')}
                 </Text>
                 {myMatches.length > 0 && (
                   <View style={[styles.tabBadge, activeTab === 'connected' && styles.tabBadgeActive]}>
@@ -182,7 +182,7 @@ export default function ConnectScreen() {
                   color={activeTab === 'pending' ? Colors.safeBlue : Colors.textMuted}
                 />
                 <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
-                  Pending
+                  {t('connect.pending')}
                 </Text>
                 {pendingCount > 0 && (
                   <View style={[styles.tabBadge, activeTab === 'pending' && styles.tabBadgeActive]}>
@@ -202,8 +202,8 @@ export default function ConnectScreen() {
                   />
                 : <View style={styles.tabEmpty}>
                     <Ionicons name="people-outline" size={36} color={Colors.textMuted} />
-                    <Text style={styles.tabEmptyTitle}>No connections yet</Text>
-                    <Text style={styles.tabEmptyText}>Like someone to start a connection.</Text>
+                    <Text style={styles.tabEmptyTitle}>{t('connect.noConnections')}</Text>
+                    <Text style={styles.tabEmptyText}>{t('connect.noConnectionsBody')}</Text>
                   </View>
             )}
 
@@ -219,8 +219,8 @@ export default function ConnectScreen() {
                   </View>
                 : <View style={styles.tabEmpty}>
                     <Ionicons name="time-outline" size={36} color={Colors.textMuted} />
-                    <Text style={styles.tabEmptyTitle}>Nothing pending</Text>
-                    <Text style={styles.tabEmptyText}>Likes you send or receive will appear here.</Text>
+                    <Text style={styles.tabEmptyTitle}>{t('connect.nothingPending')}</Text>
+                    <Text style={styles.tabEmptyText}>{t('connect.nothingPendingBody')}</Text>
                   </View>
             )}
           </View>
@@ -237,19 +237,15 @@ export default function ConnectScreen() {
             <Ionicons name="people" size={22} color={Colors.mutedLavender} />
           </View>
           <View style={styles.circlesEntryText}>
-            <Text style={styles.circlesEntryTitle}>Support circles</Text>
-            <Text style={styles.circlesEntrySub}>
-              Small groups of 4–8 people. Safer than public feeds.
-            </Text>
+            <Text style={styles.circlesEntryTitle}>{t('connect.supportCircles')}</Text>
+            <Text style={styles.circlesEntrySub}>{t('connect.supportCirclesSub')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
         </TouchableOpacity>
 
         <Card style={styles.safetyNote}>
           <Ionicons name="shield-checkmark-outline" size={18} color={Colors.softGreen} />
-          <Text style={styles.safetyText}>
-            All connections are anonymous. You can block or report anyone at any time.
-          </Text>
+          <Text style={styles.safetyText}>{t('connect.safetyNote')}</Text>
         </Card>
       </ScrollView>
       <EmergencyButton />
