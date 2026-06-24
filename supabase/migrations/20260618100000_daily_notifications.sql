@@ -60,9 +60,20 @@ create index if not exists resource_reads_user_day
 -- Calls the send-daily-notifications edge function at 07:00 and 19:00 UTC
 -- (~09:00 and 21:00 Stockholm summer time).
 --
--- Pre-requisites — add these two Supabase Vault secrets before deploying:
---   supabase secrets set SUPABASE_URL=https://<your-project-ref>.supabase.co
---   supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+-- Pre-requisites — add these two secrets to Supabase VAULT (not edge-function
+-- env vars) before running this migration. Use the SQL editor or Dashboard →
+-- Database → Vault → New Secret:
+--
+--   INSERT INTO vault.secrets (name, secret)
+--   VALUES ('SUPABASE_URL', 'https://<project-ref>.supabase.co')
+--   ON CONFLICT (name) DO UPDATE SET secret = EXCLUDED.secret;
+--
+--   INSERT INTO vault.secrets (name, secret)
+--   VALUES ('SUPABASE_SERVICE_ROLE_KEY', '<service-role-key>')
+--   ON CONFLICT (name) DO UPDATE SET secret = EXCLUDED.secret;
+--
+-- NOTE: `supabase secrets set` sets EDGE FUNCTION env vars, NOT Vault secrets —
+-- do NOT use it here. The cron job reads from vault.decrypted_secrets.
 --
 -- pg_cron and pg_net must both be enabled on your project. Both are available
 -- on all Supabase plans; pg_cron ships pre-enabled on Supabase projects.

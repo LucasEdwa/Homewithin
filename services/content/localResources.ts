@@ -3,6 +3,7 @@ import {
     LOCAL_RESOURCES,
     SWEDISH_STATES,
     WORKSHOPS,
+    WORKSHOPS_SV,
 } from "@/data/localResources";
 import type {
     LocalMeetup,
@@ -104,9 +105,10 @@ export function getResources(
 
 // ── Workshop helpers ──────────────────────────────────────────────────────────
 
-export function getWorkshops(category?: string): Workshop[] {
-  if (!category) return WORKSHOPS;
-  return WORKSHOPS.filter((w) => w.category === category);
+export function getWorkshops(category?: string, language = 'en'): Workshop[] {
+  const list = language === 'sv' ? WORKSHOPS_SV : WORKSHOPS;
+  if (!category) return list;
+  return list.filter((w) => w.category === category);
 }
 
 // ── Meetup helpers ────────────────────────────────────────────────────────────

@@ -388,6 +388,93 @@ export const LOCAL_RESOURCES: LocalResource[] = [
   },
 ];
 
+export const WORKSHOPS_SV: Workshop[] = [
+  {
+    id: "ws-1",
+    title: "Komma ut med självförtroende",
+    description:
+      "En skonsam 4-veckors onlineworkshop som hjälper dig förbereda din berättelse och öva på samtal i din egen takt.",
+    host: "HomeWithin Community",
+    format: "online",
+    recurring: "Månadsvis — första söndagen",
+    category: "coming_out",
+    free: true,
+    link: "https://homewithin.app/workshops/coming-out",
+  },
+  {
+    id: "ws-2",
+    title: "Läka från familjeförkastning",
+    description:
+      "Faciliterade peer support-sessioner för dem som navigerar distans eller förkastning från sin ursprungsfamilj.",
+    host: "HomeWithin Community",
+    format: "online",
+    recurring: "Varannan vecka — lördagar 18:00 UTC",
+    category: "family_rejection",
+    free: true,
+    link: "https://homewithin.app/workshops/family-healing",
+  },
+  {
+    id: "ws-3",
+    title: "Bygga din valda familj",
+    description:
+      "Interaktiv workshop om att identifiera, vårda och växa ditt nätverk av valt stöd.",
+    host: "HomeWithin Community",
+    format: "online",
+    recurring: "Månadsvis — tredje lördagen",
+    category: "chosen_family",
+    free: true,
+    link: "https://homewithin.app/workshops/chosen-family",
+  },
+  {
+    id: "ws-4",
+    title: "Mindfulness för HBTQ+-välmående",
+    description:
+      "Veckovis guidad mindfulness-övning anpassad för queera upplevelser av stress och hypervigilans.",
+    host: "HomeWithin Community",
+    format: "online",
+    recurring: "Veckovis — onsdagar 19:00 UTC",
+    category: "mental_health",
+    free: true,
+    link: "https://homewithin.app/workshops/mindfulness",
+  },
+  {
+    id: "ws-5",
+    title: "Trans+ Peer Café",
+    description:
+      "Informellt drop-in-utrymme för transpersoner, icke-binära och könsfrågande personer att mötas och dela.",
+    host: "HomeWithin Community",
+    format: "online",
+    recurring: "Veckovis — fredagar 20:00 UTC",
+    category: "trans_support",
+    free: true,
+    link: "https://homewithin.app/workshops/trans-cafe",
+  },
+  {
+    id: "ws-6",
+    title: "Queer sorg & förlust-cirkel",
+    description:
+      "Ett skonsamt rum för att bearbeta sorg — från relationer, familjestrangement eller identitetsförluster.",
+    host: "HomeWithin Community",
+    format: "online",
+    recurring: "Månadsvis — sista torsdagen",
+    category: "grief",
+    free: true,
+    link: "https://homewithin.app/workshops/grief-circle",
+  },
+  {
+    id: "ws-7",
+    title: "Navigera fientliga skolor och samhällen",
+    description:
+      "Praktiska strategier för unga HBTQ+-personer som möter mobbning, diskriminering eller utestängning i skolan eller lokalsamhället.",
+    host: "HomeWithin Community",
+    format: "online",
+    recurring: "Månadsvis — andra tisdagen",
+    category: "outside_home",
+    free: true,
+    link: "https://homewithin.app/workshops/outside-home",
+  },
+];
+
 export const WORKSHOPS: Workshop[] = [
   {
     id: "ws-1",

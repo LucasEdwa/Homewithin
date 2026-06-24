@@ -134,8 +134,8 @@ describe('ChatScreen', () => {
     const spy = jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
       .mockImplementation((_opts: any, callback: (idx: number) => void) => callback(3)); // '24 hours'
     render(<ChatScreen />);
-    await waitFor(() => screen.getByLabelText('Auto-delete messages off'));
-    fireEvent.press(screen.getByLabelText('Auto-delete messages off'));
+    await waitFor(() => screen.getByLabelText('Auto-delete off'));
+    fireEvent.press(screen.getByLabelText('Auto-delete off'));
     fireEvent.changeText(screen.getByTestId('message-input'), 'Private');
     fireEvent.press(screen.getByTestId('send-btn'));
     await waitFor(() =>

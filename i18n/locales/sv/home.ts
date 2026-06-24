@@ -82,5 +82,7 @@ export default {
     connect: 'Anslut',
     resources: 'Resurser',
     profile: 'Profil',
+    events: 'Evenemang',
+    circles: 'Cirklar',
   },
 };

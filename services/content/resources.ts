@@ -46,14 +46,16 @@ function rowToResource(row: Record<string, unknown>): Resource {
   };
 }
 
-export async function getResources(category?: ResourceCategory): Promise<Resource[]> {
+export async function getResources(category?: ResourceCategory, language = 'en'): Promise<Resource[]> {
   if (supabase) {
-    let query = supabase.from('resources').select('*').order('created_at', { ascending: false });
+    let query = supabase
+      .from('resources')
+      .select('*')
+      .eq('language', language)
+      .order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
     const { data, error } = await query;
-    if (!error && data && data.length > 0) {
-      return data.map(rowToResource);
-    }
+    if (!error && data && data.length > 0) return data.map(rowToResource);
   }
   const articles = category ? SEED_ARTICLES.filter((a) => a.category === category) : SEED_ARTICLES;
   return articles;
@@ -88,6 +90,9 @@ export async function toggleBookmark(id: string): Promise<boolean> {
 export async function getBookmarkedResources(): Promise<Resource[]> {
   const ids = await getBookmarks();
   if (ids.length === 0) return [];
-  const all = await getResources();
-  return ids.map((id) => all.find((a) => a.id === id)).filter(Boolean) as Resource[];
+  if (supabase) {
+    const { data, error } = await supabase.from('resources').select('*').in('id', ids);
+    if (!error && data) return data.map(rowToResource);
+  }
+  return SEED_ARTICLES.filter((a) => ids.includes(a.id));
 }

@@ -76,5 +76,7 @@ export default {
     connect: 'Connect',
     resources: 'Resources',
     profile: 'Profile',
+    events: 'Events',
+    circles: 'Circles',
   },
 };

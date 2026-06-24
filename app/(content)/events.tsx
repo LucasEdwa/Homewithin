@@ -34,7 +34,7 @@ const FORMAT_COLORS: Record<WorkshopFormat, string> = {
 };
 
 export default function EventsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { nearbyState, profile } = useSession();
   const [activeTab, setActiveTab] = useState<Tab>('workshops');
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -49,7 +49,7 @@ export default function EventsScreen() {
     }
   }, [nearbyLocation, manualLocationOverride]);
 
-  const workshops = getWorkshops();
+  const workshops = getWorkshops(undefined, i18n.language);
   const meetups = getMeetups(selectedLocation);
 
   const openLink = useCallback((url: string) => {

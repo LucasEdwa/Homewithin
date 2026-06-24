@@ -45,17 +45,17 @@ function CapacityDots({ count, cap, color, label }: { count: number; cap: number
 }
 
 export default function CirclesScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [circles, setCircles] = useState<Circle[]>([]);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const data = await listCircles();
+    const data = await listCircles(i18n.language);
     setCircles(data);
     setLoading(false);
-  }, []);
+  }, [i18n.language]);
 
   useFocusEffect(
     useCallback(() => {

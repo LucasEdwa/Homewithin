@@ -20,13 +20,13 @@ import type { Program } from '@/types';
 type ProgramWithProgress = Program & { completed: number; total: number };
 
 export default function ProgramsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [programs, setPrograms] = useState<ProgramWithProgress[]>([]);
 
   useFocusEffect(
     useCallback(() => {
-      getAllProgramsWithProgress().then(setPrograms);
-    }, [])
+      getAllProgramsWithProgress(i18n.language).then(setPrograms);
+    }, [i18n.language])
   );
 
   return (

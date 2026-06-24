@@ -27,7 +27,7 @@ const ALL = 'all' as const;
 type Filter = ResourceCategory | typeof ALL;
 
 export default function ResourcesScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>(ALL);
   const [articles, setArticles] = useState<Resource[]>([]);
@@ -39,7 +39,7 @@ export default function ResourcesScreen() {
       let active = true;
       (async () => {
         setLoading(true);
-        const [all, bms] = await Promise.all([getResources(), getBookmarks()]);
+        const [all, bms] = await Promise.all([getResources(undefined, i18n.language), getBookmarks()]);
         if (active) {
           setArticles(all);
           setBookmarkIds(bms);

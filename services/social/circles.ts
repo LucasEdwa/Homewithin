@@ -21,7 +21,7 @@ function rowToMessage(
   };
 }
 
-export async function listCircles(): Promise<Circle[]> {
+export async function listCircles(language = 'en'): Promise<Circle[]> {
   if (!supabase) return [];
   const uid = await currentUserId();
 
@@ -32,6 +32,7 @@ export async function listCircles(): Promise<Circle[]> {
     .select(
       "id, slug, name, description, rules, category, member_cap, member_count, created_at",
     )
+    .eq("language", language)
     .order("created_at", { ascending: true });
 
   if (error) {
