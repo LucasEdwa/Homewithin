@@ -141,3 +141,34 @@ describe('LocalResourcesScreen — location', () => {
     await waitFor(() => expect(mockRequestLocation).toHaveBeenCalled());
   });
 });
+
+describe('LocalResourcesScreen — search', () => {
+  it('filters resources by name', () => {
+    render(<LocalResourcesScreen />);
+    fireEvent.changeText(screen.getByTestId('local-resources-search-input'), 'RFSL');
+    expect(screen.getByTestId('resource-se-sthlm-1')).toBeTruthy();
+    expect(screen.queryByTestId('resource-se-nat-3')).toBeNull();
+  });
+
+  it('filters resources by description text, case-insensitively', () => {
+    render(<LocalResourcesScreen />);
+    fireEvent.changeText(screen.getByTestId('local-resources-search-input'), 'krisstöd');
+    expect(screen.getByTestId('resource-se-nat-3')).toBeTruthy();
+    expect(screen.queryByTestId('resource-se-sthlm-1')).toBeNull();
+  });
+
+  it('shows the empty state when nothing matches the search', () => {
+    render(<LocalResourcesScreen />);
+    fireEvent.changeText(screen.getByTestId('local-resources-search-input'), 'nonexistent org');
+    expect(screen.getByTestId('empty-state')).toBeTruthy();
+  });
+
+  it('clears the search and restores the full list', () => {
+    render(<LocalResourcesScreen />);
+    const input = screen.getByTestId('local-resources-search-input');
+    fireEvent.changeText(input, 'RFSL');
+    expect(screen.queryByTestId('resource-se-nat-3')).toBeNull();
+    fireEvent.changeText(input, '');
+    expect(screen.getByTestId('resource-se-nat-3')).toBeTruthy();
+  });
+});

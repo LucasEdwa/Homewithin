@@ -5,9 +5,11 @@ import { Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { getCheckIns, getJournalEntries } from '@/services/storage';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Share, StyleSheet, Text } from 'react-native';
 
 export function ProfileDataCard() {
+  const { t } = useTranslation();
   const { profile } = useSession();
   const [exporting, setExporting] = useState(false);
 
@@ -33,7 +35,7 @@ export function ProfileDataCard() {
       await Share.share({ message: JSON.stringify(payload, null, 2), title: 'HomeWithin — My Data Export' });
     } catch (e: any) {
       if (e?.message !== 'The user did not share') {
-        Alert.alert('Export failed', 'Could not export your data. Please try again.');
+        Alert.alert(t('profileCards.exportFailed'), t('profileCards.exportFailedBody'));
       }
     } finally {
       setExporting(false);
@@ -42,17 +44,21 @@ export function ProfileDataCard() {
 
   function handleNotificationPrefs() {
     Alert.alert(
-      'Notification preferences',
-      'Push notifications are not enabled in this version. Stay tuned for future updates.',
-      [{ text: 'Got it' }],
+      t('profileCards.notifPrefs'),
+      t('profileCards.notifPrefsBody'),
+      [{ text: t('profileCards.gotIt') }],
     );
   }
 
   return (
     <Card style={styles.card}>
-      <Text style={styles.title}>Your data</Text>
-      <SettingRow label="Export journal & check-ins" value={exporting ? 'Exporting…' : ''} onPress={handleExportData} />
-      <SettingRow label="Notification preferences" value="" onPress={handleNotificationPrefs} />
+      <Text style={styles.title}>{t('profileCards.yourData')}</Text>
+      <SettingRow
+        label={t('profileCards.exportJournal')}
+        value={exporting ? t('profileCards.exporting') : ''}
+        onPress={handleExportData}
+      />
+      <SettingRow label={t('profileCards.notifPrefs')} value="" onPress={handleNotificationPrefs} />
     </Card>
   );
 }

@@ -4,11 +4,13 @@ import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { useProgress } from '@/hooks/useProgress';
-import type { MoodDataPoint } from '@/types';
+import { maybePromptReview } from '@/services/user/appReview';
+import type { MoodDataPoint, StreakMilestone } from '@/types';
 import { MOOD_COLORS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Animated,
@@ -24,9 +26,11 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 const MOOD_BAR_MAX = 80;
 
 export default function ProgressScreen() {
-  const { profile } = useSession();
+  const { t } = useTranslation();
+  const { profile, safetyLevel } = useSession();
   const { snapshot, loading } = useProgress();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const reviewPromptFired = useRef(false);
 
   useEffect(() => {
     if (!loading && snapshot) {
@@ -39,13 +43,23 @@ export default function ProgressScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, snapshot]);
 
+  // A streak milestone is a genuinely positive moment — the only place in the
+  // app we ask for a store rating. Never fires on a yellow/red safety level
+  // (gated inside maybePromptReview) and at most once per screen visit.
+  useEffect(() => {
+    if (snapshot?.streakMilestone.isMilestoneToday && snapshot.journalStreak > 0 && !reviewPromptFired.current) {
+      reviewPromptFired.current = true;
+      maybePromptReview(safetyLevel);
+    }
+  }, [snapshot, safetyLevel]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>Your Progress</Text>
+        <Text style={styles.title}>{t('progress.title')}</Text>
       </View>
 
       {loading ? (
@@ -55,20 +69,23 @@ export default function ProgressScreen() {
       ) : !snapshot ? (
         <View style={styles.centered} testID="error-state">
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textMuted} />
-          <Text style={styles.errorText}>Could not load your progress.</Text>
-          <Text style={styles.errorHint}>Try again in a moment.</Text>
+          <Text style={styles.errorText}>{t('progress.loadError')}</Text>
+          <Text style={styles.errorHint}>{t('progress.loadErrorHint')}</Text>
         </View>
       ) : (
         <Animated.ScrollView
           style={{ opacity: fadeAnim }}
           contentContainerStyle={styles.scroll}
         >
-          {/* Arc gauge — lessons progress */}
+          {snapshot.streakMilestone.isMilestoneToday && snapshot.journalStreak > 0 && (
+            <MilestoneCelebration milestone={snapshot.streakMilestone} />
+          )}
+
           <Card style={styles.gaugeCard}>
             <ArcGauge
               value={snapshot.lessonsCompleted}
               max={snapshot.totalLessons}
-              label="Lessons Progress"
+              label={t('progress.lessonsLabel')}
               icon="layers-outline"
               color={Colors.softGreen}
             />
@@ -80,80 +97,77 @@ export default function ProgressScreen() {
             nickname={profile?.nickname}
           />
 
-          {/* Stat cards row 1 */}
           <View style={styles.statRow}>
             <StatCard
               testID="stat-streak"
               icon="flame-outline"
               color="#E8844E"
               value={String(snapshot.journalStreak)}
-              label={snapshot.journalStreak === 1 ? 'day streak' : 'day streak'}
+              label={t('progress.dayStreak')}
               sublabel="Journal"
               empty={snapshot.journalStreak === 0}
-              emptyMsg="Write today to start a streak"
+              emptyMsg={t('progress.startStreak')}
+              footer={<StreakMilestoneFooter milestone={snapshot.streakMilestone} />}
             />
             <StatCard
               testID="stat-connections"
               icon="people-outline"
               color={Colors.safeBlue}
               value={String(snapshot.connectionsCount)}
-              label={snapshot.connectionsCount === 1 ? 'connection' : 'connections'}
-              sublabel="Made"
+              label={snapshot.connectionsCount === 1 ? t('progress.connections', { count: 1 }) : t('progress.connections_plural', { count: snapshot.connectionsCount })}
+              sublabel={t('progress.connectionsMade')}
             />
           </View>
 
-          {/* Stat cards row 2 */}
           <View style={styles.statRow}>
             <StatCard
               testID="stat-lessons"
               icon="checkmark-circle-outline"
               color={Colors.softGreen}
               value={`${snapshot.lessonsCompleted}/${snapshot.totalLessons}`}
-              label="lessons"
-              sublabel="Programs"
+              label={t('progress.lessons')}
+              sublabel={t('progress.programsSublabel')}
               empty={snapshot.lessonsCompleted === 0}
-              emptyMsg="Start a healing program"
+              emptyMsg={t('progress.startProgram')}
             />
             <SafetyCard delta={snapshot.safetyDelta} />
           </View>
 
-          {/* Mood trend: 30 days */}
           <Card style={styles.moodCard}>
             <View style={styles.cardHeader}>
               <Ionicons name="bar-chart-outline" size={18} color={Colors.mutedLavender} />
-              <Text style={styles.cardTitle}>Mood — last 30 days</Text>
+              <Text style={styles.cardTitle}>{t('progress.moodTitle')}</Text>
             </View>
             {snapshot.moodTrend.length === 0 ? (
               <View style={styles.emptyCard} testID="mood-empty">
-                <Text style={styles.emptyCardText}>No check-ins yet. Start today!</Text>
+                <Text style={styles.emptyCardText}>{t('progress.moodEmpty')}</Text>
               </View>
             ) : (
               <MoodTrendChart data={snapshot.moodTrend} />
             )}
           </Card>
 
-          {/* Quick links */}
           <Card style={styles.linksCard}>
-            <Text style={styles.cardTitle}>Keep going</Text>
+            <Text style={styles.cardTitle}>{t('progress.keepGoing')}</Text>
             <QuickLink
               testID="link-checkin"
               icon="happy-outline"
               color={Colors.safeBlue}
-              label="Daily Check-in"
+              label={t('progress.goDailyCheckIn')}
               onPress={() => router.push('/checkin')}
             />
             <QuickLink
               testID="link-journal"
               icon="book-outline"
               color={Colors.mutedLavender}
-              label="Write in Journal"
+              label={t('progress.goJournal')}
               onPress={() => router.push('/journal-entry')}
             />
             <QuickLink
               testID="link-programs"
               icon="layers-outline"
               color={Colors.softGreen}
-              label="Continue a Program"
+              label={t('progress.goPrograms')}
               onPress={() => router.push('/programs')}
             />
           </Card>
@@ -162,8 +176,6 @@ export default function ProgressScreen() {
     </SafeAreaView>
   );
 }
-
-// ── Profile badge ─────────────────────────────────────────────────────────────
 
 function ProfileBadge({
   completion,
@@ -174,6 +186,7 @@ function ProfileBadge({
   onboardingBadge: boolean;
   nickname?: string;
 }) {
+  const { t } = useTranslation();
   const color =
     completion >= 100
       ? Colors.softGreen
@@ -186,28 +199,27 @@ function ProfileBadge({
       <View style={styles.badgeRow}>
         <View style={[styles.badgeCircle, { borderColor: color }]}>
           <Text style={[styles.badgePct, { color }]}>{completion}%</Text>
-          <Text style={styles.badgeLabel}>profile</Text>
+          <Text style={styles.badgeLabel}>{t('progress.profileLabel')}</Text>
         </View>
         <View style={styles.badgeInfo}>
-          <Text style={styles.badgeName}>{nickname ?? 'Your profile'}</Text>
+          <Text style={styles.badgeName}>{nickname ?? t('progress.profileLabel')}</Text>
           <Text style={styles.badgeDesc}>
             {completion === 100
-              ? 'Profile complete! You show up fully here.'
-              : `${100 - completion}% left — fill in your profile to help others find you.`}
+              ? t('progress.profileComplete')
+              : t('progress.profileIncomplete', { pct: 100 - completion })}
           </Text>
           {onboardingBadge && (
             <View style={styles.badge}>
               <Ionicons name="star" size={12} color={Colors.softGreen} />
-              <Text style={styles.badgeText}>Profile complete</Text>
+              <Text style={styles.badgeText}>{t('progress.profileBadge')}</Text>
             </View>
           )}
         </View>
       </View>
 
-      {/* Progress bar */}
       <View
         style={styles.progressTrack}
-        accessibilityLabel={`Profile ${completion}% complete`}
+        accessibilityLabel={`${t('progress.profileLabel')} ${completion}%`}
         accessibilityRole="progressbar"
       >
         <View style={[styles.progressFill, { width: `${completion}%`, backgroundColor: color }]} />
@@ -215,8 +227,6 @@ function ProfileBadge({
     </Card>
   );
 }
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
 
 function StatCard({
   testID,
@@ -227,6 +237,7 @@ function StatCard({
   sublabel,
   empty,
   emptyMsg,
+  footer,
 }: {
   testID: string;
   icon: IoniconsName;
@@ -236,6 +247,7 @@ function StatCard({
   sublabel: string;
   empty?: boolean;
   emptyMsg?: string;
+  footer?: React.ReactNode;
 }) {
   return (
     <Card style={styles.statCard} testID={testID}>
@@ -251,21 +263,74 @@ function StatCard({
           <Text style={styles.statLabel}>{label}</Text>
         </>
       )}
+      {!empty && footer}
     </Card>
   );
 }
 
-// ── Safety improvement card ───────────────────────────────────────────────────
+const MILESTONE_LABEL_KEY: Record<number, string> = {
+  7: 'progress.milestoneWeek',
+  30: 'progress.milestoneMonth',
+  100: 'progress.milestone100',
+  365: 'progress.milestoneYear',
+};
+
+function MilestoneCelebration({ milestone }: { milestone: StreakMilestone }) {
+  const { t } = useTranslation();
+  if (milestone.reached === null) return null;
+  const label = t(MILESTONE_LABEL_KEY[milestone.reached]);
+
+  return (
+    <Card style={styles.celebrationCard} testID="milestone-celebration">
+      <View style={styles.celebrationIcon}>
+        <Ionicons name="trophy" size={28} color="#E8844E" />
+      </View>
+      <Text style={styles.celebrationTitle}>
+        {t('progress.milestoneCelebrateTitle', { label })}
+      </Text>
+      <Text style={styles.celebrationBody}>
+        {t('progress.milestoneCelebrateBody', { label })}
+      </Text>
+    </Card>
+  );
+}
+
+function StreakMilestoneFooter({ milestone }: { milestone: StreakMilestone }) {
+  const { t } = useTranslation();
+
+  if (milestone.reached !== null) {
+    const label = t(MILESTONE_LABEL_KEY[milestone.reached]);
+    return (
+      <View style={styles.milestoneChip}>
+        <Ionicons name="trophy-outline" size={11} color="#E8844E" />
+        <Text style={styles.milestoneChipText}>{t('progress.milestoneBadge', { label })}</Text>
+      </View>
+    );
+  }
+
+  if (milestone.next !== null && milestone.daysToNext !== null) {
+    const label = t(MILESTONE_LABEL_KEY[milestone.next]);
+    return (
+      <Text style={styles.milestoneHint}>
+        {t('progress.milestoneNext', { count: milestone.daysToNext, label })}
+      </Text>
+    );
+  }
+
+  return null;
+}
 
 function SafetyCard({ delta }: { delta: number | null }) {
+  const { t } = useTranslation();
+
   if (delta === null) {
     return (
       <Card style={styles.statCard} testID="stat-safety">
         <View style={styles.statIcon}>
           <Ionicons name="shield-outline" size={24} color={Colors.alertRed} />
         </View>
-        <Text style={styles.sublabel}>Safety</Text>
-        <Text style={styles.emptyStatText}>Need 14 days of check-ins</Text>
+        <Text style={styles.sublabel}>{t('progress.safetySublabel')}</Text>
+        <Text style={styles.emptyStatText}>{t('progress.safetyNeeds')}</Text>
       </Card>
     );
   }
@@ -288,18 +353,17 @@ function SafetyCard({ delta }: { delta: number | null }) {
       <View style={styles.statIcon}>
         <Ionicons name={icon} size={24} color={color} />
       </View>
-      <Text style={styles.sublabel}>Safety</Text>
+      <Text style={styles.sublabel}>{t('progress.safetySublabel')}</Text>
       <Text style={[styles.statValue, { color }]}>
         {delta > 0 ? '+' : ''}{delta}
       </Text>
-      <Text style={styles.statLabel}>vs last week</Text>
+      <Text style={styles.statLabel}>{t('progress.vsLastWeek')}</Text>
     </Card>
   );
 }
 
-// ── Mood trend chart ─────────────────────────────────────────────────────────
-
 function MoodTrendChart({ data }: { data: MoodDataPoint[] }) {
+  const { t } = useTranslation();
   const last = data.slice(-14);
   return (
     <View style={styles.moodBars} testID="mood-chart">
@@ -312,15 +376,13 @@ function MoodTrendChart({ data }: { data: MoodDataPoint[] }) {
             <View style={styles.moodBarTrack}>
               <View style={[styles.moodBar, { height: barH, backgroundColor: color }]} />
             </View>
-            {isLast && <Text style={styles.todayLabel}>Today</Text>}
+            {isLast && <Text style={styles.todayLabel}>{t('progress.today')}</Text>}
           </View>
         );
       })}
     </View>
   );
 }
-
-// ── Quick link row ────────────────────────────────────────────────────────────
 
 function QuickLink({
   testID,
@@ -372,6 +434,33 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
 
   gaugeCard: { paddingBottom: Spacing.lg },
+
+  celebrationCard: { alignItems: 'center', gap: 6, paddingVertical: Spacing.lg, backgroundColor: '#E8844E12' },
+  celebrationIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#E8844E22',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  celebrationTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center' },
+  celebrationBody: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18, paddingHorizontal: Spacing.md },
+
+  milestoneChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8844E18',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    marginTop: 4,
+  },
+  milestoneChipText: { fontSize: 10, fontWeight: '700', color: '#E8844E' },
+  milestoneHint: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
 
   badgeCard: { gap: Spacing.sm },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },

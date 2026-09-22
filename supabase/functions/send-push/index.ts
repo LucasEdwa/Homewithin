@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Invalid session" }, 401);
   const senderId = userData.user.id;
 
-  const { matchId, body, type, targetId } = await req.json().catch(() => ({}));
+  const { matchId, body, type, targetId, circleId, circleName } = await req.json().catch(() => ({}));
 
   // Use service role for cross-user reads.
   const admin = createClient(supabaseUrl, serviceKey, {
@@ -102,6 +102,118 @@ Deno.serve(async (req: Request) => {
     return json({ sent: true }, 200);
   }
 
+  // ── Match notification (like was accepted / mutual) ───────────────────────────
+  if (type === "match") {
+    if (!targetId)
+      return json({ error: "targetId is required for match notifications" }, 400);
+
+    const [{ data: senderProfile }, { data: recipientProfile }] =
+      await Promise.all([
+        admin
+          .from("user_profiles")
+          .select("nickname")
+          .eq("user_id", senderId)
+          .maybeSingle(),
+        admin
+          .from("user_profiles")
+          .select("push_token")
+          .eq("user_id", targetId)
+          .maybeSingle(),
+      ]);
+
+    const pushToken = recipientProfile?.push_token;
+    if (!pushToken)
+      return json({ skipped: "recipient has no push token" }, 200);
+
+    const senderName = senderProfile?.nickname ?? "Someone";
+
+    const expoPush = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        to: pushToken,
+        title: "It's a match ✨",
+        body: `${senderName} accepted your connection`,
+        data: { screen: "connect" },
+        sound: "default",
+        channelId: "chat",
+      }),
+    });
+
+    if (!expoPush.ok) {
+      const err = await expoPush.text();
+      console.error("[send-push] Expo API error (match):", err);
+      return json({ error: "Push delivery failed" }, 500);
+    }
+
+    return json({ sent: true }, 200);
+  }
+
+  // ── Circle message notification ───────────────────────────────────────────────
+  // Notifies every circle member except the sender when a new message is posted.
+  if (type === "circle_message") {
+    if (!circleId || !body)
+      return json({ error: "circleId and body are required for circle_message" }, 400);
+
+    const [{ data: senderProfile }, { data: members }] = await Promise.all([
+      admin
+        .from("user_profiles")
+        .select("nickname")
+        .eq("user_id", senderId)
+        .maybeSingle(),
+      admin
+        .from("circle_members")
+        .select("user_id")
+        .eq("circle_id", circleId)
+        .neq("user_id", senderId),
+    ]);
+
+    if (!members?.length)
+      return json({ skipped: "no other members in circle" }, 200);
+
+    const memberIds = members.map((m: any) => m.user_id);
+    const { data: profiles } = await admin
+      .from("user_profiles")
+      .select("push_token")
+      .in("user_id", memberIds)
+      .not("push_token", "is", null);
+
+    const tokens = (profiles ?? []).map((p: any) => p.push_token).filter(Boolean);
+    if (!tokens.length)
+      return json({ skipped: "no members with push tokens" }, 200);
+
+    const senderName = senderProfile?.nickname ?? "Someone";
+    // Never surface the circle name or message content in the notification —
+    // circle names (e.g. "Newly Out") and message text can appear on a lock
+    // screen a hostile person sees, defeating disguise mode and PIN lock.
+    void circleName;
+    const notifTitle = "Your support circle 💬";
+    const notifBody = `${senderName} sent a new message`;
+
+    const batch = tokens.map((token: string) => ({
+      to: token,
+      title: notifTitle,
+      body: notifBody,
+      data: { screen: "circle", circleId },
+      sound: "default",
+      channelId: "circles",
+    }));
+
+    const expoPush = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(batch),
+    });
+
+    if (!expoPush.ok) {
+      const err = await expoPush.text();
+      console.error("[send-push] Expo API error (circle_message):", err);
+      return json({ error: "Push delivery failed" }, 500);
+    }
+
+    return json({ sent: tokens.length }, 200);
+  }
+
   // ── Chat message notification ────────────────────────────────────────────────
   if (!matchId || !body)
     return json({ error: "matchId and body are required" }, 400);
@@ -137,6 +249,12 @@ Deno.serve(async (req: Request) => {
 
   const senderName = senderProfile?.nickname ?? "Someone";
 
+  // Body must never include the actual message text — it can appear on a
+  // lock screen a hostile person sees, defeating disguise mode and PIN lock.
+  // senderName is a self-chosen nickname (never a real name), so it's safe
+  // to show as the title.
+  void body;
+
   // Send via Expo Push API.
   const expoPush = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
@@ -144,7 +262,7 @@ Deno.serve(async (req: Request) => {
     body: JSON.stringify({
       to: pushToken,
       title: senderName,
-      body: body.length > 100 ? body.slice(0, 97) + "…" : body,
+      body: "Sent you a new message",
       data: { matchId },
       sound: "default",
       channelId: "chat",

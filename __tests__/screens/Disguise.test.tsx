@@ -61,7 +61,7 @@ describe('DisguiseScreen', () => {
 
   it('navigates to preview when "Preview disguise" tapped', () => {
     render(<DisguiseScreen />);
-    fireEvent.press(screen.getByLabelText('Preview disguise'));
+    fireEvent.press(screen.getByLabelText('Preview disguise now'));
     expect(router.push).toHaveBeenCalledWith('/decoy');
   });
 

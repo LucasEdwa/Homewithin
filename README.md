@@ -150,6 +150,55 @@ Accepted matches become chat relationships inside the app and can be added direc
 
 ---
 
+### Content Safety & Messaging Controls
+
+HomeWithin applies multiple layers of protection inside every conversation — both 1-on-1 matches and group circles.
+
+#### Automatic content filter
+
+Every message passes through a two-tier client-side filter before it is sent:
+
+| Tier | Content | Outcome |
+|------|---------|---------|
+| Hard block | Hate speech, slurs, direct threats, illegal material | Message is rejected — cannot be sent |
+| Soft warning | Strong language / profanity | A prompt asks you to edit or confirm before sending |
+
+The filter runs entirely on-device before anything touches the server.
+
+#### Delete your own messages
+
+Long-pressing any message you sent shows a delete confirmation. The message is removed from the database and disappears immediately on both sides.
+
+#### Report a user
+
+- **From the Connect screen** — a flag button on every browse card lets you report a profile before you match
+- **Inside a 1-on-1 chat** — the options menu includes "Report a message"
+- **Inside a circle** — long-pressing another user's message shows a report prompt
+
+Reports are reviewed within 24 hours. The reported user is never told who filed the report.
+
+#### Block a user
+
+Blocking is available from within any 1-on-1 chat. A blocked user can no longer contact you or appear in your match results.
+
+#### Auto-delete messages
+
+The timer button in every chat lets you choose an auto-delete window:
+
+| Setting | Behaviour |
+|---------|-----------|
+| Off | Messages are kept indefinitely |
+| 1 hour | All messages — including existing ones — expire in 1 hour |
+| 6 hours | All messages expire in 6 hours |
+| 24 hours | All messages expire in 24 hours |
+| 7 days | All messages expire in 7 days |
+
+**Changing the timer applies retroactively.** When you switch to "1 hour", all messages currently in the chat are updated to expire within that window — not just future ones. Your own messages are updated in the database (RLS-enforced); all messages are removed from local state immediately so the chat clears without waiting for a reload.
+
+This means auto-delete can be used as a one-tap "clean chat" — selecting any timer clears the conversation history on your device right away.
+
+---
+
 ### Support Circles — Community Without Exposure
 
 Support circles are small, themed group spaces inside HomeWithin.

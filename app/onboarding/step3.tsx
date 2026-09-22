@@ -7,6 +7,7 @@ import { INTENTIONS, type IntentionId } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   SafeAreaView,
   ScrollView,
@@ -17,9 +18,16 @@ import {
 } from 'react-native';
 
 export default function OnboardingStep3() {
+  const { t } = useTranslation();
   const { profile, setProfile } = useSession();
   const [selected, setSelected] = useState<Set<IntentionId>>(new Set());
   const [loading, setLoading] = useState(false);
+
+  const intentions = INTENTIONS.map((item) => ({
+    ...item,
+    label: t(`intentions.${item.id}.label` as any),
+    description: t(`intentions.${item.id}.description` as any),
+  }));
 
   function toggle(id: IntentionId) {
     setSelected((prev) => {
@@ -53,13 +61,11 @@ export default function OnboardingStep3() {
           <View style={[styles.dot, styles.dotActive]} />
         </View>
 
-        <Text style={styles.title}>What are you open to offering?</Text>
-        <Text style={styles.subtitle}>
-          People searching for these will be able to find you. You can change this anytime from your profile.
-        </Text>
+        <Text style={styles.title}>{t('onboarding.step3.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.step3.subtitle')}</Text>
 
         <View style={styles.list}>
-          {INTENTIONS.map((item) => {
+          {intentions.map((item) => {
             const isSelected = selected.has(item.id);
             return (
               <TouchableOpacity
@@ -86,23 +92,21 @@ export default function OnboardingStep3() {
           })}
         </View>
 
-        <Text style={styles.hint}>
-          Leaving everything unchecked means you won't appear in anyone's matches — you can still browse.
-        </Text>
+        <Text style={styles.hint}>{t('onboarding.step3.hint')}</Text>
 
         <Button
-          label={loading ? 'Finishing…' : 'Get started'}
+          label={loading ? t('common.finishing') : t('common.getStarted')}
           onPress={handleFinish}
           loading={loading}
           style={styles.cta}
         />
 
-        <TouchableOpacity onPress={handleFinish} style={styles.skip} accessibilityLabel="Skip this step">
-          <Text style={styles.skipText}>Skip for now</Text>
+        <TouchableOpacity onPress={handleFinish} style={styles.skip} accessibilityLabel={t('common.skip')}>
+          <Text style={styles.skipText}>{t('common.skip')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

@@ -6,6 +6,7 @@ import type { DisguiseStyle } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Platform,
     Pressable,
@@ -17,32 +18,37 @@ import {
     View,
 } from 'react-native';
 
-const STYLES: { id: DisguiseStyle; label: string; icon: keyof typeof Ionicons.glyphMap; description: string }[] = [
-  { id: 'weather',    label: 'Weather',    icon: 'partly-sunny-outline',     description: 'A simple weather screen.' },
-  { id: 'calculator', label: 'Calculator', icon: 'calculator-outline',       description: 'A working-looking calculator.' },
-  { id: 'notes',      label: 'Notes',      icon: 'document-text-outline',    description: 'A plain notes list.' },
-];
+const STYLE_ICONS: Record<DisguiseStyle, keyof typeof Ionicons.glyphMap> = {
+  weather: 'partly-sunny-outline',
+  calculator: 'calculator-outline',
+  notes: 'document-text-outline',
+};
 
 export default function DisguiseScreen() {
+  const { t } = useTranslation();
   const { disguiseEnabled, disguiseStyle, setDisguiseEnabled, setDisguiseStyle } = useSession();
+
+  const STYLES: { id: DisguiseStyle }[] = [
+    { id: 'weather' },
+    { id: 'calculator' },
+    { id: 'notes' },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Go back">
+          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel={t('common.goBack')}>
             <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
           </Pressable>
-          <Text style={styles.title}>App disguise mode</Text>
+          <Text style={styles.title}>{t('disguise.title')}</Text>
         </View>
 
         <Card style={styles.section}>
           <View style={styles.row}>
             <View style={styles.rowInfo}>
-              <Text style={styles.rowLabel}>Disguise on launch</Text>
-              <Text style={styles.rowHint}>
-                When on, opening the app shows a neutral screen instead of HomeWithin.
-              </Text>
+              <Text style={styles.rowLabel}>{t('disguise.onLaunch')}</Text>
+              <Text style={styles.rowHint}>{t('disguise.onLaunchHint')}</Text>
             </View>
             <Switch
               value={disguiseEnabled}
@@ -50,15 +56,17 @@ export default function DisguiseScreen() {
               trackColor={{ false: '#D1D5DB', true: Colors.safeBlue }}
               thumbColor={Platform.OS === 'android' ? Colors.white : undefined}
               ios_backgroundColor="#D1D5DB"
-              accessibilityLabel="Disguise on launch"
+              accessibilityLabel={t('disguise.onLaunch')}
             />
           </View>
         </Card>
 
-        <Text style={styles.sectionTitle}>Pick a disguise</Text>
+        <Text style={styles.sectionTitle}>{t('disguise.pickDisguise')}</Text>
         <Card style={styles.section}>
           {STYLES.map((s, i) => {
             const selected = disguiseStyle === s.id;
+            const label = t(`disguise.styles.${s.id}.label` as any);
+            const description = t(`disguise.styles.${s.id}.description` as any);
             return (
               <Pressable
                 key={s.id}
@@ -66,14 +74,14 @@ export default function DisguiseScreen() {
                 style={[styles.styleRow, i < STYLES.length - 1 && styles.styleRowBorder]}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
-                accessibilityLabel={`Disguise: ${s.label}`}
+                accessibilityLabel={t('disguise.styleAccessibility', { label })}
               >
                 <View style={[styles.iconWrap, selected && styles.iconWrapSelected]}>
-                  <Ionicons name={s.icon} size={22} color={selected ? Colors.white : Colors.textPrimary} />
+                  <Ionicons name={STYLE_ICONS[s.id]} size={22} color={selected ? Colors.white : Colors.textPrimary} />
                 </View>
                 <View style={styles.rowInfo}>
-                  <Text style={styles.rowLabel}>{s.label}</Text>
-                  <Text style={styles.rowHint}>{s.description}</Text>
+                  <Text style={styles.rowLabel}>{label}</Text>
+                  <Text style={styles.rowHint}>{description}</Text>
                 </View>
                 {selected ? (
                   <Ionicons name="checkmark-circle" size={22} color={Colors.safeBlue} />
@@ -86,21 +94,18 @@ export default function DisguiseScreen() {
         </Card>
 
         <Card style={[styles.section, styles.tip]}>
-          <Text style={styles.tipTitle}>How to unlock the disguise</Text>
-          <Text style={styles.tipBody}>
-            Tap the title (top of the disguise screen) <Text style={styles.bold}>5 times within 2 seconds</Text> to reveal HomeWithin.
-            {' '}If you've set a PIN, you'll be asked to enter it next.
-          </Text>
+          <Text style={styles.tipTitle}>{t('disguise.howToUnlock')}</Text>
+          <Text style={styles.tipBody}>{t('disguise.unlockInstructions')}</Text>
         </Card>
 
         <Card style={styles.section}>
           <Pressable
             onPress={() => router.push('/decoy')}
             style={styles.previewBtn}
-            accessibilityLabel="Preview disguise"
+            accessibilityLabel={t('disguise.previewBtn')}
           >
             <Ionicons name="eye-outline" size={18} color={Colors.safeBlue} />
-            <Text style={styles.previewText}>Preview disguise now</Text>
+            <Text style={styles.previewText}>{t('disguise.previewBtn')}</Text>
           </Pressable>
         </Card>
       </ScrollView>
@@ -130,7 +135,6 @@ const styles = StyleSheet.create({
   tip: { backgroundColor: Colors.softGreen + '18', borderLeftWidth: 3, borderLeftColor: Colors.softGreen },
   tipTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 4 },
   tipBody: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
-  bold: { fontWeight: '700', color: Colors.textPrimary },
   previewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: Spacing.sm },
   previewText: { color: Colors.safeBlue, fontSize: 15, fontWeight: '600' },
 });

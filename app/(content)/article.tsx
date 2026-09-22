@@ -15,10 +15,14 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, Radius } from '@/constants/Spacing';
 import { EmergencyButton } from '@/components/safety/EmergencyButton';
 import { getResourceById, toggleBookmark, isBookmarked } from '@/services/content/resources';
-import { CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
+import { currentUserId, supabase } from '@/services/supabase';
+import { CATEGORY_COLORS } from '@/types';
 import type { Resource } from '@/types';
+import { MarkdownBody } from '@/components/ui/MarkdownBody';
+import { useTranslation } from 'react-i18next';
 
 export default function ArticleScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [article, setArticle] = useState<Resource | null>(null);
   const [bookmarked, setBookmarked] = useState(false);
@@ -31,6 +35,17 @@ export default function ArticleScreen() {
       setArticle(res);
       setBookmarked(bm);
       setLoading(false);
+
+      // Log resource read for daily notification tracking (fire-and-forget)
+      if (supabase) {
+        const uid = await currentUserId();
+        if (uid) {
+          supabase
+            .from('resource_reads')
+            .insert({ user_id: uid, resource_id: id })
+            .then(() => {});
+        }
+      }
     })();
   }, [id]);
 
@@ -60,9 +75,9 @@ export default function ArticleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Article not found.</Text>
+          <Text style={styles.notFoundText}>{t('article.notFound')}</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backLink}>Go back</Text>
+            <Text style={styles.backLink}>{t('common.goBack')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -75,14 +90,14 @@ export default function ArticleScreen() {
     <SafeAreaView style={styles.safe}>
       {/* Nav bar */}
       <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel={t('common.back')}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.navActions}>
-          <TouchableOpacity onPress={handleShare} style={styles.navBtn} accessibilityLabel="Share article">
+          <TouchableOpacity onPress={handleShare} style={styles.navBtn} accessibilityLabel={t('article.shareArticle')}>
             <Ionicons name="share-outline" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleToggleBookmark} style={styles.navBtn} accessibilityLabel={bookmarked ? 'Remove bookmark' : 'Bookmark article'}>
+          <TouchableOpacity onPress={handleToggleBookmark} style={styles.navBtn} accessibilityLabel={bookmarked ? t('article.removeBookmark') : t('article.bookmarkArticle')}>
             <Ionicons
               name={bookmarked ? 'bookmark' : 'bookmark-outline'}
               size={22}
@@ -95,27 +110,27 @@ export default function ArticleScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Category badge */}
         <View style={[styles.badge, { backgroundColor: catColor + '22', borderColor: catColor }]}>
-          <Text style={[styles.badgeText, { color: catColor }]}>{CATEGORY_LABELS[article.category]}</Text>
+          <Text style={[styles.badgeText, { color: catColor }]}>{t(`resources.categoryLabels.${article.category}` as any)}</Text>
         </View>
 
         <Text style={styles.title}>{article.title}</Text>
 
         <View style={styles.meta}>
           <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
-          <Text style={styles.metaText}>{article.readTime} min read</Text>
+          <Text style={styles.metaText}>{t('article.minRead', { count: article.readTime })}</Text>
         </View>
 
         <Text style={styles.summary}>{article.summary}</Text>
 
         <View style={styles.divider} />
 
-        <Text style={styles.body}>{article.body}</Text>
+        <MarkdownBody body={article.body} fontSize={16} />
 
         <View style={styles.footer}>
           <TouchableOpacity
             style={[styles.bookmarkBtn, bookmarked && styles.bookmarkBtnActive]}
             onPress={handleToggleBookmark}
-            accessibilityLabel={bookmarked ? 'Remove bookmark' : 'Save for later'}
+            accessibilityLabel={bookmarked ? t('article.removeBookmark') : t('article.saveForLater')}
           >
             <Ionicons
               name={bookmarked ? 'bookmark' : 'bookmark-outline'}
@@ -123,7 +138,7 @@ export default function ArticleScreen() {
               color={bookmarked ? Colors.white : Colors.safeBlue}
             />
             <Text style={[styles.bookmarkText, bookmarked && styles.bookmarkTextActive]}>
-              {bookmarked ? 'Saved' : 'Save for later'}
+              {bookmarked ? t('article.savedBookmark') : t('article.saveForLater')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -162,6 +177,8 @@ const styles = StyleSheet.create({
   summary: { fontSize: 16, color: Colors.textSecondary, lineHeight: 24, fontStyle: 'italic' },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: Spacing.xs },
   body: { fontSize: 16, color: Colors.textPrimary, lineHeight: 26 },
+  bodyHeading: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, lineHeight: 26, marginTop: 20, marginBottom: 2 },
+  bodyBold: { fontWeight: '700', color: Colors.textPrimary },
   footer: { marginTop: Spacing.md, alignItems: 'center' },
   bookmarkBtn: {
     flexDirection: 'row',

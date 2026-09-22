@@ -38,7 +38,7 @@ describe('EmergencyScreen', () => {
 
   it('renders Quick Exit button in header', () => {
     renderWithSession(<EmergencyScreen />, { profile: mockProfile });
-    expect(screen.getByLabelText('Quick exit')).toBeTruthy();
+    expect(screen.getByLabelText('Quick Exit')).toBeTruthy();
   });
 
   it('renders the one-tap exit button', () => {

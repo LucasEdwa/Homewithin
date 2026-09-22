@@ -75,4 +75,6 @@ export async function currentUserId(): Promise<string | null> {
 export async function signOut(): Promise<void> {
   if (!supabase) return;
   await supabase.auth.signOut();
+  const { deleteSensitiveData } = await import('@/services/storage');
+  await deleteSensitiveData().catch(() => {});
 }

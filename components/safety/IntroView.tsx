@@ -3,6 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { Step } from './safetyData';
 
@@ -13,6 +14,8 @@ interface IntroViewProps {
 }
 
 export default function IntroView({ steps, onBegin, onSkip }: IntroViewProps) {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -20,10 +23,9 @@ export default function IntroView({ steps, onBegin, onSkip }: IntroViewProps) {
           <View style={styles.headerIcon}>
             <Ionicons name="shield-outline" size={36} color={Colors.safeBlue} />
           </View>
-          <Text style={styles.title}>Safety check-in</Text>
+          <Text style={styles.title}>{t('safetyAssessment.introTitle')}</Text>
           <Text style={styles.subtitle}>
-            {steps.length} short steps to help us understand how you're doing right now.{'\n\n'}
-            Everything stays on your device. You can stop at any point.
+            {t('safetyAssessment.introSubtitle', { count: steps.length })}
           </Text>
         </View>
 
@@ -34,16 +36,16 @@ export default function IntroView({ steps, onBegin, onSkip }: IntroViewProps) {
                 <Ionicons name={s.icon} size={16} color={s.iconColor} />
               </View>
               <View>
-                <Text style={styles.stepNum}>Step {s.id}</Text>
-                <Text style={styles.stepTitle}>{s.title}</Text>
+                <Text style={styles.stepNum}>{t('safetyAssessment.stepLabel', { step: s.id })}</Text>
+                <Text style={styles.stepTitle}>{t(`safetyAssessment.steps.${s.id}.title` as any)}</Text>
               </View>
             </View>
           ))}
         </View>
 
-        <Button label="Begin" onPress={onBegin} />
+        <Button label={t('safetyAssessment.beginBtn')} onPress={onBegin} />
         <TouchableOpacity onPress={onSkip} style={styles.skipLink}>
-          <Text style={styles.skipLinkText}>Skip for now</Text>
+          <Text style={styles.skipLinkText}>{t('safetyAssessment.skipLink')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

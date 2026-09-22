@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useSession } from '@/context/SessionContext';
 import { Image } from 'expo-image';
+import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
@@ -16,6 +17,18 @@ const RING_SIZE = ICON_SIZE + 20;
 export default function SplashScreen() {
   const { onboardingComplete, loading, locked, disguiseEnabled } = useSession();
   const [timerDone, setTimerDone] = useState(false);
+  const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+  const hasNavigated = useRef(false);
+
+  // Load intro-seen flag so we can route first-timers to the carousel.
+  useEffect(() => {
+    SecureStore.deleteItemAsync('intro_seen') // DEV ONLY — remove this line after testing
+      .finally(() => {
+        SecureStore.getItemAsync('intro_seen')
+          .then((v) => setIntroSeen(!!v))
+          .catch(() => setIntroSeen(true));
+      });
+  }, []);
 
   const rings = useRef(
     Array.from({ length: RING_COUNT }, () => new Animated.Value(0))
@@ -43,19 +56,34 @@ export default function SplashScreen() {
     return () => clearTimeout(t);
   }, []);
 
-  // Navigate only when both session and timer are ready.
+  // Navigate only when session, timer, and intro-seen check are all ready.
   useEffect(() => {
-    if (loading || !timerDone) return;
+    if (loading || !timerDone || introSeen === null) return;
+    hasNavigated.current = true;
     if (disguiseEnabled) {
       router.replace('/decoy');
     } else if (locked) {
       router.replace('/lock');
     } else if (onboardingComplete) {
       router.replace('/(tabs)');
+    } else if (!introSeen) {
+      router.replace('/onboarding/intro');
     } else {
       router.replace('/welcome');
     }
-  }, [loading, timerDone, onboardingComplete, locked, disguiseEnabled]);
+  }, [loading, timerDone, introSeen, onboardingComplete, locked, disguiseEnabled]);
+
+  // Absolute safety net: if loading never clears (context init hung silently),
+  // force navigation after 12 seconds so the app is never stuck on the splash.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!hasNavigated.current) {
+        console.warn('Splash: forced navigation after 12s timeout');
+        router.replace('/onboarding/intro');
+      }
+    }, 12_000);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -72,7 +100,7 @@ export default function SplashScreen() {
           );
         })}
         <Image
-          source={require('../assets/images/homeIcon.png')}
+          source={require('../assets/images/image.png')}
           style={styles.icon}
           contentFit="contain"
         />
@@ -84,7 +112,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.warmWhite,
+    backgroundColor: '#101010',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -104,7 +132,7 @@ const styles = StyleSheet.create({
   icon: {
     width: ICON_SIZE,
     height: ICON_SIZE,
-    borderRadius: ICON_SIZE / 2,
+    borderRadius: ICON_SIZE / 3,
     overflow: 'hidden',
   },
 });

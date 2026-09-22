@@ -14,6 +14,7 @@ import { Spacing, Radius } from '@/constants/Spacing';
 import { Button } from '@/components/ui/Button';
 import { useSession } from '@/context/SessionContext';
 import { supabase } from '@/services/supabase';
+import { useTranslation } from 'react-i18next';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -25,19 +26,26 @@ interface Need {
   description: string;
 }
 
-const NEEDS: Need[] = [
-  { id: 'emotional_safety', label: 'Emotional safety', icon: 'shield-checkmark-outline', color: Colors.safeBlue,      description: 'I need to feel safe right now' },
-  { id: 'healing',          label: 'Healing',          icon: 'leaf-outline',             color: Colors.softGreen,     description: 'I want to process what happened' },
-  { id: 'someone_to_talk',  label: 'Someone to talk',  icon: 'chatbubbles-outline',      color: Colors.mutedLavender, description: 'I just need to be heard' },
-  { id: 'gay_friends',      label: 'Find community',   icon: 'people-circle-outline',    color: Colors.safeBlue,      description: 'Find people like me' },
-  { id: 'support_group',    label: 'Support group',    icon: 'people-outline',           color: Colors.softGreen,     description: 'A circle I can belong to' },
-  { id: 'crisis_help',      label: 'Crisis help',      icon: 'alert-circle-outline',     color: Colors.alertRed,      description: 'I need urgent support right now' },
+const NEED_META: { id: string; icon: IoniconsName; color: string }[] = [
+  { id: 'emotional_safety', icon: 'shield-checkmark-outline', color: Colors.safeBlue },
+  { id: 'healing',          icon: 'leaf-outline',             color: Colors.softGreen },
+  { id: 'someone_to_talk',  icon: 'chatbubbles-outline',      color: Colors.mutedLavender },
+  { id: 'gay_friends',      icon: 'people-circle-outline',    color: Colors.safeBlue },
+  { id: 'support_group',    icon: 'people-outline',           color: Colors.softGreen },
+  { id: 'crisis_help',      icon: 'alert-circle-outline',     color: Colors.alertRed },
 ];
 
 export default function OnboardingStep2() {
+  const { t } = useTranslation();
   const { profile, setProfile, completeOnboarding } = useSession();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+
+  const needs: Need[] = NEED_META.map((m) => ({
+    ...m,
+    label: t(`onboarding.step2.needs.${m.id}.label` as any),
+    description: t(`onboarding.step2.needs.${m.id}.description` as any),
+  }));
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -82,13 +90,11 @@ export default function OnboardingStep2() {
           <View style={styles.dot} />
         </View>
 
-        <Text style={styles.title}>What would help most today?</Text>
-        <Text style={styles.subtitle}>
-          Choose as many as you like. You can change this anytime.
-        </Text>
+        <Text style={styles.title}>{t('onboarding.step2.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.step2.subtitle')}</Text>
 
         <View style={styles.grid}>
-          {NEEDS.map((need) => {
+          {needs.map((need) => {
             const isSelected = selected.has(need.id);
             return (
               <TouchableOpacity
@@ -118,14 +124,14 @@ export default function OnboardingStep2() {
         </View>
 
         <View style={styles.actions}>
-          <Button label="Continue" onPress={handleNext} loading={loading} style={styles.cta} />
-          <TouchableOpacity onPress={handleNext} accessibilityLabel="Skip this step">
-            <Text style={styles.skip}>Skip for now</Text>
+          <Button label={t('common.continue')} onPress={handleNext} loading={loading} style={styles.cta} />
+          <TouchableOpacity onPress={handleNext} accessibilityLabel={t('common.skip')}>
+            <Text style={styles.skip}>{t('common.skip')}</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

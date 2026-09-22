@@ -1,151 +1,60 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
-import { useUnread } from '@/context/UnreadContext';
-import { useMessages } from '@/hooks/useMessages';
-import { containsCrisisKeywords, sendMessage } from '@/services/social/chat';
-import { blockUser, getMatchPeerId, reportMessage } from '@/services/social/matching';
-import { supabase } from '@/services/supabase';
+import { useTranslation } from 'react-i18next';
+import { useCountdown } from '@/hooks/useCountdown';
+import { EXPIRY_OPTIONS, useChatScreen } from '@/hooks/useChatScreen';
 import type { Message } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
+import React, { useRef } from 'react';
 import {
-    ActionSheetIOS,
-    Alert,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActionSheetIOS,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 const CRISIS_HOTLINE = 'Trevor Project (LGBTQ+): 1-866-488-7386\nCrisis Text Line: text HOME to 741741';
+const REPLY_THRESHOLD = 64;
 
 export default function ChatScreen() {
-  const { matchId, nickname, avatarUrl } = useLocalSearchParams<{ matchId: string; nickname: string; avatarUrl?: string }>();
-  const { setActiveMatch } = useUnread();
-  const { messages, setMessages } = useMessages(matchId);
-  const [input, setInput] = useState('');
-  const [disappearing, setDisappearing] = useState(false);
-  const [showCrisisBanner, setShowCrisisBanner] = useState(false);
-  const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const listRef = useRef<FlatList>(null);
-
-  useEffect(() => {
-    supabase?.auth.getUser().then(({ data: { user } }) => setMyUserId(user?.id ?? null));
-  }, []);
-
-  // Tell UnreadContext this chat is active so incoming messages don't increment the badge.
-  useEffect(() => {
-    if (!matchId) return;
-    setActiveMatch(matchId);
-    return () => setActiveMatch(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
-
-  // Scroll to end when messages load or a new one arrives.
-  useEffect(() => {
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: messages.length > 0 }), 50);
-  }, [messages.length]);
-
-  async function handleSend() {
-    if (!input.trim() || !matchId) return;
-    const body = input.trim();
-    setInput('');
-    setSending(true);
-
-    if (containsCrisisKeywords(body)) setShowCrisisBanner(true);
-
-    const msg = await sendMessage(matchId, body, disappearing);
-    if (msg) {
-      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-    }
-    setSending(false);
-  }
-
-  function handleOptions() {
-    const options = ['Block & report user', 'Report a message', 'Cancel'];
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex: 0, cancelButtonIndex: 2 },
-        (idx) => {
-          if (idx === 0) confirmBlock();
-          if (idx === 1) promptReportMessage();
-        }
-      );
-    } else {
-      Alert.alert('Options', undefined, [
-        { text: 'Block & report user', style: 'destructive', onPress: confirmBlock },
-        { text: 'Report a message', onPress: promptReportMessage },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
-  }
-
-  function confirmBlock() {
-    Alert.alert(
-      'Block this person?',
-      'They won\'t be able to contact you. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Block',
-          style: 'destructive',
-          onPress: async () => {
-            if (!matchId) {
-              Alert.alert('Block failed', 'Missing match info. Please try again.');
-              return;
-            }
-
-            // Prefer the match row (works even if they never sent a message);
-            // fall back to messages if for some reason the lookup fails.
-            let targetId = await getMatchPeerId(matchId);
-            if (!targetId) {
-              const theirMsg = messages.find((m) => m.senderId !== myUserId);
-              targetId = theirMsg?.senderId ?? null;
-            }
-
-            if (!targetId) {
-              Alert.alert('Block failed', 'Could not identify the other user.');
-              return;
-            }
-
-            const ok = await blockUser(targetId, matchId);
-            if (!ok) {
-              Alert.alert('Block failed', 'Please check your connection and try again.');
-              return;
-            }
-            router.back();
-          },
-        },
-      ]
-    );
-  }
-
-  function promptReportMessage() {
-    Alert.prompt(
-      'Report a message',
-      'Briefly describe the issue (e.g. harassment, threats):',
-      async (reason) => {
-        if (!reason?.trim()) return;
-        const lastTheirMsg = [...messages].reverse().find((m) => m.senderId !== myUserId);
-        if (lastTheirMsg) {
-          await reportMessage(lastTheirMsg.id, lastTheirMsg.senderId, reason.trim());
-          Alert.alert('Reported', 'Thank you. We\'ll review this shortly.');
-        }
-      },
-      'plain-text'
-    );
-  }
-
-  const isExpired = (msg: Message) =>
-    !!msg.expiresAt && new Date(msg.expiresAt) < new Date();
+  const { t } = useTranslation();
+  const {
+    nickname,
+    avatarUrl,
+    myUserId,
+    listRef,
+    listItems,
+    input,
+    setInput,
+    expiryHours,
+    sending,
+    showCrisisBanner,
+    setShowCrisisBanner,
+    replyTo,
+    setReplyTo,
+    handleSend,
+    handleLike,
+    handlePickExpiry,
+    handleOptions,
+    handleDeleteMessage,
+  } = useChatScreen();
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -172,7 +81,7 @@ export default function ChatScreen() {
       {/* Safety banner */}
       <View style={styles.safetyBanner}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.softGreen} />
-        <Text style={styles.safetyText}>You can block or report anytime.</Text>
+        <Text style={styles.safetyText}>{t('chat.safetyBanner')}</Text>
       </View>
 
       {/* Crisis banner */}
@@ -194,37 +103,108 @@ export default function ChatScreen() {
       >
         <FlatList
           ref={listRef}
-          data={messages.filter((m) => !isExpired(m))}
-          keyExtractor={(m) => m.id}
+          data={listItems}
+          keyExtractor={(item) => item.type === 'message' ? item.data.id : item.key}
           style={styles.flatList}
           contentContainerStyle={styles.messageList}
-          renderItem={({ item }) => (
-            <MessageBubble
-              message={item}
-              isMe={item.senderId === myUserId}
-              disappearing={!!item.expiresAt}
-            />
-          )}
+          inverted
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          renderItem={({ item }) => {
+            if (item.type === 'dateHeader') {
+              return (
+                <View style={styles.dateHeader}>
+                  <Text style={styles.dateHeaderText}>{item.label}</Text>
+                </View>
+              );
+            }
+            if (item.type === 'unreadSeparator') {
+              return (
+                <View style={styles.unreadSep}>
+                  <View style={styles.unreadSepLine} />
+                  <Text style={styles.unreadSepText}>
+                    {item.count === 1 ? t('chat.unreadOne') : t('chat.unreadMany', { count: item.count })}
+                  </Text>
+                  <View style={styles.unreadSepLine} />
+                </View>
+              );
+            }
+            const isMe = item.data.senderId === myUserId;
+            return (
+              <MessageBubble
+                message={item.data}
+                isMe={isMe}
+                disappearing={!!item.data.expiresAt}
+                onLike={() => handleLike(item.data)}
+                onReply={() => setReplyTo(item.data)}
+                onLongPress={() => {
+                  if (isMe) {
+                    const options = [t('chat.copy'), t('common.delete'), t('common.cancel')];
+                    if (Platform.OS === 'ios') {
+                      ActionSheetIOS.showActionSheetWithOptions(
+                        { options, destructiveButtonIndex: 1, cancelButtonIndex: 2 },
+                        (idx) => {
+                          if (idx === 0) Clipboard.setStringAsync(item.data.body);
+                          if (idx === 1) handleDeleteMessage(item.data.id);
+                        },
+                      );
+                    } else {
+                      Alert.alert(t('chat.options'), undefined, [
+                        { text: t('chat.copy'), onPress: () => Clipboard.setStringAsync(item.data.body) },
+                        { text: t('common.delete'), style: 'destructive', onPress: () => handleDeleteMessage(item.data.id) },
+                        { text: t('common.cancel'), style: 'cancel' },
+                      ]);
+                    }
+                  } else {
+                    if (Platform.OS === 'ios') {
+                      ActionSheetIOS.showActionSheetWithOptions(
+                        { options: [t('chat.copy'), t('common.cancel')], cancelButtonIndex: 1 },
+                        (idx) => { if (idx === 0) Clipboard.setStringAsync(item.data.body); },
+                      );
+                    } else {
+                      Alert.alert(t('chat.options'), undefined, [
+                        { text: t('chat.copy'), onPress: () => Clipboard.setStringAsync(item.data.body) },
+                        { text: t('common.cancel'), style: 'cancel' },
+                      ]);
+                    }
+                  }
+                }}
+              />
+            );
+          }}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No messages yet. Say hello!</Text>
+            <Text style={styles.emptyText}>{t('chat.noMessages')}</Text>
           }
         />
 
-        {/* Disappearing toggle */}
+        {/* Auto-delete duration picker */}
         <TouchableOpacity
-          style={[styles.disappearToggle, disappearing && styles.disappearToggleActive]}
-          onPress={() => setDisappearing((d) => !d)}
-          accessibilityLabel={disappearing ? 'Disappearing messages on (24h)' : 'Disappearing messages off'}
+          style={[styles.disappearToggle, expiryHours != null && styles.disappearToggleActive]}
+          onPress={handlePickExpiry}
+          accessibilityLabel={expiryHours != null ? `Auto-delete: ${t(EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.labelKey ?? '')}` : t('chat.autoDeleteOff')}
         >
           <Ionicons
-            name={disappearing ? 'timer' : 'timer-outline'}
+            name={expiryHours != null ? 'timer' : 'timer-outline'}
             size={15}
-            color={disappearing ? Colors.safeBlue : Colors.textMuted}
+            color={expiryHours != null ? Colors.safeBlue : Colors.textMuted}
           />
-          <Text style={[styles.disappearText, disappearing && styles.disappearTextActive]}>
-            {disappearing ? '24h · on' : '24h off'}
+          <Text style={[styles.disappearText, expiryHours != null && styles.disappearTextActive]}>
+            {expiryHours != null
+              ? `${t(EXPIRY_OPTIONS.find((o) => o.hours === expiryHours)?.labelKey ?? '')} · on`
+              : t('chat.autoDeleteOff')}
           </Text>
         </TouchableOpacity>
+
+        {/* Reply bar */}
+        {replyTo && (
+          <View style={styles.replyBar}>
+            <Ionicons name="return-down-forward" size={15} color={Colors.safeBlue} />
+            <Text style={styles.replyBarText} numberOfLines={1}>{replyTo.body}</Text>
+            <TouchableOpacity onPress={() => setReplyTo(null)} accessibilityLabel="Cancel reply">
+              <Ionicons name="close" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Input row */}
         <View style={styles.inputRow}>
@@ -232,7 +212,7 @@ export default function ChatScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="Message…"
+            placeholder={t('chat.inputPlaceholder')}
             placeholderTextColor={Colors.textMuted}
             multiline
             maxLength={1000}
@@ -260,25 +240,119 @@ function MessageBubble({
   message,
   isMe,
   disappearing,
+  onLike,
+  onReply,
+  onLongPress,
 }: {
   message: Message;
   isMe: boolean;
   disappearing: boolean;
+  onLike: () => void;
+  onReply: () => void;
+  onLongPress: () => void;
 }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const countdown = useCountdown(disappearing ? message.expiresAt : undefined);
+
+  // Swipe-to-reply
+  // Non-me messages: swipe RIGHT (+translateX), icon appears on the left.
+  // Me messages:     swipe LEFT  (-translateX), icon appears on the right.
+  const translateX = useSharedValue(0);
+  const replyTriggered = useRef(false);
+  const dir = isMe ? -1 : 1;
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX(isMe ? [-Infinity, -10] : [10, Infinity])
+    .failOffsetY([-12, 12])
+    .onUpdate((e) => {
+      const drag = isMe ? -e.translationX : e.translationX;
+      if (drag > 0) {
+        translateX.value = dir * Math.min(drag * 0.45, REPLY_THRESHOLD);
+        if (drag * 0.45 >= REPLY_THRESHOLD - 2 && !replyTriggered.current) {
+          replyTriggered.current = true;
+          runOnJS(onReply)();
+        }
+      }
+    })
+    .onEnd(() => {
+      replyTriggered.current = false;
+      translateX.value = withSpring(0, { damping: 18, stiffness: 200 });
+    });
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  // Reply icon fades in as swipe progresses
+  const progress = useAnimatedStyle(() => ({
+    opacity: Math.min(Math.abs(translateX.value) / REPLY_THRESHOLD, 1),
+    transform: [{ scale: 0.7 + (Math.abs(translateX.value) / REPLY_THRESHOLD) * 0.3 }],
+  }));
+
+  // Double-tap to like
+  const lastTap = useRef(0);
+  function handleDoubleTap() {
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+      onLike();
+    }
+    lastTap.current = now;
+  }
+
   return (
     <View style={[styles.bubbleRow, isMe && styles.bubbleRowMe]}>
-      <View style={[styles.bubbleCol, isMe && styles.bubbleColMe]}>
-        <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-          <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
-        </View>
-        <View style={styles.bubbleMeta}>
-          {disappearing && (
-            <Ionicons name="timer-outline" size={11} color={Colors.textMuted} />
+      {/* Reply icon — absolutely positioned so it never shifts the bubble layout */}
+      <Animated.View style={[
+        styles.replyIconAbs,
+        isMe ? styles.replyIconAbsRight : styles.replyIconAbsLeft,
+        progress,
+      ]}>
+        <Ionicons
+          name={isMe ? 'return-down-back' : 'return-down-forward'}
+          size={18}
+          color={Colors.safeBlue}
+        />
+      </Animated.View>
+
+      <GestureDetector gesture={swipeGesture}>
+        <Animated.View style={[styles.bubbleCol, isMe && styles.bubbleColMe, animStyle]}>
+          {/* Reply quote */}
+          {message.replyToBody && (
+            <View style={[styles.replyQuote, isMe && styles.replyQuoteMe]}>
+              <View style={styles.replyQuoteBar} />
+              <Text style={styles.replyQuoteText} numberOfLines={2}>{message.replyToBody}</Text>
+            </View>
           )}
-          <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>{time}</Text>
-        </View>
-      </View>
+
+          <TouchableOpacity
+            onPress={handleDoubleTap}
+            onLongPress={onLongPress}
+            activeOpacity={0.85}
+            accessibilityLabel={isMe ? 'Your message, double-tap to like, long-press to copy or delete' : 'Message, double-tap to like, long-press to copy'}
+          >
+            <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+              <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.body}</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.bubbleMeta}>
+            {disappearing && countdown != null && (
+              <View style={styles.countdownPill}>
+                <Ionicons name="timer-outline" size={11} color={Colors.safetyYellow} />
+                <Text style={styles.countdownText}>{countdown}</Text>
+              </View>
+            )}
+            <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>{time}</Text>
+          </View>
+
+          {/* Like heart badge */}
+          {message.liked && (
+            <View style={[styles.likeBadge, isMe && styles.likeBadgeMe]}>
+              <Text style={styles.likeEmoji}>❤️</Text>
+            </View>
+          )}
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }
@@ -331,10 +405,70 @@ const styles = StyleSheet.create({
   crisisText: { flex: 1, fontSize: 12, color: Colors.alertRed, lineHeight: 18 },
   messageList: { padding: Spacing.md, gap: Spacing.sm, flexGrow: 1 },
   emptyText: { textAlign: 'center', color: Colors.textMuted, marginTop: Spacing.xl * 2, fontSize: 14 },
-  bubbleRow: { flexDirection: 'row', justifyContent: 'flex-start' },
-  bubbleRowMe: { justifyContent: 'flex-end' },
+
+  // Bubble rows — column container so alignItems controls left/right without spacers
+  bubbleRow: {
+    position: 'relative',
+    alignItems: 'flex-start',
+  },
+  bubbleRowMe: { alignItems: 'flex-end' },
   bubbleCol: { maxWidth: '78%', gap: 3, alignItems: 'flex-start' },
   bubbleColMe: { alignItems: 'flex-end' },
+
+  // Reply swipe icons — absolutely positioned so they never affect bubble layout
+  replyIconAbs: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  replyIconAbsLeft: { left: 2 },
+  replyIconAbsRight: { right: 2 },
+
+  // Unread separator
+  unreadSep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginVertical: Spacing.sm,
+  },
+  unreadSepLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.safeBlue + '55',
+  },
+  unreadSepText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.safeBlue,
+  },
+
+  // Reply quote
+  replyQuote: {
+    flexDirection: 'row',
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.sm,
+    overflow: 'hidden',
+    maxWidth: '100%',
+    marginBottom: 2,
+  },
+  replyQuoteMe: { backgroundColor: 'rgba(255,255,255,0.12)' },
+  replyQuoteBar: {
+    width: 3,
+    backgroundColor: Colors.safeBlue,
+  },
+  replyQuoteText: {
+    flex: 1,
+    fontSize: 12,
+    color: Colors.textMuted,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
+    lineHeight: 16,
+  },
+
+  // Bubbles
   bubble: {
     borderRadius: Radius.lg,
     paddingHorizontal: Spacing.md,
@@ -345,9 +479,66 @@ const styles = StyleSheet.create({
   bubbleThem: { backgroundColor: Colors.softGray, borderBottomLeftRadius: 4 },
   bubbleText: { fontSize: 15, color: Colors.textPrimary, lineHeight: 21 },
   bubbleTextMe: { color: Colors.textPrimary },
-  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  countdownPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: Colors.safetyYellow + '22',
+    borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1,
+  },
+  countdownText: { fontSize: 10, fontWeight: '700', color: Colors.safetyYellow },
   bubbleTime: { fontSize: 10, color: Colors.textMuted },
   bubbleTimeMe: { color: Colors.textMuted },
+
+  // Like badge
+  likeBadge: {
+    position: 'absolute',
+    bottom: 10,
+    right: 0,
+    backgroundColor: Colors.warmWhite,
+    borderRadius: 10,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  likeBadgeMe: { left: -5, right: undefined },
+  likeEmoji: { fontSize: 13 },
+
+  // Date header
+  dateHeader: { alignItems: 'center' as const, marginVertical: Spacing.sm },
+  dateHeaderText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: '600' as const,
+    backgroundColor: Colors.softGray,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    overflow: 'hidden' as const,
+  },
+
+  // Reply bar above input
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 7,
+    backgroundColor: Colors.softGray,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  replyBarText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
+  },
+
+  // Auto-delete toggle
   disappearToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -363,6 +554,8 @@ const styles = StyleSheet.create({
   disappearToggleActive: { backgroundColor: Colors.safeBlue + '18' },
   disappearText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
   disappearTextActive: { color: Colors.safeBlue },
+
+  // Input row
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',

@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Animated,
   SafeAreaView,
@@ -24,24 +25,27 @@ const SAFETY_COLORS: Record<string, string> = {
   yellow: Colors.safetyYellow,
   red: Colors.alertRed,
 };
-const SAFETY_LABELS: Record<string, string> = {
-  green: 'Safe',
-  yellow: 'Some concern',
-  red: 'Reach out now',
-};
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
+  const { t, i18n } = useTranslation();
   const { profile, safetyLevel } = useSession();
   const { todayCheckIn, recentCheckIns } = useCheckIns();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const name = profile?.nickname ?? 'Friend';
+  const safetyLabels: Record<string, string> = {
+    green: t('home.safety.safe'),
+    yellow: t('home.safety.someConcern'),
+    red: t('home.safety.reachOutNow'),
+  };
+
+  const name = profile?.nickname ?? t('common.friend');
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const dayLabel = new Date().toLocaleDateString('en-SE', {
+    hour < 12 ? t('home.greeting.morning') : hour < 17 ? t('home.greeting.afternoon') : t('home.greeting.evening');
+  const locale = i18n.language === 'sv' ? 'sv-SE' : 'en-SE';
+  const dayLabel = new Date().toLocaleDateString(locale, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -74,7 +78,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/profile')}
               activeOpacity={0.8}
-              accessibilityLabel="Go to profile"
+              accessibilityLabel={t('home.goToProfile')}
             >
               {profile?.avatarUrl ? (
                 <Image
@@ -96,119 +100,123 @@ export default function HomeScreen() {
             <View style={[styles.safetyPill, { borderColor: SAFETY_COLORS[safetyLevel] + '60' }]}>
               <View style={[styles.safetyDot, { backgroundColor: SAFETY_COLORS[safetyLevel] }]} />
               <Text style={[styles.safetyPillText, { color: SAFETY_COLORS[safetyLevel] }]}>
-                {SAFETY_LABELS[safetyLevel]}
+                {safetyLabels[safetyLevel]}
               </Text>
             </View>
           )}
         </View>
 
         {/* ── Today's state (hero) ─────────────────────────── */}
-        <SectionLabel label="Today" />
+        <SectionLabel label={t('home.sections.today')} />
         <MoodInsightCard
           todayCheckIn={todayCheckIn}
           recentCheckIns={recentCheckIns}
         />
 
         {/* ── Daily practice ───────────────────────────────── */}
-        <SectionLabel label="Daily practice" />
+        <SectionLabel label={t('home.sections.dailyPractice')} />
         <GroupedCard>
           <OuraRow
             icon="pulse-outline"
             iconColor={Colors.textMuted}
-            title="Daily Check-in"
-            subtitle="Track your mood and feelings"
+            title={t('home.rows.dailyCheckIn.title')}
+            subtitle={t('home.rows.dailyCheckIn.subtitle')}
             onPress={() => router.push('/checkin')}
           />
           <OuraRow
             icon="book-outline"
             iconColor={Colors.textMuted}
-            title="Journal"
-            subtitle="Your private space to express"
+            title={t('home.rows.journal.title')}
+            subtitle={t('home.rows.journal.subtitle')}
             onPress={() => router.push('/journal-entry')}
             divider
           />
           <OuraRow
             icon="bar-chart-outline"
             iconColor={Colors.textMuted}
-            title="My Progress"
-            subtitle="Streaks, milestones, mood trends"
+            title={t('home.rows.myProgress.title')}
+            subtitle={t('home.rows.myProgress.subtitle')}
             onPress={() => router.push('/progress')}
             divider
           />
         </GroupedCard>
 
         {/* ── Safety & support ─────────────────────────────── */}
-        <SectionLabel label="Safety & support" />
+        <SectionLabel label={t('home.sections.safetySupport')} />
         <GroupedCard>
           <OuraRow
             icon="shield-checkmark-outline"
             iconColor={Colors.textMuted}
-            title="Safety Assessment"
-            subtitle={safetyLevel ? `Status — ${SAFETY_LABELS[safetyLevel].toUpperCase()}` : 'Check in on your safety'}
+            title={t('home.rows.safetyAssessment.title')}
+            subtitle={
+              safetyLevel
+                ? `${t('home.rows.safetyAssessment.statusPrefix')}${safetyLabels[safetyLevel].toUpperCase()}`
+                : t('home.rows.safetyAssessment.subtitle')
+            }
             subtitleColor={safetyLevel ? SAFETY_COLORS[safetyLevel] : undefined}
             onPress={() => router.push('/safety')}
           />
           <OuraRow
             icon="sparkles-outline"
             iconColor={Colors.textMuted}
-            title="AI Companion"
-            subtitle="Talk through what's on your mind"
+            title={t('home.rows.aiCompanion.title')}
+            subtitle={t('home.rows.aiCompanion.subtitle')}
             onPress={() => router.push('/ai-companion')}
             divider
           />
           <OuraRow
             icon="location-outline"
             iconColor={Colors.textMuted}
-            title="Local Resources"
-            subtitle="LGBTQ+ centers, shelters, legal aid"
+            title={t('home.rows.localResources.title')}
+            subtitle={t('home.rows.localResources.subtitle')}
             onPress={() => router.push('/local-resources')}
             divider
           />
         </GroupedCard>
 
         {/* ── Community ────────────────────────────────────── */}
-        <SectionLabel label="Community" />
+        <SectionLabel label={t('home.sections.community')} />
         <GroupedCard>
           <OuraRow
             icon="people-outline"
             iconColor={Colors.textMuted}
-            title="Support Matches"
-            subtitle="Find people who understand"
+            title={t('home.rows.supportMatches.title')}
+            subtitle={t('home.rows.supportMatches.subtitle')}
             onPress={() => router.push('/(tabs)/connect')}
           />
           <OuraRow
             icon="git-network-outline"
             iconColor={Colors.textMuted}
-            title="Chosen Family"
-            subtitle="Map your support network"
+            title={t('home.rows.chosenFamily.title')}
+            subtitle={t('home.rows.chosenFamily.subtitle')}
             onPress={() => router.push('/chosen-family')}
             divider
           />
           <OuraRow
             icon="calendar-outline"
             iconColor={Colors.textMuted}
-            title="Events & Circles"
-            subtitle="Workshops, meetups, online circles"
+            title={t('home.rows.eventsCircles.title')}
+            subtitle={t('home.rows.eventsCircles.subtitle')}
             onPress={() => router.push('/events')}
             divider
           />
         </GroupedCard>
 
         {/* ── Growth ───────────────────────────────────────── */}
-        <SectionLabel label="Growth" />
+        <SectionLabel label={t('home.sections.growth')} />
         <GroupedCard>
           <OuraRow
             icon="library-outline"
             iconColor={Colors.textMuted}
-            title="Resources"
-            subtitle="Guides, articles, and tools"
+            title={t('home.rows.resources.title')}
+            subtitle={t('home.rows.resources.subtitle')}
             onPress={() => router.push('/(tabs)/resources')}
           />
           <OuraRow
             icon="layers-outline"
             iconColor={Colors.textMuted}
-            title="Healing Programs"
-            subtitle="Structured paths for recovery"
+            title={t('home.rows.healingPrograms.title')}
+            subtitle={t('home.rows.healingPrograms.subtitle')}
             onPress={() => router.push('/programs')}
             divider
           />
@@ -216,9 +224,7 @@ export default function HomeScreen() {
 
         {/* ── Affirmation ──────────────────────────────────── */}
         <View style={styles.affirmation}>
-          <Text style={styles.affirmationText}>
-            "You deserve safety, connection, and belonging — at home, at school, and everywhere you go."
-          </Text>
+          <Text style={styles.affirmationText}>{t('home.affirmation')}</Text>
         </View>
       </Animated.ScrollView>
 

@@ -1,0 +1,36 @@
+export default {
+  welcome: {
+    tagline: "A safe space for LGBTQ+ people\n— when home isn't always safe.",
+    pillars: {
+      safety: 'Safety',
+      healing: 'Healing',
+      connection: 'Connection',
+      growth: 'Growth',
+    },
+    startAnonymously: 'Start anonymously',
+    signIn: 'Sign in',
+    continueAsGuest: 'Continue as guest — no account needed',
+    agreePrefix: 'I am 18 or older and agree to the ',
+    termsOfUse: 'Terms of Use',
+    and: ' and ',
+    privacyPolicy: 'Privacy Policy',
+    agreeSuffix: '.',
+  },
+
+  signIn: {
+    title: 'Welcome back',
+    subtitle: 'Sign in to access your journal, connections, and progress.',
+    email: 'Email',
+    emailPlaceholder: 'your@email.com',
+    password: 'Password',
+    signInBtn: 'Sign in',
+    createAccount: 'Create account',
+    continueAnonymously: 'Continue anonymously — no account needed',
+    emailPasswordRequired: 'Please enter your email and password.',
+    passwordTooShort: 'Password must be at least 8 characters.',
+    supabaseNotConfigured: 'Supabase not configured',
+    supabaseBody: 'Add your project credentials to {{file}} to enable sign-in:',
+    checkEmail: 'Check your email',
+    checkEmailBody: 'We sent a confirmation link to {{email}}. Open it and then sign in.',
+  },
+};

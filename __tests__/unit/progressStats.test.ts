@@ -6,6 +6,7 @@ import {
   getSafetyDelta,
   getProfileCompletion,
   getProgressSnapshot,
+  getStreakMilestone,
 } from '@/services/wellness/progressStats';
 import type { UserProfile } from '@/context/SessionContext';
 
@@ -225,5 +226,25 @@ describe('getProgressSnapshot', () => {
     await seedJournalEntry(1);
     const snap = await getProgressSnapshot(profile);
     expect(snap.journalStreak).toBe(2);
+  });
+});
+
+describe('getStreakMilestone', () => {
+  it('reports no milestone reached and days to the first one below 7', () => {
+    expect(getStreakMilestone(0)).toEqual({ reached: null, next: 7, daysToNext: 7, isMilestoneToday: false });
+    expect(getStreakMilestone(5)).toEqual({ reached: null, next: 7, daysToNext: 2, isMilestoneToday: false });
+  });
+
+  it('flags the exact day a milestone is hit', () => {
+    expect(getStreakMilestone(7)).toEqual({ reached: 7, next: 30, daysToNext: 23, isMilestoneToday: true });
+    expect(getStreakMilestone(30)).toEqual({ reached: 30, next: 100, daysToNext: 70, isMilestoneToday: true });
+  });
+
+  it('keeps the highest reached milestone as a permanent badge the day after', () => {
+    expect(getStreakMilestone(8)).toEqual({ reached: 7, next: 30, daysToNext: 22, isMilestoneToday: false });
+  });
+
+  it('has no next milestone once the final one is passed', () => {
+    expect(getStreakMilestone(400)).toEqual({ reached: 365, next: null, daysToNext: null, isMilestoneToday: false });
   });
 });

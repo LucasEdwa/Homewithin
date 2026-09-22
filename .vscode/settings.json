@@ -3,5 +3,23 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  "files.exclude": {
+    "ios/build/**": true,
+    "android/build/**": true,
+    "android/.gradle/**": true
+  },
+  "search.exclude": {
+    "ios/build/**": true,
+    "android/build/**": true
+  },
+  "C_Cpp.files.exclude": {
+    "ios/build/**": true,
+    "android/build/**": true
+  },
+  "files.associations": {
+    "ios/build/**/*.cpp": "plaintext",
+    "ios/build/**/*.h": "plaintext",
+    "ios/build/**/*.mm": "plaintext"
   }
 }

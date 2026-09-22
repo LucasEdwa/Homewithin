@@ -19,7 +19,7 @@ Your identity is not a problem to be solved. You do not need to be fixed. You ne
 
 If you are in immediate danger due to family rejection, please reach out to a crisis line. You are not alone, and there are people who will hold you exactly as you are.`,
     category: "family_rejection",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -42,7 +42,7 @@ Some practical steps: be honest about your experience when it feels safe to do s
 
 You are allowed to be loved. You are allowed to belong. And there are people out there who will be honored to call you family.`,
     category: "family_rejection",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -67,7 +67,7 @@ Recovery from internalized shame is not a single moment of realization. It is a 
 
 You were never the problem. The world that made you feel that way was.`,
     category: "internalized_shame",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -90,7 +90,7 @@ Another practice: speak the shame out loud to someone safe. Shame researcher Bre
 
 You are not your shame. You are the person underneath it — someone who has survived enormous pressure to be someone other than themselves.`,
     category: "internalized_shame",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -115,7 +115,7 @@ You are allowed to be angry. You are allowed to grieve what you lost — the com
 
 You are also allowed to find your own relationship with spirituality, or to leave it entirely. Neither path is more valid than the other. What matters is that you move forward in a way that honors your experience and supports your healing.`,
     category: "religious_trauma",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -138,7 +138,7 @@ What matters is not which path you choose, but that the path you choose allows y
 
 If you're exploring what spirituality means to you now, move slowly. Trust your body — it will tell you when something feels safe or unsafe. You get to decide what is true for you.`,
     category: "religious_trauma",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -163,7 +163,7 @@ Some boundaries will cost you. Setting them may lead to conflict, to distance, t
 
 Start small. Practice with lower-stakes situations. Notice how it feels to say what you need and have it respected. Over time, boundaries become less about conflict and more about self-knowledge: knowing what you need and trusting yourself enough to ask for it.`,
     category: "boundaries",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -190,7 +190,7 @@ Practice with small things first. Saying no to a social event, to an extra task,
 
 Every time you say no to something that depletes you, you say yes to yourself. And you are worth saying yes to.`,
     category: "boundaries",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -221,7 +221,7 @@ You also never have to come out at all. Living authentically is the goal — and
 
 Whatever you decide, it is your decision. Your story belongs to you.`,
     category: "coming_out_safely",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -246,7 +246,7 @@ You can prepare a response to difficult reactions. Think in advance about what y
 
 Most importantly: your coming out is about you, not about managing others' emotions. You are allowed to take up space. You are allowed to be known. You are allowed to be exactly who you are.`,
     category: "coming_out_safely",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -273,7 +273,7 @@ Here are five concrete steps for the next five minutes:
 
 You reached out for help by being here. That matters. Please keep reaching.`,
     category: "crisis_help",
-    language: "English",
+    language: "en",
     readTime: 3,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -298,7 +298,7 @@ Recovery from suicidal crisis is possible. Many people who have been where you a
 
 Trevor Project (LGBTQ+): 1-866-488-7386 | Crisis Text Line: text START to 678-678`,
     category: "crisis_help",
-    language: "English",
+    language: "en",
     readTime: 4,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -325,7 +325,7 @@ If school feels hostile to you right now, here is the most important thing to kn
 
 You will not be in this school forever. The people making it hard for you do not get to define what your life becomes. You do.`,
     category: "outside_home",
-    language: "English",
+    language: "en",
     readTime: 4,
     createdAt: "2026-05-01T00:00:00Z",
   },
@@ -350,8 +350,62 @@ This kind of hostility is different from family rejection. It can feel smaller �
 
 The outside world is not all hostile. There are neighbors who will hang a Pride flag and mean it. There are communities that will welcome you by name. They exist — and you deserve to find them.`,
     category: "outside_home",
-    language: "English",
+    language: "en",
     readTime: 4,
     createdAt: "2026-05-01T00:00:00Z",
+  },
+
+  // ── Body image & self-worth ───────────────────────────────────────────────
+  {
+    id: "bi-001",
+    title: "Body Image Pressure and Emotional Isolation in the Gay Community",
+    summary:
+      "How unrealistic appearance standards in gay culture affect mental health, relationships, and self-worth — and what a healthier definition of happiness looks like.",
+    body: `To be a gay man in contemporary society can be emotionally complex and psychologically exhausting. While progress on LGBTQ+ rights is real, social acceptance has not eliminated the internal pressures many gay men experience daily. In modern gay culture, physical appearance is often treated as social currency — and the pressure to achieve the "perfect body" has become one of the most harmful standards affecting self-esteem, relationships, and mental health within the community.
+
+Research now shows that gay and bisexual men experience some of the highest levels of body dissatisfaction among all male groups. Media, dating apps, pornography, fitness culture, and social media continuously promote a narrow ideal: muscular, lean, tall, youthful, masculine, and often white. These standards affect many people, but studies suggest they have a particularly strong impact on gay men.
+
+According to the Mental Health Foundation, 53% of LGBTQ+ participants reported feeling anxious because of their body image, 56% reported depression connected to physical appearance, and approximately one-third reported suicidal thoughts linked to body dissatisfaction. Body image is not simply about vanity — it is deeply connected to emotional wellbeing, identity, and self-worth.
+
+**The culture of comparison**
+
+Social media amplifies these pressures to unprecedented levels. The most visible gay influencers frequently represent a narrow body standard: muscular physiques, flawless skin, expensive lifestyles, and carefully curated appearances. Many gay men find themselves comparing their everyday reality to digitally altered images, fuelling thoughts like:
+
+• "I am not muscular enough."
+• "My skin is not clear enough."
+• "I am too feminine."
+• "I do not look like the men people desire online."
+
+Studies have linked excessive social media exposure to increased body dysmorphia, anxiety, depression, and steroid abuse. For gay men of color, these pressures become even more intense because beauty standards are often racialized — white, Eurocentric features continue to dominate media representation, causing many non-white gay men to feel excluded or invisible.
+
+**When appearance replaces connection**
+
+One of the most concerning effects of superficial beauty culture is the gradual loss of emotional depth in relationships. When perfection becomes the primary requirement for connection, genuine human intimacy becomes difficult to sustain.
+
+A person may spend years pursuing the "perfect body" while simultaneously developing loneliness, insecurity, and fear of rejection. Some become trapped in endless cycles of self-improvement without ever feeling satisfied. Others isolate themselves because they believe they are not attractive enough to deserve love or attention.
+
+Ironically, extreme perfectionism often produces emotional isolation rather than happiness. Confidence, emotional intelligence, empathy, communication, and self-respect are the qualities that create long-term compatibility — yet modern dating culture frequently reduces people to images rather than personalities.
+
+**Minority stress and mental health**
+
+Psychologists use the term "minority stress" to describe the chronic stress experienced by marginalized groups due to discrimination, rejection, and stigma. Gay men often experience this stress throughout their lives, beginning in childhood or adolescence. Bullying, rejection, internalized shame, and fear of discrimination all contribute significantly to body dissatisfaction and mental health struggles.
+
+The pressure to appear masculine also plays an important role. Many gay men feel they must compensate for stereotypes associated with femininity by pursuing hyper-masculine appearances, increasing obsession with muscularity and gym culture.
+
+LGBTQ+ adults experience significantly higher risks of anxiety, depression, self-harm, and suicide than heterosexual populations. These struggles are not caused by being gay itself — they are caused by the social pressures, discrimination, unrealistic expectations, and emotional isolation many LGBTQ+ people face.
+
+**A healthier definition of happiness**
+
+Health and self-care are important. Exercising, eating well, and caring for your appearance can improve confidence and wellbeing. Problems begin when self-worth becomes entirely dependent on physical perfection.
+
+A healthier understanding of happiness must include emotional authenticity, self-acceptance, meaningful relationships, and psychological balance. Real connection is built through character rather than perfection. A person's kindness, honesty, emotional stability, humor, empathy, and values determine the quality of relationships far more than physical appearance.
+
+The challenge for modern gay culture is not simply to redefine beauty, but to redefine value itself. A healthier community must recognize that human worth is not measured by muscles, height, skin color, or perfection — but by character, emotional depth, compassion, and authenticity.
+
+Only then can happiness become something deeper than appearance.`,
+    category: "body_image",
+    language: "en",
+    readTime: 7,
+    createdAt: "2026-05-29T00:00:00Z",
   },
 ];

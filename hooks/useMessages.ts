@@ -18,18 +18,33 @@ export function useMessages(matchId: string | undefined) {
 
     loadMessages();
 
-    const unsub = subscribeToMessages(matchId, (msg) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-      markRead(matchId!);
-    });
+    const unsub = subscribeToMessages(
+      matchId,
+      (msg) => {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+        markRead(matchId!);
+      },
+      (updated) => {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
+        );
+      },
+      // When the realtime channel errors or times out, re-fetch so we don't miss
+      // messages that arrived while the connection was down.
+      () => loadMessages(),
+      (deletedId) => {
+        setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+      },
+    );
 
-    // Refetch on foreground — covers WebSocket gaps when the app was backgrounded.
     const appStateSub = AppState.addEventListener("change", (state) => {
       if (state === "active") loadMessages();
     });
+
+    // Expiry purge is handled by useChatScreen (30 s interval). No duplicate needed here.
 
     return () => {
       unsub();

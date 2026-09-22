@@ -5,6 +5,7 @@ export const RESOURCE_CATEGORY_IDS = [
   'boundaries',
   'coming_out_safely',
   'outside_home',
+  'body_image',
   'crisis_help',
 ] as const;
 
@@ -17,6 +18,7 @@ export const CATEGORY_LABELS: Record<ResourceCategory, string> = {
   boundaries: 'Boundaries',
   coming_out_safely: 'Coming out safely',
   outside_home: 'School & community',
+  body_image: 'Body & self-image',
   crisis_help: 'Crisis help',
 };
 
@@ -27,6 +29,7 @@ export const CATEGORY_COLORS: Record<ResourceCategory, string> = {
   boundaries: '#7BC9A7',
   coming_out_safely: '#5B8DEF',
   outside_home: '#8B6FB5',
+  body_image: '#B8A8E3',
   crisis_help: '#D9534F',
 };
 

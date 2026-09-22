@@ -1,11 +1,14 @@
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { RESOURCE_LOCATIONS } from '@/data/localResources';
 import { useSession } from '@/context/SessionContext';
 import { getMeetups, getWorkshops } from '@/services/content/localResources';
+import { getRsvpIds, toggleRsvp } from '@/services/content/eventRsvp';
 import type { LocalMeetup, Workshop, WorkshopFormat } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Linking,
@@ -30,36 +33,56 @@ const FORMAT_COLORS: Record<WorkshopFormat, string> = {
   in_person: Colors.softGreen,
   hybrid: '#B8A8E3',
 };
-const FORMAT_LABELS: Record<WorkshopFormat, string> = {
-  online: 'Online',
-  in_person: 'In Person',
-  hybrid: 'Hybrid',
-};
 
 export default function EventsScreen() {
-  const { nearbyState } = useSession();
+  const { t, i18n } = useTranslation();
+  const { nearbyState, profile } = useSession();
   const [activeTab, setActiveTab] = useState<Tab>('workshops');
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [manualLocationOverride, setManualLocationOverride] = useState(false);
 
-  const workshops = getWorkshops();
-  const meetups = getMeetups(nearbyState ?? undefined);
+  const nearbyLocation = nearbyState ?? profile?.country ?? 'your area';
+  const [selectedLocation, setSelectedLocation] = useState(nearbyLocation);
+  const [rsvpIds, setRsvpIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!manualLocationOverride) {
+      setSelectedLocation(nearbyLocation);
+    }
+  }, [nearbyLocation, manualLocationOverride]);
+
+  useEffect(() => {
+    getRsvpIds().then((ids) => setRsvpIds(new Set(ids)));
+  }, []);
+
+  const workshops = getWorkshops(undefined, i18n.language);
+  const meetups = getMeetups(selectedLocation);
 
   const openLink = useCallback((url: string) => {
     Linking.openURL(url).catch(() =>
-      Alert.alert('Could not open link', 'Please check your internet connection.')
+      Alert.alert(t('events.couldNotOpenLink'), t('events.checkConnection'))
     );
+  }, [t]);
+
+  const handleToggleRsvp = useCallback(async (item: Workshop | LocalMeetup) => {
+    const going = await toggleRsvp(item);
+    setRsvpIds((prev) => {
+      const next = new Set(prev);
+      if (going) next.add(item.id);
+      else next.delete(item.id);
+      return next;
+    });
   }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>Events & Circles</Text>
+        <Text style={styles.title}>{t('events.title')}</Text>
       </View>
 
-      {/* Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity
           testID="tab-workshops"
@@ -72,7 +95,7 @@ export default function EventsScreen() {
             color={activeTab === 'workshops' ? Colors.safeBlue : Colors.textMuted}
           />
           <Text style={[styles.tabText, activeTab === 'workshops' && styles.tabTextActive]}>
-            Online Circles
+            {t('events.onlineCircles')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -86,48 +109,131 @@ export default function EventsScreen() {
             color={activeTab === 'meetups' ? Colors.safeBlue : Colors.textMuted}
           />
           <Text style={[styles.tabText, activeTab === 'meetups' && styles.tabTextActive]}>
-            Local Meetups
+            {t('events.localMeetups')}
           </Text>
         </TouchableOpacity>
       </View>
 
+      {activeTab === 'meetups' && (
+        <>
+          <TouchableOpacity
+            style={styles.locationRow}
+            onPress={() => setShowLocationPicker((value) => !value)}
+            accessibilityLabel={t('events.usingLocation')}
+            testID="events-location-picker"
+          >
+            <Ionicons name="location-outline" size={16} color={Colors.safeBlue} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.locationLabel}>{t('events.usingLocation')}</Text>
+              <Text style={styles.locationValue}>{selectedLocation}</Text>
+            </View>
+            <Ionicons
+              name={showLocationPicker ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={Colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          {showLocationPicker && (
+            <View style={styles.locationList}>
+              {RESOURCE_LOCATIONS.map((location) => (
+                <TouchableOpacity
+                  key={location}
+                  style={[
+                    styles.locationOption,
+                    location === selectedLocation && styles.locationOptionActive,
+                  ]}
+                  onPress={() => {
+                    setSelectedLocation(location);
+                    setManualLocationOverride(true);
+                    setShowLocationPicker(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.locationOptionText,
+                      location === selectedLocation && styles.locationOptionTextActive,
+                    ]}
+                  >
+                    {location}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+
+              {manualLocationOverride && (
+                <TouchableOpacity
+                  style={styles.locationResetBtn}
+                  onPress={() => {
+                    setManualLocationOverride(false);
+                    setSelectedLocation(nearbyLocation);
+                    setShowLocationPicker(false);
+                  }}
+                >
+                  <Ionicons name="navigate-outline" size={13} color={Colors.safeBlue} />
+                  <Text style={styles.locationResetBtnText}>
+                    {t('events.useDetected', { location: nearbyLocation })}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </>
+      )}
+
       {activeTab === 'workshops' ? (
-        <WorkshopsList workshops={workshops} onOpenLink={openLink} />
+        <WorkshopsList
+          workshops={workshops}
+          onOpenLink={openLink}
+          rsvpIds={rsvpIds}
+          onToggleRsvp={handleToggleRsvp}
+        />
       ) : (
-        <MeetupsList meetups={meetups} country={nearbyState ?? ''} onOpenLink={openLink} />
+        <MeetupsList
+          meetups={meetups}
+          country={selectedLocation}
+          onOpenLink={openLink}
+          rsvpIds={rsvpIds}
+          onToggleRsvp={handleToggleRsvp}
+        />
       )}
     </SafeAreaView>
   );
 }
 
-// ── Workshops list ─────────────────────────────────────────────────────────────
-
 interface WorkshopsListProps {
   workshops: Workshop[];
   onOpenLink: (url: string) => void;
+  rsvpIds: Set<string>;
+  onToggleRsvp: (item: Workshop) => void;
 }
 
-function WorkshopsList({ workshops, onOpenLink }: WorkshopsListProps) {
+function WorkshopsList({ workshops, onOpenLink, rsvpIds, onToggleRsvp }: WorkshopsListProps) {
+  const { t } = useTranslation();
   if (workshops.length === 0) {
     return (
       <View style={styles.empty} testID="workshops-empty">
         <Ionicons name="calendar-outline" size={48} color={Colors.textMuted} />
-        <Text style={styles.emptyText}>No circles available yet.</Text>
-        <Text style={styles.emptyHint}>Check back soon!</Text>
+        <Text style={styles.emptyText}>{t('events.noCircles')}</Text>
+        <Text style={styles.emptyHint}>{t('events.checkBackSoon')}</Text>
       </View>
     );
   }
 
   return (
     <SectionList
-      sections={[{ title: 'Upcoming & Recurring', data: workshops }]}
+      sections={[{ title: t('events.upcomingRecurring'), data: workshops }]}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
       renderSectionHeader={({ section }) => (
         <Text style={styles.sectionHeader}>{section.title}</Text>
       )}
       renderItem={({ item }) => (
-        <WorkshopCard workshop={item} onOpenLink={onOpenLink} />
+        <WorkshopCard
+          workshop={item}
+          onOpenLink={onOpenLink}
+          going={rsvpIds.has(item.id)}
+          onToggleRsvp={() => onToggleRsvp(item)}
+        />
       )}
     />
   );
@@ -136,9 +242,12 @@ function WorkshopsList({ workshops, onOpenLink }: WorkshopsListProps) {
 interface WorkshopCardProps {
   workshop: Workshop;
   onOpenLink: (url: string) => void;
+  going: boolean;
+  onToggleRsvp: () => void;
 }
 
-function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
+function WorkshopCard({ workshop, onOpenLink, going, onToggleRsvp }: WorkshopCardProps) {
+  const { t } = useTranslation();
   const color = FORMAT_COLORS[workshop.format];
 
   return (
@@ -146,11 +255,11 @@ function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
       <View style={styles.cardTopRow}>
         <View style={[styles.formatBadge, { backgroundColor: color + '18' }]}>
           <Ionicons name={FORMAT_ICONS[workshop.format]} size={12} color={color} />
-          <Text style={[styles.formatText, { color }]}>{FORMAT_LABELS[workshop.format]}</Text>
+          <Text style={[styles.formatText, { color }]}>{t(`events.formatLabels.${workshop.format}` as any)}</Text>
         </View>
         {workshop.free && (
           <View style={styles.freeBadge}>
-            <Text style={styles.freeText}>Free</Text>
+            <Text style={styles.freeText}>{t('events.free')}</Text>
           </View>
         )}
       </View>
@@ -170,58 +279,100 @@ function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
         </View>
       )}
 
-      {workshop.link && (
-        <TouchableOpacity
-          testID={`join-${workshop.id}`}
-          style={styles.joinBtnLocked}
-          onPress={() =>
-            Alert.alert(
-              'Available under organizations',
-              'Joining circles will be available through your organization once the feature launches. Stay tuned!',
-              [{ text: 'Got it' }]
-            )
-          }
-          accessibilityLabel={`Join ${workshop.title} — available under organizations`}
-        >
-          <Ionicons name="lock-closed" size={16} color={Colors.safetyYellow} />
-          <Text style={styles.joinBtnLockedText}>Join Circle</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.cardActions}>
+        <RsvpButton going={going} onPress={onToggleRsvp} hasReminder={!!workshop.date} testID={`rsvp-${workshop.id}`} />
+        {workshop.link && (
+          <TouchableOpacity
+            testID={`join-${workshop.id}`}
+            style={styles.joinBtnLocked}
+            onPress={() =>
+              Alert.alert(
+                t('events.comingSoon'),
+                t('events.comingSoonBody'),
+                [{ text: t('events.gotIt') }]
+              )
+            }
+            accessibilityLabel={workshop.title}
+          >
+            <Ionicons name="lock-closed" size={16} color={Colors.safetyYellow} />
+            <Text style={styles.joinBtnLockedText}>{t('events.joinCircle')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
 
-// ── Meetups list ───────────────────────────────────────────────────────────────
+function RsvpButton({
+  going,
+  onPress,
+  hasReminder,
+  testID,
+}: {
+  going: boolean;
+  onPress: () => void;
+  hasReminder: boolean;
+  testID: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <TouchableOpacity
+      testID={testID}
+      style={[styles.rsvpBtn, going && styles.rsvpBtnActive]}
+      onPress={onPress}
+      accessibilityLabel={going ? t('events.rsvpGoing') : t('events.rsvpImGoing')}
+      accessibilityRole="button"
+    >
+      <Ionicons
+        name={going ? 'checkmark-circle' : 'calendar-outline'}
+        size={16}
+        color={going ? Colors.softGreen : Colors.textSecondary}
+      />
+      <Text style={[styles.rsvpBtnText, going && styles.rsvpBtnTextActive]}>
+        {going ? t('events.rsvpGoing') : t('events.rsvpImGoing')}
+      </Text>
+      {going && hasReminder && (
+        <Ionicons name="notifications-outline" size={13} color={Colors.softGreen} />
+      )}
+    </TouchableOpacity>
+  );
+}
 
 interface MeetupsListProps {
   meetups: LocalMeetup[];
   country: string;
   onOpenLink: (url: string) => void;
+  rsvpIds: Set<string>;
+  onToggleRsvp: (item: LocalMeetup) => void;
 }
 
-function MeetupsList({ meetups, country, onOpenLink }: MeetupsListProps) {
+function MeetupsList({ meetups, country, onOpenLink, rsvpIds, onToggleRsvp }: MeetupsListProps) {
+  const { t } = useTranslation();
   if (meetups.length === 0) {
     return (
       <View style={styles.empty} testID="meetups-empty">
         <Ionicons name="map-outline" size={48} color={Colors.textMuted} />
-        <Text style={styles.emptyText}>No meetups found near you.</Text>
-        <Text style={styles.emptyHint}>
-          Check back later or explore online circles above.
-        </Text>
+        <Text style={styles.emptyText}>{t('events.noMeetups')}</Text>
+        <Text style={styles.emptyHint}>{t('events.checkBackLater')}</Text>
       </View>
     );
   }
 
   return (
     <SectionList
-      sections={[{ title: `Near ${country}`, data: meetups }]}
+      sections={[{ title: t('events.nearLocation', { location: country }), data: meetups }]}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
       renderSectionHeader={({ section }) => (
         <Text style={styles.sectionHeader}>{section.title}</Text>
       )}
       renderItem={({ item }) => (
-        <MeetupCard meetup={item} onOpenLink={onOpenLink} />
+        <MeetupCard
+          meetup={item}
+          onOpenLink={onOpenLink}
+          going={rsvpIds.has(item.id)}
+          onToggleRsvp={() => onToggleRsvp(item)}
+        />
       )}
     />
   );
@@ -230,9 +381,12 @@ function MeetupsList({ meetups, country, onOpenLink }: MeetupsListProps) {
 interface MeetupCardProps {
   meetup: LocalMeetup;
   onOpenLink: (url: string) => void;
+  going: boolean;
+  onToggleRsvp: () => void;
 }
 
-function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
+function MeetupCard({ meetup, onOpenLink, going, onToggleRsvp }: MeetupCardProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.card} testID={`meetup-${meetup.id}`}>
       <View style={styles.metaRow}>
@@ -252,17 +406,20 @@ function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
         </View>
       )}
 
-      {meetup.link && (
-        <TouchableOpacity
-          testID={`rsvp-${meetup.id}`}
-          style={[styles.joinBtn, { backgroundColor: Colors.softGreen }]}
-          onPress={() => onOpenLink(meetup.link!)}
-          accessibilityLabel={`RSVP to ${meetup.title}`}
-        >
-          <Ionicons name="calendar-outline" size={16} color={Colors.white} />
-          <Text style={styles.joinBtnText}>RSVP / View</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.cardActions}>
+        <RsvpButton going={going} onPress={onToggleRsvp} hasReminder={!!meetup.date} testID={`rsvp-${meetup.id}`} />
+        {meetup.link && (
+          <TouchableOpacity
+            testID={`view-${meetup.id}`}
+            style={[styles.joinBtn, { backgroundColor: Colors.softGreen }]}
+            onPress={() => onOpenLink(meetup.link!)}
+            accessibilityLabel={meetup.title}
+          >
+            <Ionicons name="open-outline" size={16} color={Colors.white} />
+            <Text style={styles.joinBtnText}>{t('events.rsvpView')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -289,6 +446,47 @@ const styles = StyleSheet.create({
     padding: 4,
     gap: 4,
   },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xs,
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  locationLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+  locationValue: { fontSize: 15, color: Colors.textPrimary, fontWeight: '600' },
+  locationList: {
+    marginHorizontal: Spacing.lg,
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+    marginBottom: Spacing.sm,
+  },
+  locationOption: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  locationOptionActive: { backgroundColor: Colors.safeBlue + '10' },
+  locationOptionText: { fontSize: 15, color: Colors.textSecondary },
+  locationOptionTextActive: { color: Colors.safeBlue, fontWeight: '600' },
+  locationResetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  locationResetBtnText: { fontSize: 13, color: Colors.safeBlue, fontWeight: '600' },
   tab: {
     flex: 1,
     flexDirection: 'row',
@@ -348,7 +546,13 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   metaText: { fontSize: 13, color: Colors.textMuted },
 
+  cardActions: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
   joinBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -356,10 +560,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.safeBlue,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
-    marginTop: Spacing.xs,
   },
   joinBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
   joinBtnLocked: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -369,9 +573,25 @@ const styles = StyleSheet.create({
     borderColor: Colors.safetyYellow + '55',
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
-    marginTop: Spacing.xs,
   },
   joinBtnLockedText: { fontSize: 14, fontWeight: '700', color: Colors.safetyYellow },
+  rsvpBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: Colors.softGray,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+  },
+  rsvpBtnActive: {
+    backgroundColor: Colors.softGreen + '18',
+    borderWidth: 1,
+    borderColor: Colors.softGreen + '55',
+  },
+  rsvpBtnText: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary },
+  rsvpBtnTextActive: { color: Colors.softGreen },
 
   empty: {
     flex: 1,

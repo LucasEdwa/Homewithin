@@ -1,15 +1,18 @@
 import * as SecureStore from 'expo-secure-store';
-import type { AIMessage } from '@/types';
+import type { AIMessage, CircleMessage } from '@/types';
+import { currentUserId, supabase } from '@/services/supabase';
 
 const HISTORY_KEY = 'hw_ai_history';
 const RATE_KEY = 'hw_ai_timestamps';
+
 const SESSION_ID_KEY = 'hw_ai_session_id';
 const SESSION_NEW_KEY = 'hw_ai_session_new'; // 'true' until first message sent
+
 const MAX_PER_DAY = 20;
 const MAX_HISTORY = 20;
 
-// AI endpoint — put EXPO_PUBLIC_AI_API_KEY=haven_ZGLIl6ClRzbu1SK614zC in .env
-const AI_ENDPOINT = 'https://app.second-horizon.com/chat';
+// AI requests are proxied through the haven-proxy Supabase Edge Function
+// so the API key never touches the client bundle.
 
 export const AI_DISCLAIMER =
   'AI is not a therapist or crisis counselor. If you are in danger, use the emergency button.';
@@ -31,7 +34,8 @@ What you are NOT:
 If the user mentions suicide, self-harm, or immediate danger, always say:
 "I hear that you're in a really hard place right now. Please reach out to the Trevor Project at 1-866-488-7386 or text HOME to 741741. I'm here with you, and I want you to be safe."
 
-Tone: warm, grounding, direct, never clinical. Keep responses under 200 words. Ask one question at a time.`;
+Tone: warm, grounding, direct, never clinical. Keep responses under 200 words. Ask one question at a time.
+`;
 
 // ─── Rate limiting (client-side) ─────────────────────────────────────────────
 
@@ -55,6 +59,38 @@ async function recordUsage(): Promise<void> {
   await SecureStore.setItemAsync(RATE_KEY, JSON.stringify([...timestamps, now]));
 }
 
+// ─── Welcome-back note ────────────────────────────────────────────────────────
+// Purely client-side, no model call: when the user returns after a gap, the
+// companion screen shows a short note referencing their mood trend instead of
+// staying silent. This is separate from (and does not replace) the generic
+// daily push-notification nudge — it only shows once the user has actually
+// opened the screen, using data the notification can't safely include.
+
+export const WELCOME_BACK_THRESHOLD_DAYS = 3;
+
+export type WelcomeBackVariant = 'moodDeclining' | 'moodImproving' | 'generic';
+
+export interface WelcomeBack {
+  days: number;
+  variant: WelcomeBackVariant;
+}
+
+export function getWelcomeBack(
+  lastMessageAt: string | undefined,
+  moodTrend: UserContext['moodTrend'] | undefined,
+  now: Date = new Date(),
+): WelcomeBack | null {
+  if (!lastMessageAt) return null;
+
+  const days = Math.floor((now.getTime() - new Date(lastMessageAt).getTime()) / (24 * 60 * 60 * 1000));
+  if (days < WELCOME_BACK_THRESHOLD_DAYS) return null;
+
+  const variant: WelcomeBackVariant =
+    moodTrend === 'declining' ? 'moodDeclining' : moodTrend === 'improving' ? 'moodImproving' : 'generic';
+
+  return { days, variant };
+}
+
 // ─── Conversation history ─────────────────────────────────────────────────────
 
 export async function getHistory(): Promise<AIMessage[]> {
@@ -68,10 +104,64 @@ export async function clearHistory(): Promise<void> {
   await SecureStore.deleteItemAsync(SESSION_NEW_KEY);
 }
 
+export async function clearRateLimit(): Promise<void> {
+  await SecureStore.deleteItemAsync(RATE_KEY);
+}
+
 async function appendHistory(message: AIMessage): Promise<void> {
   const history = await getHistory();
   const updated = [...history, message].slice(-MAX_HISTORY);
   await SecureStore.setItemAsync(HISTORY_KEY, JSON.stringify(updated));
+}
+
+async function getScopedSessionKeys(scope: string): Promise<{
+  sessionIdKey: string;
+  sessionNewKey: string;
+}> {
+  if (scope === 'personal') {
+    return {
+      sessionIdKey: SESSION_ID_KEY,
+      sessionNewKey: SESSION_NEW_KEY,
+    };
+  }
+
+  const suffix = scope.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return {
+    sessionIdKey: `${SESSION_ID_KEY}_${suffix}`,
+    sessionNewKey: `${SESSION_NEW_KEY}_${suffix}`,
+  };
+}
+
+async function getOrCreateSession(scope: string): Promise<{
+  sessionId: string;
+  isNewSession: boolean;
+  sessionNewKey: string;
+}> {
+  const { sessionIdKey, sessionNewKey } = await getScopedSessionKeys(scope);
+  let sessionId = await SecureStore.getItemAsync(sessionIdKey);
+  if (!sessionId) {
+    sessionId = `hw-${scope}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    await SecureStore.setItemAsync(sessionIdKey, sessionId);
+    await SecureStore.setItemAsync(sessionNewKey, 'true');
+  }
+
+  const isNewSession = (await SecureStore.getItemAsync(sessionNewKey)) === 'true';
+  return { sessionId, isNewSession, sessionNewKey };
+}
+
+async function sendToAIEndpoint(messageToSend: string, sessionId: string): Promise<string> {
+  if (!supabase) {
+    throw new Error('AI companion is unavailable until Supabase is configured.');
+  }
+
+  const { data, error } = await supabase.functions.invoke('haven-proxy', {
+    body: { session_id: sessionId, message: messageToSend },
+  });
+
+  if (error) throw new Error(error.message || 'AI endpoint error');
+  if (data?.error) throw new Error(data.error);
+
+  return data?.reply ?? "I'm here with you. Could you say that again?";
 }
 
 // ─── AI call ─────────────────────────────────────────────────────────────────
@@ -99,9 +189,17 @@ export interface UserContext {
   connectionsCount?: number;
   chosenFamilyCount?: number;
 
+  // Today's full check-in detail
+  hardestThing?: string;
+  anxietyScore?: number;
+  lonelinessScore?: number;
+  checkInSafetyScore?: number;
+  checkInTags?: string[];
+
   // Full history for pattern matching
   journalSummaries?: { date: string; tags: string[]; snippet: string }[];
   moodHistory?: { date: string; score: number }[];
+  checkInHistory?: { date: string; anxiety: number; loneliness: number; safety: number; tags: string[]; hardestThing: string }[];
 }
 
 /** Builds the full personalized system prompt from live user data. */
@@ -129,6 +227,14 @@ export function buildSystemPrompt(ctx: UserContext): string {
   const currentMood = ctx.currentMoodScore
     ? `Today's mood: ${MOOD_LABELS[ctx.currentMoodScore] ?? ctx.currentMoodScore}/5`
     : null;
+
+  const checkInDetail = [
+    ctx.anxietyScore != null ? `Anxiety today: ${ctx.anxietyScore}/10` : null,
+    ctx.lonelinessScore != null ? `Loneliness today: ${ctx.lonelinessScore}/10` : null,
+    ctx.checkInSafetyScore != null ? `Felt safety today: ${ctx.checkInSafetyScore}/10` : null,
+    ctx.checkInTags?.length ? `Today's triggers: ${ctx.checkInTags.join(', ')}` : null,
+    ctx.hardestThing ? `What was hardest today (in their words): "${ctx.hardestThing}"` : null,
+  ].filter(Boolean).join('\n');
 
   const journalBlock = [
     ctx.journalStreak != null ? `Journal streak: ${ctx.journalStreak} day${ctx.journalStreak !== 1 ? 's' : ''}` : null,
@@ -166,6 +272,22 @@ export function buildSystemPrompt(ctx: UserContext): string {
         .join(', ')
     : null;
 
+  const checkInHistoryBlock = ctx.checkInHistory?.length
+    ? ctx.checkInHistory
+        .map((c) => {
+          const parts = [
+            `[${c.date}]`,
+            `anxiety ${c.anxiety}/10`,
+            `loneliness ${c.loneliness}/10`,
+            `safety ${c.safety}/10`,
+            c.tags.length ? `triggers: ${c.tags.join(', ')}` : null,
+            c.hardestThing ? `hardest: "${c.hardestThing.slice(0, 120)}"` : null,
+          ].filter(Boolean);
+          return parts.join(' | ');
+        })
+        .join('\n')
+    : null;
+
   return `${SYSTEM_PROMPT}
 
 ─── USER CONTEXT ───────────────────────────────
@@ -174,7 +296,7 @@ ${profileBlock || 'Anonymous user'}
 Safety level: ${safetyLabel}
 Mood: ${moodLabel}
 ${currentMood ?? ''}
-
+${checkInDetail ? `\n${checkInDetail}` : ''}
 ${journalBlock || 'No journal history yet'}
 
 Healing programs in progress:
@@ -184,6 +306,7 @@ ${connectionBlock || 'No connections yet'}
 ────────────────────────────────────────────────
 ${journalTimeline ? `\n─── JOURNAL HISTORY (newest first) ────────────\n${journalTimeline}\n────────────────────────────────────────────────` : ''}
 ${moodHistoryBlock ? `\n─── MOOD HISTORY ───────────────────────────────\n${moodHistoryBlock}\n────────────────────────────────────────────────` : ''}
+${checkInHistoryBlock ? `\n─── CHECK-IN HISTORY (newest first) ────────────\n${checkInHistoryBlock}\n────────────────────────────────────────────────` : ''}
 
 Use this context to respond in a personalized way. You do not need to state back all these facts — just let them inform your empathy and suggestions.
 
@@ -195,6 +318,94 @@ export interface AIContext {
   moodScore?: number;
   journalPreview?: string;
   userContext?: UserContext;
+}
+
+export interface CircleAIContext {
+  circleId: string;
+  circleTitle: string;
+  circleDescription?: string;
+  circleTags?: string[];
+  language?: string;
+  region?: string;
+  safetyLevel: 'standard' | 'heightened';
+}
+
+function buildCircleTranscript(messages: CircleMessage[]): string {
+  return messages
+    .map((message) => {
+      const sender = message.isAI ? 'AI Companion' : message.senderNickname ?? 'Member';
+      return `[${sender}] ${message.body}`;
+    })
+    .join('\n');
+}
+
+export function buildCirclePrompt(
+  circle: CircleAIContext,
+  conversation: CircleMessage[],
+  userText: string,
+): string {
+  const circleSummary = [
+    `Circle title: ${circle.circleTitle}`,
+    circle.circleDescription ? `Circle description: ${circle.circleDescription}` : null,
+    circle.circleTags?.length ? `Circle tags: ${circle.circleTags.join(', ')}` : null,
+    `Safety mode: ${circle.safetyLevel}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const transcript = buildCircleTranscript(conversation);
+
+  return `${SYSTEM_PROMPT}
+
+You are AI Companion inside a group support circle on Homewithin.
+Keep your response relevant to the circle theme and the current discussion.
+Address the group when appropriate, but respond directly to the member who mentioned you.
+Do not claim to be a therapist, doctor, moderator, or emergency service.
+Do not reveal or infer private details about one member to the rest of the circle.
+If the member asks something unrelated, answer briefly and reconnect to the circle's purpose.
+
+--- CIRCLE CONTEXT ---
+${circleSummary}
+
+--- GROUP CONVERSATION ---
+${transcript || 'No prior circle messages.'}
+
+--- CURRENT REQUEST ---
+${userText}`;
+}
+
+export async function sendCircleAIMessage(
+  circleId: string,
+  triggerMessageId: string,
+): Promise<{ message: CircleMessage | null; error?: string }> {
+  const { allowed } = await checkRateLimit();
+  if (!allowed) {
+    return { message: null, error: `Daily limit reached (${MAX_PER_DAY} messages/day). Come back tomorrow.` };
+  }
+
+  if (!supabase) {
+    return { message: null, error: 'Circle AI is unavailable until Supabase is configured.' };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('circle-ai-companion', {
+      body: { circleId, triggerMessageId },
+    });
+
+    if (error) throw new Error(error.message || 'Circle AI invocation failed');
+    if (data?.error) throw new Error(data.error);
+
+    await recordUsage();
+
+    const message = data?.message as CircleMessage | undefined;
+    return { message: message ?? null };
+  } catch (err: any) {
+    console.error('Circle AI call failed:', err?.message);
+    return {
+      message: null,
+      error: err?.message || 'Something went wrong. Try again in a moment.',
+    };
+  }
 }
 
 export async function sendAIMessage(
@@ -238,47 +449,29 @@ export async function sendAIMessage(
   }
 
   // ── Session ID (server tracks conversation history via this ID) ──────────────
-  let sessionId = await SecureStore.getItemAsync(SESSION_ID_KEY);
-  if (!sessionId) {
-    sessionId = `hw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    await SecureStore.setItemAsync(SESSION_ID_KEY, sessionId);
-    // Mark as a fresh session so we inject context on the first real message
-    await SecureStore.setItemAsync(SESSION_NEW_KEY, 'true');
-  }
+  const { sessionId, isNewSession, sessionNewKey } = await getOrCreateSession('personal');
 
   // On a brand-new session, prepend the system context to the first user message.
   // The server sees this as background info; the UI only shows the bare user text.
-  const isNewSession = (await SecureStore.getItemAsync(SESSION_NEW_KEY)) === 'true';
   const messageToSend = isNewSession
     ? `${systemContent}\n\n---\n\n${userText}`
     : userText;
 
   if (isNewSession) {
-    await SecureStore.setItemAsync(SESSION_NEW_KEY, 'false');
-  }
-
-  const AI_API_KEY = process.env.EXPO_PUBLIC_AI_API_KEY ?? '';
-  if (!AI_API_KEY) {
-    return { message: null, error: 'AI companion not configured. Add EXPO_PUBLIC_AI_API_KEY to .env.' };
+    await SecureStore.setItemAsync(sessionNewKey, 'false');
   }
 
   try {
-    let responseText: string;
-
-    const res = await fetch(AI_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': AI_API_KEY,
-      },
-      body: JSON.stringify({ session_id: sessionId, message: messageToSend }),
-    });
-
-    if (!res.ok) throw new Error(`AI endpoint error ${res.status}`);
-    const json = await res.json();
-    responseText = json.reply ?? "I'm here with you. Could you say that again?";
+    const responseText = await sendToAIEndpoint(messageToSend, sessionId);
 
     await recordUsage();
+
+    // Log session to Supabase so daily notifications can detect activity (fire-and-forget)
+    if (supabase) {
+      currentUserId().then((uid) => {
+        if (uid) supabase!.from('ai_sessions').insert({ user_id: uid }).then(() => {});
+      });
+    }
 
     const assistantMessage: AIMessage = {
       id: `ai-${Date.now()}`,

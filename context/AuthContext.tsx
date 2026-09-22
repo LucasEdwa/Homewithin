@@ -1,4 +1,5 @@
 import {
+  clearSession,
   getSession,
   isOnboardingComplete,
   markOnboardingComplete,
@@ -63,15 +64,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         const uid = session.user.id;
-        const { data: row } = await client
-          .from('user_profiles')
-          .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
-          .eq('user_id', uid)
-          .maybeSingle();
-        if (row) {
-          const hydrated = buildHydratedProfile(row);
-          setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
-          await saveSession(hydrated).catch(() => {});
+        try {
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('onAuthStateChange profile timeout')), 8000)
+          );
+          const { data: row } = await Promise.race([
+            client
+              .from('user_profiles')
+              .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
+              .eq('user_id', uid)
+              .maybeSingle(),
+            timeout,
+          ]);
+          if (row) {
+            const hydrated = buildHydratedProfile(row);
+            setState(s => ({ ...s, profile: hydrated, onboardingComplete: true }));
+            await saveSession(hydrated).catch(() => {});
+          }
+        } catch (e: any) {
+          console.warn('onAuthStateChange profile fetch failed:', e?.message);
         }
       }
     });
@@ -80,21 +91,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function init() {
-      const [complete, session] = await Promise.all([
-        isOnboardingComplete(),
-        getSession(),
-      ]);
+      // Outer try/catch ensures loading is always cleared even if SecureStore
+      // throws on fresh install or an unusual keychain state.
+      let complete = false;
+      let profile: UserProfile | null = null;
+      try {
+        const [c, session] = await Promise.all([
+          isOnboardingComplete(),
+          getSession(),
+        ]);
+        complete = c;
+        profile = session as UserProfile | null;
+      } catch (e: any) {
+        console.warn('Auth init storage read failed:', e?.message);
+        // Fall through with defaults; loading will still be cleared below.
+      }
 
-      let profile = session as UserProfile | null;
       if (supabase) {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          // Single timeout covers getUser() AND all subsequent profile queries.
+          // Reusing the same Promise means the 8-second budget is shared across
+          // the entire Supabase block, not reset per call.
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('auth init timeout')), 8000)
+          );
+          const { data: { user } } = await Promise.race([
+            supabase.auth.getUser(),
+            timeout,
+          ]);
           if (user) {
-            const { data: row, error } = await supabase
-              .from('user_profiles')
-              .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
-              .eq('user_id', user.id)
-              .maybeSingle();
+            const { data: row, error } = await Promise.race([
+              supabase
+                .from('user_profiles')
+                .select('nickname, age_range, language, country, hide_from_search, needs, intentions, avatar_url')
+                .eq('user_id', user.id)
+                .maybeSingle(),
+              timeout,
+            ]);
             if (error) {
               console.warn('Profile hydrate select error:', error.message);
             }
@@ -113,11 +146,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 needs: [],
                 intentions: [],
               };
-              const { error: insertErr } = await supabase
-                .from('user_profiles')
-                .insert(defaultRow);
-              if (insertErr) {
-                console.warn('Profile auto-create failed:', insertErr.message);
+              const insertResult = await Promise.race([
+                supabase.from('user_profiles').insert(defaultRow),
+                timeout,
+              ]);
+              if (insertResult.error) {
+                console.warn('Profile auto-create failed:', insertResult.error.message);
               } else {
                 profile = {
                   nickname: defaultRow.nickname,
@@ -134,7 +168,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           } else {
-            console.warn('Profile hydrate: no authenticated Supabase user');
+            // No active Supabase session. If the cached profile belongs to a
+            // previously signed-in account (isAnonymous: false) it is stale —
+            // clear it so the PIN lock screen cannot appear on the login screen.
+            if (profile && !profile.isAnonymous) {
+              profile = null;
+              await clearSession().catch(() => {});
+            }
           }
         } catch (e: any) {
           console.warn('Profile hydrate from Supabase failed:', e?.message);
@@ -168,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function reset() {
     setState({ profile: null, onboardingComplete: false, loading: false });
+    clearSession().catch(() => {});
   }
 
   return (

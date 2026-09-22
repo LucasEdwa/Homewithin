@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
+import { ActionSheetIOS, Alert } from 'react-native';
 
 import ChatScreen from '@/app/(social)/chat';
 import * as chatService from '@/services/social/chat';
@@ -10,6 +11,8 @@ jest.mock('@/services/social/chat', () => ({
   sendMessage: jest.fn(),
   subscribeToMessages: jest.fn(),
   containsCrisisKeywords: jest.fn(),
+  deleteMessage: jest.fn(),
+  applyExpiryToMatch: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/services/social/matching', () => ({
@@ -114,7 +117,7 @@ describe('ChatScreen', () => {
     fireEvent.changeText(screen.getByTestId('message-input'), 'Hello!');
     fireEvent.press(screen.getByTestId('send-btn'));
     await waitFor(() =>
-      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Hello!', false)
+      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Hello!', null, undefined)
     );
   });
 
@@ -128,14 +131,17 @@ describe('ChatScreen', () => {
   });
 
   it('sends with disappearing mode when toggle is on', async () => {
+    const spy = jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+      .mockImplementation((_opts: any, callback: (idx: number) => void) => callback(3)); // '24 hours'
     render(<ChatScreen />);
-    await waitFor(() => screen.getByLabelText('Disappearing messages off'));
-    fireEvent.press(screen.getByLabelText('Disappearing messages off'));
+    await waitFor(() => screen.getByLabelText('Auto-delete off'));
+    fireEvent.press(screen.getByLabelText('Auto-delete off'));
     fireEvent.changeText(screen.getByTestId('message-input'), 'Private');
     fireEvent.press(screen.getByTestId('send-btn'));
     await waitFor(() =>
-      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Private', true)
+      expect(mockSendMessage).toHaveBeenCalledWith('match-1', 'Private', 24, undefined)
     );
+    spy.mockRestore();
   });
 
   it('shows empty state when no messages', async () => {
@@ -149,5 +155,41 @@ describe('ChatScreen', () => {
     await waitFor(() => screen.getByLabelText('Back'));
     fireEvent.press(screen.getByLabelText('Back'));
     expect(router.back).toHaveBeenCalled();
+  });
+
+  it('blocks a message containing objectionable content and does not call sendMessage', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<ChatScreen />);
+    await waitFor(() => screen.getByTestId('message-input'));
+    fireEvent.changeText(screen.getByTestId('message-input'), "i'll kill you");
+    fireEvent.press(screen.getByTestId('send-btn'));
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith('Message blocked', expect.stringMatching(/community guidelines/i))
+    );
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('own message bubble is accessible with delete label', async () => {
+    render(<ChatScreen />);
+    await waitFor(() => screen.getByText('Hello there!'));
+    const ownBubble = screen.getByLabelText('Your message, double-tap to like, long-press to copy or delete');
+    expect(ownBubble).toBeTruthy();
+  });
+
+  it('long-pressing own message shows delete confirmation', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    // Simulate the user tapping "Delete" (index 1) from the action sheet.
+    const actionSheetSpy = jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+      .mockImplementation((_opts: any, cb: (i: number) => void) => cb(1));
+    (chatService.deleteMessage as jest.Mock).mockResolvedValue(true);
+    render(<ChatScreen />);
+    await waitFor(() => screen.getByLabelText('Your message, double-tap to like, long-press to copy or delete'));
+    fireEvent(screen.getByLabelText('Your message, double-tap to like, long-press to copy or delete'), 'longPress');
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith('Delete message?', expect.any(String), expect.any(Array))
+    );
+    alertSpy.mockRestore();
+    actionSheetSpy.mockRestore();
   });
 });

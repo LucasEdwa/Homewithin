@@ -1,5 +1,6 @@
 import { useSession } from "@/context/SessionContext";
 import { useUnread } from "@/context/UnreadContext";
+import { getLastMessagesByMatchIds } from "@/services/social/chat";
 import {
   getIncomingLikes,
   getMyMatches,
@@ -23,10 +24,23 @@ export function useMatches() {
       getPendingOutgoing(),
       getIncomingLikes(),
     ]);
-    setMyMatches(matches);
+
+    let hydratedMatches = matches;
+    if (matches.length > 0) {
+      const lastMsgs = await getLastMessagesByMatchIds(matches.map((m) => m.id));
+      hydratedMatches = matches
+        .map((m) => ({ ...m, lastMessage: lastMsgs[m.id] }))
+        .sort((a, b) => {
+          const ta = a.lastMessage?.createdAt ?? a.createdAt;
+          const tb = b.lastMessage?.createdAt ?? b.createdAt;
+          return tb.localeCompare(ta);
+        });
+      refreshUnread(matches.map((m) => m.id));
+    }
+
+    setMyMatches(hydratedMatches);
     setPendingOutgoing(pending);
     setIncomingLikes(incoming);
-    if (matches.length > 0) refreshUnread(matches.map((m) => m.id));
   }
 
   useFocusEffect(

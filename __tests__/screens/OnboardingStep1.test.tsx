@@ -31,14 +31,15 @@ describe('OnboardingStep1', () => {
 
   it('renders all age range options', () => {
     renderWithSession(<OnboardingStep1 />);
-    expect(screen.getByText('Under 18')).toBeTruthy();
     expect(screen.getByText('18–24')).toBeTruthy();
     expect(screen.getByText('25–34')).toBeTruthy();
+    expect(screen.getByText('35–44')).toBeTruthy();
+    expect(screen.getByText('45+')).toBeTruthy();
   });
 
   it('renders Hide from search toggle', () => {
     renderWithSession(<OnboardingStep1 />);
-    expect(screen.getByLabelText('Hide profile from search')).toBeTruthy();
+    expect(screen.getByLabelText('Hide my profile from search')).toBeTruthy();
   });
 
   it('shows validation error when continuing without nickname', async () => {

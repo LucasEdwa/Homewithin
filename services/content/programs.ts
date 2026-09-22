@@ -63,10 +63,10 @@ function normalizeProgram(p: DbProgram): Program {
   };
 }
 
-/** In-memory cache so Supabase is only hit once per app session. */
-let programsCache: Program[] | null = null;
+/** Per-language in-memory cache. */
+const programsCache: Record<string, Program[]> = {};
 
-async function fetchFromSupabase(): Promise<Program[] | null> {
+async function fetchFromSupabase(language: string): Promise<Program[] | null> {
   if (!supabase) {
     console.warn("[programs] supabase client is null — using local fallback");
     return null;
@@ -75,13 +75,14 @@ async function fetchFromSupabase(): Promise<Program[] | null> {
     const { data, error } = await supabase
       .from("programs")
       .select("*, lessons(*)")
+      .eq("language", language)
       .order("sort_order");
     if (error) {
       console.warn("[programs] Supabase fetch error:", error.message);
       return null;
     }
     if (!data?.length) {
-      console.warn("[programs] No programs in DB — using local fallback");
+      console.warn("[programs] No programs in DB for language:", language);
       return null;
     }
     return (data as DbProgram[]).map(normalizeProgram);
@@ -93,19 +94,20 @@ async function fetchFromSupabase(): Promise<Program[] | null> {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function getPrograms(): Promise<Program[]> {
-  if (programsCache) return programsCache;
-  const remote = await fetchFromSupabase();
-  // Only cache on success — if Supabase fails, retry next call
+export async function getPrograms(language = "en"): Promise<Program[]> {
+  if (programsCache[language]) return programsCache[language];
+  const remote = await fetchFromSupabase(language);
   if (remote) {
-    programsCache = remote;
+    programsCache[language] = remote;
     return remote;
   }
+  // Fallback: SEED_PROGRAMS are English only
   return SEED_PROGRAMS;
 }
 
 export async function getProgramById(id: string): Promise<Program | null> {
-  const programs = await getPrograms();
+  const language = id.endsWith("-sv") ? "sv" : "en";
+  const programs = await getPrograms(language);
   return programs.find((p) => p.id === id) ?? null;
 }
 
@@ -159,11 +161,11 @@ export async function getProgramProgress(
   return { completed: completedCount, total: program.lessons.length };
 }
 
-export async function getAllProgramsWithProgress(): Promise<
-  (Program & { completed: number; total: number })[]
-> {
+export async function getAllProgramsWithProgress(
+  language = "en",
+): Promise<(Program & { completed: number; total: number })[]> {
   const [programs, completed] = await Promise.all([
-    getPrograms(),
+    getPrograms(language),
     getCompletedLessonIds(),
   ]);
   return programs.map((program) => ({

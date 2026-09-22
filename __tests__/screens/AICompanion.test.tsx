@@ -8,8 +8,10 @@ jest.mock('@/services/wellness/ai', () => ({
   sendAIMessage: jest.fn(),
   getHistory: jest.fn(),
   clearHistory: jest.fn(),
+  clearRateLimit: jest.fn(),
   checkRateLimit: jest.fn(),
   buildSystemPrompt: jest.fn().mockReturnValue('system prompt'),
+  getWelcomeBack: jest.fn().mockReturnValue(null),
   AI_DISCLAIMER: 'AI is not a therapist or crisis counselor. If you are in danger, use the emergency button.',
 }));
 
@@ -77,9 +79,11 @@ describe('AICompanionScreen', () => {
   it('hides starters when history exists', async () => {
     mockGetHistory.mockResolvedValue([USER_MSG, AI_MSG]);
     render(<AICompanionScreen />);
+    // Wait for messages to load first (positive assertion stabilises timing)
     await waitFor(() => {
-      expect(screen.queryByText("What's on your mind?")).toBeNull();
+      expect(screen.getByText('I hear you.')).toBeTruthy();
     });
+    expect(screen.queryByText("What's on your mind?")).toBeNull();
   });
 
   it('renders existing messages', async () => {

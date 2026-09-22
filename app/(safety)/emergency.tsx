@@ -20,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -32,6 +33,7 @@ interface ActionCardProps {
 }
 
 export default function EmergencyScreen() {
+  const { t } = useTranslation();
   const { nearbyState, nearbyResources } = useSession();
   const [safetyPlan, setSafetyPlan] = useState<string[]>([]);
   const [showPlan, setShowPlan] = useState(false);
@@ -49,16 +51,16 @@ export default function EmergencyScreen() {
 
   async function handleDeleteData() {
     Alert.alert(
-      'Delete sensitive data?',
-      'This will permanently delete your journal entries and chat history from this device. This cannot be undone.',
+      t('emergency.deleteDataTitle'),
+      t('emergency.deleteDataBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             await deleteSensitiveData();
-            Alert.alert('Done', 'Sensitive data has been deleted.');
+            Alert.alert(t('emergency.done'), t('emergency.deleteDataDone'));
           },
         },
       ]
@@ -68,39 +70,35 @@ export default function EmergencyScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Close emergency screen">
+        <TouchableOpacity onPress={() => router.back()} accessibilityLabel={t('emergency.close')}>
           <Ionicons name="close" size={22} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Emergency Support</Text>
+        <Text style={styles.headerTitle}>{t('emergency.title')}</Text>
         <TouchableOpacity
           onPress={handleQuickExit}
           style={styles.quickExitBtn}
-          accessibilityLabel="Quick exit"
+          accessibilityLabel={t('emergency.quickExit')}
         >
           <Ionicons name="exit-outline" size={14} color={Colors.white} />
-          <Text style={styles.quickExitText}>Quick Exit</Text>
+          <Text style={styles.quickExitText}>{t('emergency.quickExit')}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.supportText}>
-          You are not alone. Help is available right now.
-        </Text>
+        <Text style={styles.supportText}>{t('emergency.supportText')}</Text>
 
         <View style={styles.grid}>
-          <ActionCard icon="location-outline"   label="Local help"    description="Help centers near you"      color={Colors.safeBlue}      onPress={() => router.push('/local-resources' as any)} />
-          <ActionCard icon="clipboard-outline"  label="Safety plan"  description="Your personal steps"         color={Colors.softGreen}     onPress={loadSafetyPlan} />
-          <ActionCard icon="eye-off-outline"    label="Quick hide"   description="Switch to a neutral screen"  color={Colors.mutedLavender} onPress={() => router.replace('/decoy')} />
-          <ActionCard icon="trash-outline"      label="Delete data"  description="Wipe sensitive info"         color={Colors.alertRed}      onPress={handleDeleteData} />
+          <ActionCard icon="location-outline"  label={t('emergency.actions.localHelp.label')}  description={t('emergency.actions.localHelp.description')}  color={Colors.safeBlue}      onPress={() => router.push('/local-resources' as any)} />
+          <ActionCard icon="clipboard-outline" label={t('emergency.actions.safetyPlan.label')} description={t('emergency.actions.safetyPlan.description')} color={Colors.softGreen}     onPress={loadSafetyPlan} />
+          <ActionCard icon="eye-off-outline"   label={t('emergency.actions.quickHide.label')}  description={t('emergency.actions.quickHide.description')}  color={Colors.mutedLavender} onPress={() => router.replace('/decoy')} />
+          <ActionCard icon="trash-outline"     label={t('emergency.actions.deleteData.label')} description={t('emergency.actions.deleteData.description')} color={Colors.alertRed}      onPress={handleDeleteData} />
         </View>
 
         {showPlan && (
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>Your safety plan</Text>
+            <Text style={styles.sectionTitle}>{t('emergency.safetyPlanTitle')}</Text>
             {safetyPlan.length === 0 ? (
-              <Text style={styles.emptyPlan}>
-                No safety plan saved yet. Go to the Safety Assessment to create one.
-              </Text>
+              <Text style={styles.emptyPlan}>{t('emergency.safetyPlanEmpty')}</Text>
             ) : (
               safetyPlan.map((step, i) => (
                 <View key={i} style={styles.planStep}>
@@ -118,7 +116,7 @@ export default function EmergencyScreen() {
           <Card style={styles.section}>
             <View style={styles.localHelpHeader}>
               <Ionicons name="location-outline" size={18} color={Colors.safeBlue} />
-              <Text style={styles.sectionTitle}>Local help centers — {nearbyState}</Text>
+              <Text style={styles.sectionTitle}>{t('emergency.localHelpTitle', { state: nearbyState })}</Text>
             </View>
             {nearbyResources.map((r) => (
               <View key={r.id} style={styles.resourceRow}>
@@ -137,7 +135,7 @@ export default function EmergencyScreen() {
                   {r.phone && (
                     <TouchableOpacity
                       onPress={() => Linking.openURL(`tel:${r.phone!.replace(/\s/g, '')}`)}
-                      accessibilityLabel={`Call ${r.name}`}
+                      accessibilityLabel={t('emergency.callName', { name: r.name })}
                       style={styles.resourceActionBtn}
                     >
                       <Ionicons name="call-outline" size={18} color={Colors.safeBlue} />
@@ -146,7 +144,7 @@ export default function EmergencyScreen() {
                   {r.website && (
                     <TouchableOpacity
                       onPress={() => Linking.openURL(r.website!)}
-                      accessibilityLabel={`Visit ${r.name} website`}
+                      accessibilityLabel={t('emergency.visitName', { name: r.name })}
                       style={styles.resourceActionBtn}
                     >
                       <Ionicons name="globe-outline" size={18} color={Colors.safeBlue} />
@@ -159,22 +157,18 @@ export default function EmergencyScreen() {
               style={styles.seeAllBtn}
               onPress={() => router.push('/local-resources' as any)}
             >
-              <Text style={styles.seeAllText}>See all resources in {nearbyState}</Text>
+              <Text style={styles.seeAllText}>{t('emergency.seeAll', { state: nearbyState })}</Text>
               <Ionicons name="arrow-forward-outline" size={14} color={Colors.safeBlue} />
             </TouchableOpacity>
           </Card>
         )}
 
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Hide app guide</Text>
-          <Text style={styles.hideText}>
-            On Android: Settings → Apps → HomeWithin → Disable.{'\n'}
-            On iOS: Hold the icon → Remove App → Remove from Home Screen.{'\n\n'}
-            You can also set up a disguise name in Profile › Privacy.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('emergency.hideGuideTitle')}</Text>
+          <Text style={styles.hideText}>{t('emergency.hideGuideText')}</Text>
         </Card>
 
-        <Button label="One-tap exit" onPress={handleQuickExit} variant="danger" style={styles.exitBtn} />
+        <Button label={t('emergency.oneTapExit')} onPress={handleQuickExit} variant="danger" style={styles.exitBtn} />
       </ScrollView>
     </SafeAreaView>
   );

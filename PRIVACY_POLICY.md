@@ -1,6 +1,6 @@
 # Privacy Policy — HomeWithin
 
-**Last updated: 24 May 2026**
+**Last updated: 1 June 2026**
 
 HomeWithin ("we", "our", or "the app") is a mobile application designed to provide a safe, private support space for LGBTQ+ people in Sweden. We are deeply committed to protecting your privacy, particularly given the sensitive nature of the people who use this app.
 
@@ -25,7 +25,7 @@ If you have any questions about this policy or your data, contact us at the emai
 When you create a profile you may optionally provide:
 
 - A nickname (not your real name)
-- Age range (e.g. "18–24")
+- Age range (one of: 18–24, 25–34, 35–44, 45+)
 - Language preference
 - Country
 - Needs and intentions (e.g. looking for a mentor, first friend)
@@ -47,7 +47,7 @@ If you use the Connect feature to match with other users, the following is store
 
 ### 2.4 Location Data
 
-Location is only accessed when you use the **Local Resources** or **Events** features to find LGBTQ+ resources near you. We do not store your location on our servers. It is used only in the moment to filter results and is never shared with third parties.
+Location is only accessed when you use the **Local Resources** or **Events** features to find LGBTQ+ support centres, shelters, and therapists near you in Sweden. We do not store your location on our servers. It is used only in the moment to filter results and is never shared with third parties.
 
 ### 2.5 Push Notification Token
 
@@ -56,6 +56,19 @@ If you enable notifications, your device's push notification token is stored on 
 ### 2.6 Technical Data
 
 When you use the app, our backend (Supabase) may log standard technical information such as timestamps of requests. We do not use any analytics SDKs, advertising SDKs, or tracking tools.
+
+### 2.8 Moderation & Reports
+
+If you report another user or a message, the following is stored:
+
+- The ID of the reported user or message
+- The reason or category you selected
+- A timestamp
+- Your user ID (so we can follow up if needed and prevent abuse of the report system)
+
+Reports are reviewed by HomeWithin within 24 hours. They are never shared with the reported user. Report records are retained for 12 months and then permanently deleted.
+
+---
 
 ### 2.7 AI Companion Data
 
@@ -83,6 +96,7 @@ If you choose to use the AI Companion feature and grant consent, the following d
 | Location          | Show local resources near you         | Consent (requested each time)                      |
 | Push token        | Deliver chat notifications            | Consent (you enable notifications)                 |
 | AI Companion data | Personalise AI conversation responses | Consent (explicit in-app consent before first use) |
+| Moderation reports | Review safety complaints and enforce community standards | Legitimate interest (safety of all users) |
 
 We do **not** use your data for advertising, profiling, or sale to third parties.
 
@@ -109,6 +123,7 @@ HomeWithin includes a "Disguise Mode" that makes the app appear as a calculator,
 
 - **Profile and match data:** Retained for as long as your account exists. Deleted when you delete your account.
 - **Chat messages:** Retained until you or the other user deletes the conversation or account.
+- **Moderation reports:** Retained for 12 months from submission, then permanently deleted.
 - **Journal entries:** Stored locally on your device. Server-synced entries are deleted when you delete your account.
 - **Location data:** Never stored — used only in real time.
 - **Push tokens:** Deleted when you sign out or delete your account.
@@ -135,9 +150,9 @@ imy.se | imy@imy.se
 
 ---
 
-## 8. Children
+## 8. Age Requirement
 
-HomeWithin is not intended for children under the age of 13. We do not knowingly collect personal data from children under 13. If you believe a child has provided us with personal data, please contact us immediately and we will delete it.
+HomeWithin is intended for users who are **18 years of age or older**. You must confirm you are 18 or older before accessing the app. We do not knowingly collect personal data from anyone under the age of 18. If you believe a minor has provided us with personal data, please contact us immediately and we will delete it.
 
 ---
 

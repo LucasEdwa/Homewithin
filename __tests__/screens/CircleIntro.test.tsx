@@ -72,7 +72,7 @@ describe('CircleIntroScreen', () => {
   it('renders the safety note about leaving or reporting', async () => {
     render(<CircleIntroScreen />);
     await waitFor(() =>
-      expect(screen.getByText(/leave or report anyone/i)).toBeTruthy()
+      expect(screen.getByText(/block a member, leave, or report anyone/i)).toBeTruthy()
     );
   });
 

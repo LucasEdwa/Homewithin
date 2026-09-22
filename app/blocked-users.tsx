@@ -6,6 +6,7 @@ import type { BlockedUser } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     Alert,
@@ -18,6 +19,7 @@ import {
 } from 'react-native';
 
 export default function BlockedUsersScreen() {
+  const { t, i18n } = useTranslation();
   const [users, setUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<Record<string, boolean>>({});
@@ -37,18 +39,18 @@ export default function BlockedUsersScreen() {
 
   function confirmUnblock(user: BlockedUser) {
     Alert.alert(
-      `Unblock ${user.nickname}?`,
-      'They will be able to appear in matches and contact you again.',
+      t('blockedUsers.unblockTitle', { name: user.nickname }),
+      t('blockedUsers.unblockBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Unblock',
+          text: t('blockedUsers.unblock'),
           onPress: async () => {
             setPending((p) => ({ ...p, [user.userId]: true }));
             const ok = await unblockUser(user.userId);
             setPending((p) => ({ ...p, [user.userId]: false }));
             if (!ok) {
-              Alert.alert('Unblock failed', 'Please check your connection and try again.');
+              Alert.alert(t('blockedUsers.unblockFailed'), t('blockedUsers.unblockFailedBody'));
               return;
             }
             setUsers((prev) => prev.filter((u) => u.userId !== user.userId));
@@ -61,10 +63,10 @@ export default function BlockedUsersScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.nav}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => router.back()} style={styles.navBtn} accessibilityLabel={t('common.back')}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Blocked users</Text>
+        <Text style={styles.navTitle}>{t('blockedUsers.title')}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -74,10 +76,8 @@ export default function BlockedUsersScreen() {
         ) : users.length === 0 ? (
           <Card style={styles.empty}>
             <Ionicons name="shield-checkmark-outline" size={28} color={Colors.softGreen} />
-            <Text style={styles.emptyTitle}>No blocked users</Text>
-            <Text style={styles.emptyText}>
-              People you block will appear here. You can unblock them anytime.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('blockedUsers.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('blockedUsers.emptyBody')}</Text>
           </Card>
         ) : (
           <Card style={styles.list}>
@@ -91,18 +91,18 @@ export default function BlockedUsersScreen() {
                 </View>
                 <View style={styles.info}>
                   <Text style={styles.nickname} numberOfLines={1}>{user.nickname}</Text>
-                  <Text style={styles.meta}>Blocked {formatDate(user.createdAt)}</Text>
+                  <Text style={styles.meta}>{t('blockedUsers.blockedOn', { date: formatBlockedDate(user.createdAt, i18n.language) })}</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => confirmUnblock(user)}
                   style={styles.unblockBtn}
                   disabled={pending[user.userId]}
-                  accessibilityLabel={`Unblock ${user.nickname}`}
+                  accessibilityLabel={t('blockedUsers.unblockTitle', { name: user.nickname })}
                 >
                   {pending[user.userId] ? (
                     <ActivityIndicator color={Colors.safeBlue} size="small" />
                   ) : (
-                    <Text style={styles.unblockText}>Unblock</Text>
+                    <Text style={styles.unblockText}>{t('blockedUsers.unblock')}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -114,10 +114,10 @@ export default function BlockedUsersScreen() {
   );
 }
 
-function formatDate(iso: string): string {
+function formatBlockedDate(iso: string, lang: string): string {
   try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const locale = lang === 'sv' ? 'sv-SE' : 'en-US';
+    return new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
   } catch {
     return '';
   }

@@ -6,15 +6,16 @@ import type { LocalResource, SafetyAnswers } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { IoniconsName, Step } from './safetyData';
 
-const SAFETY_LEVELS: { value: number; icon: IoniconsName; color: string; label: string }[] = [
-  { value: 2,  icon: 'alert-circle',            color: '#E53935', label: 'Not safe'  },
-  { value: 4,  icon: 'sad-outline',             color: '#E8844E', label: 'Uneasy'    },
-  { value: 6,  icon: 'help-circle-outline',     color: '#FFC107', label: 'Okay'      },
-  { value: 8,  icon: 'happy-outline',           color: '#66BB6A', label: 'Safe'      },
-  { value: 10, icon: 'shield-checkmark-outline',color: '#26A69A', label: 'Very safe' },
+const SAFETY_LEVELS: { value: number; icon: IoniconsName; color: string; labelKey: string }[] = [
+  { value: 2,  icon: 'alert-circle',            color: '#E53935', labelKey: '2'  },
+  { value: 4,  icon: 'sad-outline',             color: '#E8844E', labelKey: '4'  },
+  { value: 6,  icon: 'help-circle-outline',     color: '#FFC107', labelKey: '6'  },
+  { value: 8,  icon: 'happy-outline',           color: '#66BB6A', labelKey: '8'  },
+  { value: 10, icon: 'shield-checkmark-outline',color: '#26A69A', labelKey: '10' },
 ];
 
 interface StepViewProps {
@@ -46,12 +47,14 @@ export default function StepView({
   onNext,
   onBack,
 }: StepViewProps) {
+  const { t } = useTranslation();
   const isLastStep = step === totalSteps;
+  const nextLabel = isLastStep ? t('safetyAssessment.seeResults') : t('common.next');
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.progressWrap}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} accessibilityLabel="Go back">
+        <TouchableOpacity onPress={onBack} style={styles.backBtn} accessibilityLabel={t('common.back')}>
           <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.progressTrack}>
@@ -66,18 +69,19 @@ export default function StepView({
             <Ionicons name={currentStep.icon} size={22} color={currentStep.iconColor} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.stepNum}>Step {step} of {totalSteps}</Text>
-            <Text style={styles.stepTitle}>{currentStep.title}</Text>
+            <Text style={styles.stepNum}>{t('safetyAssessment.stepOf', { step, total: totalSteps })}</Text>
+            <Text style={styles.stepTitle}>{t(`safetyAssessment.steps.${currentStep.id}.title` as any)}</Text>
           </View>
         </View>
-        <Text style={styles.stepSubtitle}>{currentStep.subtitle}</Text>
+        <Text style={styles.stepSubtitle}>{t(`safetyAssessment.steps.${currentStep.id}.subtitle` as any)}</Text>
 
         {currentStep.hasSlider && (
           <Card style={styles.sliderCard}>
-            <Text style={styles.sliderLabel}>How safe do you feel right now?</Text>
+            <Text style={styles.sliderLabel}>{t('safetyAssessment.sliderLabel')}</Text>
             <View style={styles.safetyPicker}>
               {SAFETY_LEVELS.map((level) => {
                 const selected = moodScore === level.value;
+                const label = t(`safetyAssessment.safetyLevels.${level.labelKey}` as any);
                 return (
                   <TouchableOpacity
                     key={level.value}
@@ -85,7 +89,7 @@ export default function StepView({
                     onPress={() => onMoodChange(level.value)}
                     activeOpacity={0.7}
                     accessibilityRole="radio"
-                    accessibilityLabel={level.label}
+                    accessibilityLabel={label}
                     accessibilityState={{ selected }}
                   >
                     <Ionicons
@@ -94,7 +98,7 @@ export default function StepView({
                       color={selected ? level.color : Colors.textMuted}
                     />
                     <Text style={[styles.safetyLabel, selected && { color: level.color }]}>
-                      {level.label}
+                      {label}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -108,6 +112,8 @@ export default function StepView({
             const checked = !!answers[q.id];
             const isProtective = q.riskDirection === 'protective';
             const activeColor = isProtective ? Colors.softGreen : Colors.alertRed;
+            const qLabel = t(`safetyAssessment.steps.${currentStep.id}.questions.${q.id}.label` as any);
+            const qSublabel = t(`safetyAssessment.steps.${currentStep.id}.questions.${q.id}.sublabel` as any);
             return (
               <TouchableOpacity
                 key={q.id}
@@ -119,16 +125,16 @@ export default function StepView({
                 activeOpacity={0.75}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked }}
-                accessibilityLabel={q.label}
+                accessibilityLabel={qLabel}
               >
                 <View style={[styles.qIconBg, { backgroundColor: activeColor + '18' }]}>
                   <Ionicons name={q.icon} size={18} color={checked ? activeColor : Colors.textMuted} />
                 </View>
                 <View style={styles.qBody}>
                   <Text style={[styles.qLabel, checked && { color: activeColor, fontWeight: '600' }]}>
-                    {q.label}
+                    {qLabel}
                   </Text>
-                  {q.sublabel && <Text style={styles.qSublabel}>{q.sublabel}</Text>}
+                  {qSublabel && <Text style={styles.qSublabel}>{qSublabel}</Text>}
                 </View>
                 <View style={[styles.checkbox, checked && { backgroundColor: activeColor, borderColor: activeColor }]}>
                   {checked && <Ionicons name="checkmark" size={13} color={Colors.white} />}
@@ -144,32 +150,31 @@ export default function StepView({
 
         {skipAttempted && (
           <Text style={styles.skipHint}>
-            Nothing applies here? Tap "{isLastStep ? 'See my results' : 'Next'}" again to skip this step.
+            {t('safetyAssessment.skipHint', { label: nextLabel })}
           </Text>
         )}
 
-        <Button label={isLastStep ? 'See my results' : 'Next'} onPress={onNext} />
+        <Button label={nextLabel} onPress={onNext} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 function CrisisInterrupt({ nearbyResources }: { nearbyResources: LocalResource[] }) {
+  const { t } = useTranslation();
   const phonedResources = nearbyResources.filter((r) => r.phone).slice(0, 3);
   return (
     <Card style={styles.crisisCard}>
       <Ionicons name="heart" size={20} color={Colors.alertRed} />
-      <Text style={styles.crisisTitle}>You don't have to carry this alone.</Text>
-      <Text style={styles.crisisBody}>
-        Please reach out right now — someone near you is ready to listen.
-      </Text>
+      <Text style={styles.crisisTitle}>{t('safetyAssessment.crisisTitle')}</Text>
+      <Text style={styles.crisisBody}>{t('safetyAssessment.crisisBody')}</Text>
       {phonedResources.length > 0 ? (
         phonedResources.map((r) => (
           <TouchableOpacity
             key={r.id}
             style={styles.crisisBtn}
             onPress={() => Linking.openURL(`tel:${r.phone!.replace(/\s/g, '')}`)}
-            accessibilityLabel={`Call ${r.name}`}
+            accessibilityLabel={t('emergency.callName', { name: r.name })}
           >
             <Ionicons name="call-outline" size={16} color={Colors.white} />
             <View style={{ flex: 1 }}>
@@ -182,15 +187,13 @@ function CrisisInterrupt({ nearbyResources }: { nearbyResources: LocalResource[]
         <TouchableOpacity
           style={styles.crisisBtn}
           onPress={() => router.push('/emergency' as any)}
-          accessibilityLabel="Open emergency screen"
+          accessibilityLabel={t('safetyAssessment.crisisOpenEmergency')}
         >
           <Ionicons name="shield-outline" size={16} color={Colors.white} />
-          <Text style={styles.crisisBtnText}>Open emergency support</Text>
+          <Text style={styles.crisisBtnText}>{t('safetyAssessment.crisisOpenEmergency')}</Text>
         </TouchableOpacity>
       )}
-      <Text style={styles.crisisNote}>
-        You can continue the check-in whenever you're ready.
-      </Text>
+      <Text style={styles.crisisNote}>{t('safetyAssessment.crisisContinue')}</Text>
     </Card>
   );
 }

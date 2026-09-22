@@ -4,6 +4,7 @@ export const INTENTION_IDS = [
   "mentor",
   "listener",
   "support_group",
+  "religious_trauma",
 ] as const;
 export type IntentionId = (typeof INTENTION_IDS)[number];
 
@@ -51,6 +52,13 @@ export const INTENTIONS: IntentionOption[] = [
     icon: "people-outline",
     color: "#E8844E",
   },
+  {
+    id: "religious_trauma",
+    label: "Survived religious trauma",
+    description: "Left a faith community, found my way out",
+    icon: "leaf-outline",
+    color: "#A0845C",
+  },
 ];
 
 export type MatchStatus = "pending" | "accepted" | "passed" | "blocked";
@@ -65,6 +73,12 @@ export interface PeerProfile {
   avatarUrl?: string;
 }
 
+export interface MatchLastMessage {
+  body: string;
+  createdAt: string;
+  senderId: string;
+}
+
 export interface Match {
   id: string;
   requesterId: string;
@@ -73,6 +87,7 @@ export interface Match {
   status: MatchStatus;
   createdAt: string;
   peer?: PeerProfile;
+  lastMessage?: MatchLastMessage;
 }
 
 export interface Message {
@@ -82,6 +97,10 @@ export interface Message {
   body: string;
   expiresAt?: string;
   createdAt: string;
+  liked?: boolean;
+  replyToId?: string;
+  replyToBody?: string;
+  replyToSenderId?: string;
 }
 
 export interface Circle {
@@ -103,8 +122,20 @@ export interface CircleMessage {
   circleId: string;
   senderId: string;
   senderNickname?: string;
+  senderAvatarUrl?: string;
+  isAI?: boolean;
   body: string;
   createdAt: string;
+}
+
+export type CircleMemberRole = "member" | "moderator";
+
+export interface CircleMember {
+  userId: string;
+  nickname: string;
+  avatarUrl?: string;
+  role: CircleMemberRole;
+  isMe?: boolean;
 }
 
 export type SupportRole =

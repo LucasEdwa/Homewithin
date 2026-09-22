@@ -72,16 +72,107 @@ export async function registerForPushNotifications(): Promise<void> {
   }
 }
 
+// Returns the matchId from the notification that launched the app from a killed state,
+// or null if the app was launched normally. Must be called once early in startup.
+export async function getInitialNotificationMatchId(): Promise<string | null> {
+  if (!Notif) return null;
+  try {
+    const response = await Notif.getLastNotificationResponseAsync();
+    if (!response) return null;
+    const data = response.notification.request.content.data ?? {};
+    return (data.matchId as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type NotificationScreen =
+  | 'connect'
+  | 'checkin'
+  | 'journal'
+  | 'programs'
+  | 'resources'
+  | 'ai-companion'
+  | 'circle';
+
+export interface NotificationTap {
+  matchId?: string;
+  screen?: NotificationScreen;
+  circleId?: string;
+}
+
 export function addNotificationResponseListener(
   onMatchId: (matchId: string) => void,
-  onScreen?: (screen: string) => void,
+  onScreen?: (screen: NotificationScreen, meta?: { circleId?: string }) => void,
 ): { remove: () => void } {
   if (!Notif) return { remove: () => {} };
   return Notif.addNotificationResponseReceivedListener((response) => {
     const data = response.notification.request.content.data ?? {};
     const matchId = data.matchId as string | undefined;
-    const screen = data.screen as string | undefined;
+    const screen = data.screen as NotificationScreen | undefined;
+    const circleId = data.circleId as string | undefined;
     if (matchId) onMatchId(matchId);
-    else if (screen && onScreen) onScreen(screen);
+    else if (screen && onScreen) {
+      if (circleId) onScreen(screen, { circleId });
+      else onScreen(screen);
+    }
   });
+}
+
+// ─── Local (on-device) scheduled reminders ─────────────────────────────────
+// Used for things like event RSVPs — no server round-trip, no push token
+// needed. Returns the notification identifier so the caller can cancel it,
+// or null if scheduling wasn't possible (Expo Go, web, permission denied).
+
+export async function scheduleLocalNotification(
+  fireDate: Date,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+): Promise<string | null> {
+  if (!Notif || fireDate.getTime() <= Date.now()) return null;
+
+  try {
+    const { status: existing } = await Notif.getPermissionsAsync();
+    let finalStatus = existing;
+    if (existing !== "granted") {
+      const { status } = await Notif.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") return null;
+
+    return await Notif.scheduleNotificationAsync({
+      content: { title, body, data, sound: "default" },
+      trigger: { type: Notif.SchedulableTriggerInputTypes.DATE, date: fireDate },
+    });
+  } catch (e: any) {
+    console.warn("[notifications] scheduleLocalNotification failed:", e?.message);
+    return null;
+  }
+}
+
+export async function cancelLocalNotification(identifier: string): Promise<void> {
+  if (!Notif) return;
+  try {
+    await Notif.cancelScheduledNotificationAsync(identifier);
+  } catch {
+    // Already fired or cancelled — nothing to do.
+  }
+}
+
+// Returns the full tap payload from a cold-start notification (app was killed).
+export async function getInitialNotificationTap(): Promise<NotificationTap | null> {
+  if (!Notif) return null;
+  try {
+    const response = await Notif.getLastNotificationResponseAsync();
+    if (!response) return null;
+    const data = response.notification.request.content.data ?? {};
+    return {
+      matchId: data.matchId as string | undefined,
+      screen: data.screen as NotificationScreen | undefined,
+      circleId: data.circleId as string | undefined,
+    };
+  } catch {
+    return null;
+  }
 }
