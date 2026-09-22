@@ -2,7 +2,7 @@
   "expo": {
     "name": "Homewithin",
     "slug": "Homewithin",
-    "version": "1.2.0",
+    "version": "1.4.0",
     "orientation": "portrait",
     "icon": "./assets/images/homeIcon_fixed.png",
     "scheme": "homewithin",
@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.homewithin.app",
 
 
-      "buildNumber": "13",
+      "buildNumber": "16",
 
       "infoPlist": {
         "NSCameraUsageDescription": "HomeWithin uses your camera so you can take a new profile photo. For example, you can snap a selfie directly in the app and set it as your avatar. The photo is only uploaded when you tap Save.",

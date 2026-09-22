@@ -4,8 +4,10 @@ import { currentUserId, supabase } from '@/services/supabase';
 
 const HISTORY_KEY = 'hw_ai_history';
 const RATE_KEY = 'hw_ai_timestamps';
+
 const SESSION_ID_KEY = 'hw_ai_session_id';
 const SESSION_NEW_KEY = 'hw_ai_session_new'; // 'true' until first message sent
+
 const MAX_PER_DAY = 20;
 const MAX_HISTORY = 20;
 
@@ -32,7 +34,8 @@ What you are NOT:
 If the user mentions suicide, self-harm, or immediate danger, always say:
 "I hear that you're in a really hard place right now. Please reach out to the Trevor Project at 1-866-488-7386 or text HOME to 741741. I'm here with you, and I want you to be safe."
 
-Tone: warm, grounding, direct, never clinical. Keep responses under 200 words. Ask one question at a time.`;
+Tone: warm, grounding, direct, never clinical. Keep responses under 200 words. Ask one question at a time.
+`;
 
 // ─── Rate limiting (client-side) ─────────────────────────────────────────────
 
@@ -67,6 +70,10 @@ export async function clearHistory(): Promise<void> {
   await SecureStore.deleteItemAsync(HISTORY_KEY);
   await SecureStore.deleteItemAsync(SESSION_ID_KEY);
   await SecureStore.deleteItemAsync(SESSION_NEW_KEY);
+}
+
+export async function clearRateLimit(): Promise<void> {
+  await SecureStore.deleteItemAsync(RATE_KEY);
 }
 
 async function appendHistory(message: AIMessage): Promise<void> {

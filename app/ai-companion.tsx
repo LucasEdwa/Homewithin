@@ -12,6 +12,7 @@ import {
     AI_DISCLAIMER,
     checkRateLimit,
     clearHistory,
+    clearRateLimit,
     getHistory,
     sendAIMessage
 } from '@/services/wellness/ai';
@@ -274,8 +275,10 @@ export default function AICompanionScreen() {
 
   async function handleClear() {
     await clearHistory();
+    await clearRateLimit();
     setMessages([]);
     setError(null);
+    setRemaining(20);
   }
 
   async function handleGrantConsent() {
