@@ -7,13 +7,14 @@ import { getAllProgramsWithProgress } from '@/services/content/programs';
 import { getSupportPeople } from '@/services/social/chosenFamily';
 import { getMyMatches } from '@/services/social/matching';
 import { getCheckIns, getJournalEntries, grantAIConsent, hasAIConsent } from '@/services/storage';
-import type { AIContext, UserContext } from '@/services/wellness/ai';
+import type { AIContext, UserContext, WelcomeBack } from '@/services/wellness/ai';
 import {
     AI_DISCLAIMER,
     checkRateLimit,
     clearHistory,
     clearRateLimit,
     getHistory,
+    getWelcomeBack,
     sendAIMessage
 } from '@/services/wellness/ai';
 import type { AIMessage } from '@/types';
@@ -91,6 +92,7 @@ export default function AICompanionScreen() {
     t('aiCompanion.starters.shame'),
   ]);
   const [showConsentModal, setShowConsentModal] = useState(false);
+  const [welcomeBack, setWelcomeBack] = useState<WelcomeBack | null>(null);
   const listRef = useRef<FlatList>(null);
   const autoSentRef = useRef(false);
 
@@ -218,6 +220,10 @@ export default function AICompanionScreen() {
       setUserContext(ctx);
 
       setStarters(buildPersonalisedStarters(ctx, t));
+
+      if (history.length > 0) {
+        setWelcomeBack(getWelcomeBack(history[history.length - 1].createdAt, moodTrend));
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -375,6 +381,8 @@ export default function AICompanionScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+            ) : welcomeBack ? (
+              <WelcomeBackNote welcomeBack={welcomeBack} onDismiss={() => setWelcomeBack(null)} />
             ) : null
           }
           renderItem={({ item }) => <MessageBubble message={item} />}
@@ -431,6 +439,23 @@ export default function AICompanionScreen() {
       </KeyboardAvoidingView>
       <EmergencyButton />
     </SafeAreaView>
+  );
+}
+
+function WelcomeBackNote({ welcomeBack, onDismiss }: { welcomeBack: WelcomeBack; onDismiss: () => void }) {
+  const { t } = useTranslation();
+  const key = `aiCompanion.welcomeBack.${welcomeBack.variant}` as const;
+
+  return (
+    <Card style={styles.welcomeBackCard} testID="ai-welcome-back">
+      <View style={styles.welcomeBackRow}>
+        <Ionicons name="sparkles" size={16} color={Colors.mutedLavender} />
+        <Text style={styles.welcomeBackText}>{t(key, { count: welcomeBack.days })}</Text>
+        <TouchableOpacity onPress={onDismiss} accessibilityLabel={t('aiCompanion.welcomeBack.dismiss')} testID="ai-welcome-back-dismiss">
+          <Ionicons name="close" size={16} color={Colors.textMuted} />
+        </TouchableOpacity>
+      </View>
+    </Card>
   );
 }
 
@@ -555,6 +580,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   starterText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
+  welcomeBackCard: { marginBottom: Spacing.md, backgroundColor: Colors.mutedLavender + '12' },
+  welcomeBackRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  welcomeBackText: { flex: 1, fontSize: 14, color: Colors.textPrimary, lineHeight: 19 },
   typingIndicator: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm },
   typingText: { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic' },
   errorCard: {

@@ -3,6 +3,7 @@ import { Radius, Spacing } from '@/constants/Spacing';
 import { RESOURCE_LOCATIONS } from '@/data/localResources';
 import { useSession } from '@/context/SessionContext';
 import { getMeetups, getWorkshops } from '@/services/content/localResources';
+import { getRsvpIds, toggleRsvp } from '@/services/content/eventRsvp';
 import type { LocalMeetup, Workshop, WorkshopFormat } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -42,12 +43,17 @@ export default function EventsScreen() {
 
   const nearbyLocation = nearbyState ?? profile?.country ?? 'your area';
   const [selectedLocation, setSelectedLocation] = useState(nearbyLocation);
+  const [rsvpIds, setRsvpIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!manualLocationOverride) {
       setSelectedLocation(nearbyLocation);
     }
   }, [nearbyLocation, manualLocationOverride]);
+
+  useEffect(() => {
+    getRsvpIds().then((ids) => setRsvpIds(new Set(ids)));
+  }, []);
 
   const workshops = getWorkshops(undefined, i18n.language);
   const meetups = getMeetups(selectedLocation);
@@ -57,6 +63,16 @@ export default function EventsScreen() {
       Alert.alert(t('events.couldNotOpenLink'), t('events.checkConnection'))
     );
   }, [t]);
+
+  const handleToggleRsvp = useCallback(async (item: Workshop | LocalMeetup) => {
+    const going = await toggleRsvp(item);
+    setRsvpIds((prev) => {
+      const next = new Set(prev);
+      if (going) next.add(item.id);
+      else next.delete(item.id);
+      return next;
+    });
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -165,9 +181,20 @@ export default function EventsScreen() {
       )}
 
       {activeTab === 'workshops' ? (
-        <WorkshopsList workshops={workshops} onOpenLink={openLink} />
+        <WorkshopsList
+          workshops={workshops}
+          onOpenLink={openLink}
+          rsvpIds={rsvpIds}
+          onToggleRsvp={handleToggleRsvp}
+        />
       ) : (
-        <MeetupsList meetups={meetups} country={selectedLocation} onOpenLink={openLink} />
+        <MeetupsList
+          meetups={meetups}
+          country={selectedLocation}
+          onOpenLink={openLink}
+          rsvpIds={rsvpIds}
+          onToggleRsvp={handleToggleRsvp}
+        />
       )}
     </SafeAreaView>
   );
@@ -176,9 +203,11 @@ export default function EventsScreen() {
 interface WorkshopsListProps {
   workshops: Workshop[];
   onOpenLink: (url: string) => void;
+  rsvpIds: Set<string>;
+  onToggleRsvp: (item: Workshop) => void;
 }
 
-function WorkshopsList({ workshops, onOpenLink }: WorkshopsListProps) {
+function WorkshopsList({ workshops, onOpenLink, rsvpIds, onToggleRsvp }: WorkshopsListProps) {
   const { t } = useTranslation();
   if (workshops.length === 0) {
     return (
@@ -199,7 +228,12 @@ function WorkshopsList({ workshops, onOpenLink }: WorkshopsListProps) {
         <Text style={styles.sectionHeader}>{section.title}</Text>
       )}
       renderItem={({ item }) => (
-        <WorkshopCard workshop={item} onOpenLink={onOpenLink} />
+        <WorkshopCard
+          workshop={item}
+          onOpenLink={onOpenLink}
+          going={rsvpIds.has(item.id)}
+          onToggleRsvp={() => onToggleRsvp(item)}
+        />
       )}
     />
   );
@@ -208,9 +242,11 @@ function WorkshopsList({ workshops, onOpenLink }: WorkshopsListProps) {
 interface WorkshopCardProps {
   workshop: Workshop;
   onOpenLink: (url: string) => void;
+  going: boolean;
+  onToggleRsvp: () => void;
 }
 
-function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
+function WorkshopCard({ workshop, onOpenLink, going, onToggleRsvp }: WorkshopCardProps) {
   const { t } = useTranslation();
   const color = FORMAT_COLORS[workshop.format];
 
@@ -243,24 +279,62 @@ function WorkshopCard({ workshop, onOpenLink }: WorkshopCardProps) {
         </View>
       )}
 
-      {workshop.link && (
-        <TouchableOpacity
-          testID={`join-${workshop.id}`}
-          style={styles.joinBtnLocked}
-          onPress={() =>
-            Alert.alert(
-              t('events.comingSoon'),
-              t('events.comingSoonBody'),
-              [{ text: t('events.gotIt') }]
-            )
-          }
-          accessibilityLabel={workshop.title}
-        >
-          <Ionicons name="lock-closed" size={16} color={Colors.safetyYellow} />
-          <Text style={styles.joinBtnLockedText}>{t('events.joinCircle')}</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.cardActions}>
+        <RsvpButton going={going} onPress={onToggleRsvp} hasReminder={!!workshop.date} testID={`rsvp-${workshop.id}`} />
+        {workshop.link && (
+          <TouchableOpacity
+            testID={`join-${workshop.id}`}
+            style={styles.joinBtnLocked}
+            onPress={() =>
+              Alert.alert(
+                t('events.comingSoon'),
+                t('events.comingSoonBody'),
+                [{ text: t('events.gotIt') }]
+              )
+            }
+            accessibilityLabel={workshop.title}
+          >
+            <Ionicons name="lock-closed" size={16} color={Colors.safetyYellow} />
+            <Text style={styles.joinBtnLockedText}>{t('events.joinCircle')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
+  );
+}
+
+function RsvpButton({
+  going,
+  onPress,
+  hasReminder,
+  testID,
+}: {
+  going: boolean;
+  onPress: () => void;
+  hasReminder: boolean;
+  testID: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <TouchableOpacity
+      testID={testID}
+      style={[styles.rsvpBtn, going && styles.rsvpBtnActive]}
+      onPress={onPress}
+      accessibilityLabel={going ? t('events.rsvpGoing') : t('events.rsvpImGoing')}
+      accessibilityRole="button"
+    >
+      <Ionicons
+        name={going ? 'checkmark-circle' : 'calendar-outline'}
+        size={16}
+        color={going ? Colors.softGreen : Colors.textSecondary}
+      />
+      <Text style={[styles.rsvpBtnText, going && styles.rsvpBtnTextActive]}>
+        {going ? t('events.rsvpGoing') : t('events.rsvpImGoing')}
+      </Text>
+      {going && hasReminder && (
+        <Ionicons name="notifications-outline" size={13} color={Colors.softGreen} />
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -268,9 +342,11 @@ interface MeetupsListProps {
   meetups: LocalMeetup[];
   country: string;
   onOpenLink: (url: string) => void;
+  rsvpIds: Set<string>;
+  onToggleRsvp: (item: LocalMeetup) => void;
 }
 
-function MeetupsList({ meetups, country, onOpenLink }: MeetupsListProps) {
+function MeetupsList({ meetups, country, onOpenLink, rsvpIds, onToggleRsvp }: MeetupsListProps) {
   const { t } = useTranslation();
   if (meetups.length === 0) {
     return (
@@ -291,7 +367,12 @@ function MeetupsList({ meetups, country, onOpenLink }: MeetupsListProps) {
         <Text style={styles.sectionHeader}>{section.title}</Text>
       )}
       renderItem={({ item }) => (
-        <MeetupCard meetup={item} onOpenLink={onOpenLink} />
+        <MeetupCard
+          meetup={item}
+          onOpenLink={onOpenLink}
+          going={rsvpIds.has(item.id)}
+          onToggleRsvp={() => onToggleRsvp(item)}
+        />
       )}
     />
   );
@@ -300,9 +381,11 @@ function MeetupsList({ meetups, country, onOpenLink }: MeetupsListProps) {
 interface MeetupCardProps {
   meetup: LocalMeetup;
   onOpenLink: (url: string) => void;
+  going: boolean;
+  onToggleRsvp: () => void;
 }
 
-function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
+function MeetupCard({ meetup, onOpenLink, going, onToggleRsvp }: MeetupCardProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.card} testID={`meetup-${meetup.id}`}>
@@ -323,17 +406,20 @@ function MeetupCard({ meetup, onOpenLink }: MeetupCardProps) {
         </View>
       )}
 
-      {meetup.link && (
-        <TouchableOpacity
-          testID={`rsvp-${meetup.id}`}
-          style={[styles.joinBtn, { backgroundColor: Colors.softGreen }]}
-          onPress={() => onOpenLink(meetup.link!)}
-          accessibilityLabel={meetup.title}
-        >
-          <Ionicons name="calendar-outline" size={16} color={Colors.white} />
-          <Text style={styles.joinBtnText}>{t('events.rsvpView')}</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.cardActions}>
+        <RsvpButton going={going} onPress={onToggleRsvp} hasReminder={!!meetup.date} testID={`rsvp-${meetup.id}`} />
+        {meetup.link && (
+          <TouchableOpacity
+            testID={`view-${meetup.id}`}
+            style={[styles.joinBtn, { backgroundColor: Colors.softGreen }]}
+            onPress={() => onOpenLink(meetup.link!)}
+            accessibilityLabel={meetup.title}
+          >
+            <Ionicons name="open-outline" size={16} color={Colors.white} />
+            <Text style={styles.joinBtnText}>{t('events.rsvpView')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -460,7 +546,13 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   metaText: { fontSize: 13, color: Colors.textMuted },
 
+  cardActions: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
   joinBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -468,10 +560,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.safeBlue,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
-    marginTop: Spacing.xs,
   },
   joinBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
   joinBtnLocked: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -481,9 +573,25 @@ const styles = StyleSheet.create({
     borderColor: Colors.safetyYellow + '55',
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
-    marginTop: Spacing.xs,
   },
   joinBtnLockedText: { fontSize: 14, fontWeight: '700', color: Colors.safetyYellow },
+  rsvpBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: Colors.softGray,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+  },
+  rsvpBtnActive: {
+    backgroundColor: Colors.softGreen + '18',
+    borderWidth: 1,
+    borderColor: Colors.softGreen + '55',
+  },
+  rsvpBtnText: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary },
+  rsvpBtnTextActive: { color: Colors.softGreen },
 
   empty: {
     flex: 1,

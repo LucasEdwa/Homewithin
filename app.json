@@ -11,10 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.homewithin.app",
-
-
       "buildNumber": "16",
-
+      "appleTeamId": "24MJR4SVPV",
       "infoPlist": {
         "NSCameraUsageDescription": "HomeWithin uses your camera so you can take a new profile photo. For example, you can snap a selfie directly in the app and set it as your avatar. The photo is only uploaded when you tap Save.",
         "NSFaceIDUsageDescription": "HomeWithin uses Face ID to unlock the app when a PIN is enabled, so only you can access your private journal, check-ins, and messages.",
@@ -24,7 +22,9 @@
         "NSMicrophoneUsageDescription": "HomeWithin may request microphone access if you choose to record a voice note within the app. Audio is only captured when you actively start a recording and is stored privately on your device.",
         "NSPhotoLibraryUsageDescription": "HomeWithin uses your photo library so you can set a profile picture. For example, you can select a selfie or any image from your library to use as your avatar. Your photo is only uploaded when you tap Save, and it is only visible to other users as your profile picture.",
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -75,6 +75,22 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "HomeWithin uses your location to find LGBTQ+ support centers, shelters, and therapists near you in Sweden. For example, when you open the Resources screen, the app shows services within your area. Your location is never stored or shared with third parties."
+        }
+      ],
+      "@bacons/apple-targets",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "QuickHelp",
+              "label": "Quick Help",
+              "description": "One tap for support.",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "resizeMode": "none"
+            }
+          ]
         }
       ]
     ],

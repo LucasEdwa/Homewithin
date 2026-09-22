@@ -24,6 +24,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -37,12 +38,19 @@ export default function LocalResourcesScreen() {
   const [selectedState, setSelectedState] = useState<string>(nearbyState ?? profile?.country ?? 'Sweden');
   const [locationGranted, setLocationGranted] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (nearbyState) setSelectedState(nearbyState);
   }, [nearbyState]);
 
-  const resources = getResources(selectedState, selectedType);
+  const allResources = getResources(selectedState, selectedType);
+  const q = search.trim().toLowerCase();
+  const resources = q
+    ? allResources.filter(
+        (r) => r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q)
+      )
+    : allResources;
 
   const handleRequestLocation = useCallback(async () => {
     const result = await requestLocationPermission();
@@ -135,6 +143,25 @@ export default function LocalResourcesScreen() {
           ))}
         </View>
       )}
+
+      <View style={styles.searchRow}>
+        <Ionicons name="search-outline" size={18} color={Colors.textMuted} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={t('localResources.searchPlaceholder')}
+          placeholderTextColor={Colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          returnKeyType="search"
+          accessibilityLabel={t('localResources.searchPlaceholder')}
+          testID="local-resources-search-input"
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel={t('common.cancel')}>
+            <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <ScrollView
         horizontal
@@ -306,6 +333,24 @@ const styles = StyleSheet.create({
   stateOptionActive: { backgroundColor: Colors.safeBlue + '10' },
   stateOptionText: { fontSize: 15, color: Colors.textSecondary },
   stateOptionTextActive: { color: Colors.safeBlue, fontWeight: '600' },
+
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.softGray,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xs,
+    gap: Spacing.xs,
+  },
+  searchIcon: { marginRight: 2 },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    paddingVertical: Spacing.sm + 2,
+  },
 
   filtersScroll: {
     flexGrow: 0,

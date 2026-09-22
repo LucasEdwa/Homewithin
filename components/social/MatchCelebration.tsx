@@ -64,7 +64,7 @@ function Particle({ angle, distance, size, color, delay }: ParticleConfig) {
         withDelay(180, withTiming(0, { duration: 520, easing: Easing.out(Easing.quad) })),
       ),
     );
-  }, []);
+  }, [angle, distance, delay, tx, ty, opacity]);
 
   const style = useAnimatedStyle(() => ({
     transform: [{ translateX: tx.value }, { translateY: ty.value }],
@@ -120,7 +120,7 @@ export function MatchCelebration({ peer, matchId, onClose }: MatchCelebrationPro
       ),
     );
     ringScale.value = withDelay(160, withTiming(2.1, { duration: 700, easing: Easing.out(Easing.quad) }));
-  }, []);
+  }, [backdropOpacity, cardScale, cardOpacity, ringOpacity, ringScale]);
 
   // Exit animation then call onClose
   const animateOut = useCallback(
@@ -135,7 +135,7 @@ export function MatchCelebration({ peer, matchId, onClose }: MatchCelebrationPro
         }
       });
     },
-    [onClose],
+    [onClose, backdropOpacity, cardScale, cardOpacity],
   );
 
   function handleOpenChat() {

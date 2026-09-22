@@ -40,11 +40,14 @@ jest.mock('@/services/supabase', () => ({
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
+/* eslint-disable import/first -- jest.mock() above is hoisted, but kept
+   visually before these imports since the mock config it references reads top-to-bottom */
 import * as ExpoNotifications from 'expo-notifications';
 import {
   getInitialNotificationMatchId,
   addNotificationResponseListener,
 } from '@/services/social/notifications';
+/* eslint-enable import/first */
 
 // Typed aliases for the jest mock functions.
 const mockGetLast =

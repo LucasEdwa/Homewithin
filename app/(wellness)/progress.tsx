@@ -4,7 +4,8 @@ import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useSession } from '@/context/SessionContext';
 import { useProgress } from '@/hooks/useProgress';
-import type { MoodDataPoint } from '@/types';
+import { maybePromptReview } from '@/services/user/appReview';
+import type { MoodDataPoint, StreakMilestone } from '@/types';
 import { MOOD_COLORS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -26,9 +27,10 @@ const MOOD_BAR_MAX = 80;
 
 export default function ProgressScreen() {
   const { t } = useTranslation();
-  const { profile } = useSession();
+  const { profile, safetyLevel } = useSession();
   const { snapshot, loading } = useProgress();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const reviewPromptFired = useRef(false);
 
   useEffect(() => {
     if (!loading && snapshot) {
@@ -40,6 +42,16 @@ export default function ProgressScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, snapshot]);
+
+  // A streak milestone is a genuinely positive moment — the only place in the
+  // app we ask for a store rating. Never fires on a yellow/red safety level
+  // (gated inside maybePromptReview) and at most once per screen visit.
+  useEffect(() => {
+    if (snapshot?.streakMilestone.isMilestoneToday && snapshot.journalStreak > 0 && !reviewPromptFired.current) {
+      reviewPromptFired.current = true;
+      maybePromptReview(safetyLevel);
+    }
+  }, [snapshot, safetyLevel]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -65,6 +77,10 @@ export default function ProgressScreen() {
           style={{ opacity: fadeAnim }}
           contentContainerStyle={styles.scroll}
         >
+          {snapshot.streakMilestone.isMilestoneToday && snapshot.journalStreak > 0 && (
+            <MilestoneCelebration milestone={snapshot.streakMilestone} />
+          )}
+
           <Card style={styles.gaugeCard}>
             <ArcGauge
               value={snapshot.lessonsCompleted}
@@ -91,6 +107,7 @@ export default function ProgressScreen() {
               sublabel="Journal"
               empty={snapshot.journalStreak === 0}
               emptyMsg={t('progress.startStreak')}
+              footer={<StreakMilestoneFooter milestone={snapshot.streakMilestone} />}
             />
             <StatCard
               testID="stat-connections"
@@ -220,6 +237,7 @@ function StatCard({
   sublabel,
   empty,
   emptyMsg,
+  footer,
 }: {
   testID: string;
   icon: IoniconsName;
@@ -229,6 +247,7 @@ function StatCard({
   sublabel: string;
   empty?: boolean;
   emptyMsg?: string;
+  footer?: React.ReactNode;
 }) {
   return (
     <Card style={styles.statCard} testID={testID}>
@@ -244,8 +263,61 @@ function StatCard({
           <Text style={styles.statLabel}>{label}</Text>
         </>
       )}
+      {!empty && footer}
     </Card>
   );
+}
+
+const MILESTONE_LABEL_KEY: Record<number, string> = {
+  7: 'progress.milestoneWeek',
+  30: 'progress.milestoneMonth',
+  100: 'progress.milestone100',
+  365: 'progress.milestoneYear',
+};
+
+function MilestoneCelebration({ milestone }: { milestone: StreakMilestone }) {
+  const { t } = useTranslation();
+  if (milestone.reached === null) return null;
+  const label = t(MILESTONE_LABEL_KEY[milestone.reached]);
+
+  return (
+    <Card style={styles.celebrationCard} testID="milestone-celebration">
+      <View style={styles.celebrationIcon}>
+        <Ionicons name="trophy" size={28} color="#E8844E" />
+      </View>
+      <Text style={styles.celebrationTitle}>
+        {t('progress.milestoneCelebrateTitle', { label })}
+      </Text>
+      <Text style={styles.celebrationBody}>
+        {t('progress.milestoneCelebrateBody', { label })}
+      </Text>
+    </Card>
+  );
+}
+
+function StreakMilestoneFooter({ milestone }: { milestone: StreakMilestone }) {
+  const { t } = useTranslation();
+
+  if (milestone.reached !== null) {
+    const label = t(MILESTONE_LABEL_KEY[milestone.reached]);
+    return (
+      <View style={styles.milestoneChip}>
+        <Ionicons name="trophy-outline" size={11} color="#E8844E" />
+        <Text style={styles.milestoneChipText}>{t('progress.milestoneBadge', { label })}</Text>
+      </View>
+    );
+  }
+
+  if (milestone.next !== null && milestone.daysToNext !== null) {
+    const label = t(MILESTONE_LABEL_KEY[milestone.next]);
+    return (
+      <Text style={styles.milestoneHint}>
+        {t('progress.milestoneNext', { count: milestone.daysToNext, label })}
+      </Text>
+    );
+  }
+
+  return null;
 }
 
 function SafetyCard({ delta }: { delta: number | null }) {
@@ -362,6 +434,33 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
 
   gaugeCard: { paddingBottom: Spacing.lg },
+
+  celebrationCard: { alignItems: 'center', gap: 6, paddingVertical: Spacing.lg, backgroundColor: '#E8844E12' },
+  celebrationIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#E8844E22',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  celebrationTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center' },
+  celebrationBody: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18, paddingHorizontal: Spacing.md },
+
+  milestoneChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8844E18',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    marginTop: 4,
+  },
+  milestoneChipText: { fontSize: 10, fontWeight: '700', color: '#E8844E' },
+  milestoneHint: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
 
   badgeCard: { gap: Spacing.sm },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },

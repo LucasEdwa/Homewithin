@@ -183,8 +183,12 @@ Deno.serve(async (req: Request) => {
       return json({ skipped: "no members with push tokens" }, 200);
 
     const senderName = senderProfile?.nickname ?? "Someone";
-    const notifTitle = circleName ? `${circleName} 💬` : "Your support circle 💬";
-    const notifBody = `${senderName}: ${body.length > 80 ? body.slice(0, 77) + "…" : body}`;
+    // Never surface the circle name or message content in the notification —
+    // circle names (e.g. "Newly Out") and message text can appear on a lock
+    // screen a hostile person sees, defeating disguise mode and PIN lock.
+    void circleName;
+    const notifTitle = "Your support circle 💬";
+    const notifBody = `${senderName} sent a new message`;
 
     const batch = tokens.map((token: string) => ({
       to: token,
@@ -245,6 +249,12 @@ Deno.serve(async (req: Request) => {
 
   const senderName = senderProfile?.nickname ?? "Someone";
 
+  // Body must never include the actual message text — it can appear on a
+  // lock screen a hostile person sees, defeating disguise mode and PIN lock.
+  // senderName is a self-chosen nickname (never a real name), so it's safe
+  // to show as the title.
+  void body;
+
   // Send via Expo Push API.
   const expoPush = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
@@ -252,7 +262,7 @@ Deno.serve(async (req: Request) => {
     body: JSON.stringify({
       to: pushToken,
       title: senderName,
-      body: body.length > 100 ? body.slice(0, 97) + "…" : body,
+      body: "Sent you a new message",
       data: { matchId },
       sound: "default",
       channelId: "chat",

@@ -47,7 +47,7 @@ export default function ResourcesScreen() {
         }
       })();
       return () => { active = false; };
-    }, [])
+    }, [i18n.language])
   );
 
   const filtered = articles.filter((a) => {

@@ -55,16 +55,28 @@ export async function getResources(category?: ResourceCategory, language = 'en')
       .order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
     const { data, error } = await query;
-    if (!error && data && data.length > 0) return data.map(rowToResource);
+    if (error) {
+      console.warn(`[resources] Supabase fetch failed (language=${language}, category=${category ?? 'all'}):`, error.message);
+    } else if (data && data.length > 0) {
+      return data.map(rowToResource);
+    }
   }
-  const articles = category ? SEED_ARTICLES.filter((a) => a.category === category) : SEED_ARTICLES;
-  return articles;
+  // Local fallback only has English content — filter by language so an
+  // unreachable/erroring Supabase call surfaces the empty state instead of
+  // silently serving English articles under a Swedish/Arabic selection.
+  return SEED_ARTICLES.filter(
+    (a) => a.language === language && (!category || a.category === category),
+  );
 }
 
 export async function getResourceById(id: string): Promise<Resource | null> {
   if (supabase) {
     const { data, error } = await supabase.from('resources').select('*').eq('id', id).single();
-    if (!error && data) return rowToResource(data as Record<string, unknown>);
+    if (error) {
+      console.warn(`[resources] Supabase fetch by id failed (id=${id}):`, error.message);
+    } else if (data) {
+      return rowToResource(data as Record<string, unknown>);
+    }
   }
   return SEED_ARTICLES.find((a) => a.id === id) ?? null;
 }
