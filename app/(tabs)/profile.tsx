@@ -18,6 +18,10 @@ import { ActionSheetIOS, Alert, Linking, Platform, ScrollView, StyleSheet, Text 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+// Arabic translation (i18n/locales/ar/index.ts) is hidden from the picker
+// until it's been reviewed by a native speaker — flip it back into
+// LANGUAGE_OPTIONS once that review is done. The i18n resources and
+// setLocale() mapping for 'ar' are left in place, unaffected by this.
 const LANGUAGE_OPTIONS = ['Swedish', 'English'] as const;
 type AppLanguage = typeof LANGUAGE_OPTIONS[number];
 
@@ -37,8 +41,9 @@ export default function ProfileScreen() {
     }, [])
   );
 
-  const currentLanguage: AppLanguage =
-    (profile?.language as AppLanguage) === 'English' ? 'English' : 'Swedish';
+  const currentLanguage: AppLanguage = LANGUAGE_OPTIONS.includes(profile?.language as AppLanguage)
+    ? (profile!.language as AppLanguage)
+    : 'Swedish';
 
   function handleLanguagePress() {
     const options = [...LANGUAGE_OPTIONS, t('common.cancel')];

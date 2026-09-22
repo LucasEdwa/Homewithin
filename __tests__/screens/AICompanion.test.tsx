@@ -8,8 +8,10 @@ jest.mock('@/services/wellness/ai', () => ({
   sendAIMessage: jest.fn(),
   getHistory: jest.fn(),
   clearHistory: jest.fn(),
+  clearRateLimit: jest.fn(),
   checkRateLimit: jest.fn(),
   buildSystemPrompt: jest.fn().mockReturnValue('system prompt'),
+  getWelcomeBack: jest.fn().mockReturnValue(null),
   AI_DISCLAIMER: 'AI is not a therapist or crisis counselor. If you are in danger, use the emergency button.',
 }));
 

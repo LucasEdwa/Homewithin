@@ -35,6 +35,7 @@ const FULL_SNAPSHOT = {
     { date: '2026-05-12', mood: 5, safety: 9 },
   ],
   journalStreak: 5,
+  streakMilestone: { reached: null, next: 7, daysToNext: 2, isMilestoneToday: false },
   safetyDelta: 2.3,
   connectionsCount: 3,
   lessonsCompleted: 4,
@@ -46,6 +47,7 @@ const FULL_SNAPSHOT = {
 const EMPTY_SNAPSHOT = {
   moodTrend: [],
   journalStreak: 0,
+  streakMilestone: { reached: null, next: 7, daysToNext: 7, isMilestoneToday: false },
   safetyDelta: null,
   connectionsCount: 0,
   lessonsCompleted: 0,

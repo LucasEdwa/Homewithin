@@ -35,9 +35,17 @@ export interface MoodDataPoint {
   safety: number;
 }
 
+export interface StreakMilestone {
+  reached: number | null;
+  next: number | null;
+  daysToNext: number | null;
+  isMilestoneToday: boolean;
+}
+
 export interface ProgressSnapshot {
   moodTrend: MoodDataPoint[];
   journalStreak: number;
+  streakMilestone: StreakMilestone;
   safetyDelta: number | null;
   connectionsCount: number;
   lessonsCompleted: number;

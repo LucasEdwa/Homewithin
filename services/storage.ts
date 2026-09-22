@@ -189,6 +189,8 @@ export async function deleteSensitiveData() {
     SecureStore.deleteItemAsync('hw_last_read'),
     // Resources & security
     SecureStore.deleteItemAsync('hw_bookmarks'),
+    SecureStore.deleteItemAsync('hw_event_rsvps'),
+    SecureStore.deleteItemAsync('hw_review_prompt_state'),
     SecureStore.deleteItemAsync(PIN_KEY),
     SecureStore.deleteItemAsync(DISGUISE_ENABLED_KEY),
     SecureStore.deleteItemAsync(DISGUISE_STYLE_KEY),

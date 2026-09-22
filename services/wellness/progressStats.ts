@@ -1,5 +1,5 @@
 import type { UserProfile } from '@/context/SessionContext';
-import type { MoodDataPoint, ProgressSnapshot } from '@/types/wellness';
+import type { MoodDataPoint, ProgressSnapshot, StreakMilestone } from '@/types/wellness';
 import { SEED_PROGRAMS } from '@/data/programs';
 import { getMyMatches } from '../social/matching';
 import { getCompletedLessonIds } from '../content/programs';
@@ -39,6 +39,21 @@ export async function getJournalStreak(): Promise<number> {
   }
 
   return streak;
+}
+
+// ── Streak milestones (first week, first month, first 100 days, first year) ──
+
+export const STREAK_MILESTONE_DAYS = [7, 30, 100, 365] as const;
+
+export function getStreakMilestone(streak: number): StreakMilestone {
+  const reached = [...STREAK_MILESTONE_DAYS].reverse().find((d) => streak >= d) ?? null;
+  const next = STREAK_MILESTONE_DAYS.find((d) => d > streak) ?? null;
+  return {
+    reached,
+    next,
+    daysToNext: next !== null ? next - streak : null,
+    isMilestoneToday: STREAK_MILESTONE_DAYS.includes(streak as any),
+  };
 }
 
 // ── Safety delta: avg last 7 days vs prior 7 days ────────────────────────────
@@ -108,6 +123,7 @@ export async function getProgressSnapshot(
   return {
     moodTrend,
     journalStreak,
+    streakMilestone: getStreakMilestone(journalStreak),
     safetyDelta,
     connectionsCount: matches.length,
     lessonsCompleted,

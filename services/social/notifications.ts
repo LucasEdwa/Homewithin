@@ -119,6 +119,47 @@ export function addNotificationResponseListener(
   });
 }
 
+// ─── Local (on-device) scheduled reminders ─────────────────────────────────
+// Used for things like event RSVPs — no server round-trip, no push token
+// needed. Returns the notification identifier so the caller can cancel it,
+// or null if scheduling wasn't possible (Expo Go, web, permission denied).
+
+export async function scheduleLocalNotification(
+  fireDate: Date,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+): Promise<string | null> {
+  if (!Notif || fireDate.getTime() <= Date.now()) return null;
+
+  try {
+    const { status: existing } = await Notif.getPermissionsAsync();
+    let finalStatus = existing;
+    if (existing !== "granted") {
+      const { status } = await Notif.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") return null;
+
+    return await Notif.scheduleNotificationAsync({
+      content: { title, body, data, sound: "default" },
+      trigger: { type: Notif.SchedulableTriggerInputTypes.DATE, date: fireDate },
+    });
+  } catch (e: any) {
+    console.warn("[notifications] scheduleLocalNotification failed:", e?.message);
+    return null;
+  }
+}
+
+export async function cancelLocalNotification(identifier: string): Promise<void> {
+  if (!Notif) return;
+  try {
+    await Notif.cancelScheduledNotificationAsync(identifier);
+  } catch {
+    // Already fired or cancelled — nothing to do.
+  }
+}
+
 // Returns the full tap payload from a cold-start notification (app was killed).
 export async function getInitialNotificationTap(): Promise<NotificationTap | null> {
   if (!Notif) return null;

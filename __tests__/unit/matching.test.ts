@@ -70,6 +70,9 @@ jest.mock('@/services/supabase', () => ({
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
+// jest.mock() above is hoisted, but kept visually before this import since the
+// mock config it references reads top-to-bottom.
+// eslint-disable-next-line import/first
 import { findMatches } from '@/services/social/matching';
 
 // ─── Reset ────────────────────────────────────────────────────────────────────

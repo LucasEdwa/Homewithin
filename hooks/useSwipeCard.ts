@@ -28,7 +28,7 @@ export function useSwipeCard({ peerId, onSwipeRight, onSwipeLeft }: Options) {
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;
-  }, [peerId]);
+  }, [peerId, translateX, translateY]);
 
   const pan = Gesture.Pan()
     .activeOffsetX([-10, 10])   // only activates on clear horizontal intent

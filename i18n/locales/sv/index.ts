@@ -1,4 +1,4 @@
-import type { Translations } from '../en';
+import type { Translations } from '../en/index';
 import common from './common';
 import auth from './auth';
 import onboarding from './onboarding';

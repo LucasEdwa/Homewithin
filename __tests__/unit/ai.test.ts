@@ -5,6 +5,7 @@ import {
     checkRateLimit,
     clearHistory,
     getHistory,
+    getWelcomeBack,
     sendAIMessage,
 } from "@/services/wellness/ai";
 
@@ -150,5 +151,38 @@ describe("sendAIMessage", () => {
     const { message, error } = await sendAIMessage("Hello");
     expect(message).toBeNull();
     expect(error).toMatch(/something went wrong/i);
+  });
+});
+
+describe("getWelcomeBack", () => {
+  const NOW = new Date("2026-06-15T12:00:00Z");
+
+  it("returns null when there is no prior message", () => {
+    expect(getWelcomeBack(undefined, null, NOW)).toBeNull();
+  });
+
+  it("returns null when the gap is under the threshold", () => {
+    const twoDaysAgo = new Date("2026-06-13T12:00:00Z").toISOString();
+    expect(getWelcomeBack(twoDaysAgo, null, NOW)).toBeNull();
+  });
+
+  it("returns a generic note at the threshold with no mood trend", () => {
+    const threeDaysAgo = new Date("2026-06-12T12:00:00Z").toISOString();
+    expect(getWelcomeBack(threeDaysAgo, null, NOW)).toEqual({ days: 3, variant: "generic" });
+  });
+
+  it("picks the moodDeclining variant when the trend is declining", () => {
+    const fiveDaysAgo = new Date("2026-06-10T12:00:00Z").toISOString();
+    expect(getWelcomeBack(fiveDaysAgo, "declining", NOW)).toEqual({ days: 5, variant: "moodDeclining" });
+  });
+
+  it("picks the moodImproving variant when the trend is improving", () => {
+    const fiveDaysAgo = new Date("2026-06-10T12:00:00Z").toISOString();
+    expect(getWelcomeBack(fiveDaysAgo, "improving", NOW)).toEqual({ days: 5, variant: "moodImproving" });
+  });
+
+  it("falls back to generic for a stable trend", () => {
+    const fiveDaysAgo = new Date("2026-06-10T12:00:00Z").toISOString();
+    expect(getWelcomeBack(fiveDaysAgo, "stable", NOW)).toEqual({ days: 5, variant: "generic" });
   });
 });

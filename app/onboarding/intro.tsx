@@ -70,7 +70,7 @@ function SlideItem({ item, isActive }: { item: Slide; isActive: boolean }) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [isActive]);
+  }, [isActive, scale, opacity, textY, textOpacity]);
 
   return (
     <View style={[styles.slide, { width: SCREEN_WIDTH }]}>

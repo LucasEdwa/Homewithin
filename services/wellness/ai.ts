@@ -59,6 +59,38 @@ async function recordUsage(): Promise<void> {
   await SecureStore.setItemAsync(RATE_KEY, JSON.stringify([...timestamps, now]));
 }
 
+// ─── Welcome-back note ────────────────────────────────────────────────────────
+// Purely client-side, no model call: when the user returns after a gap, the
+// companion screen shows a short note referencing their mood trend instead of
+// staying silent. This is separate from (and does not replace) the generic
+// daily push-notification nudge — it only shows once the user has actually
+// opened the screen, using data the notification can't safely include.
+
+export const WELCOME_BACK_THRESHOLD_DAYS = 3;
+
+export type WelcomeBackVariant = 'moodDeclining' | 'moodImproving' | 'generic';
+
+export interface WelcomeBack {
+  days: number;
+  variant: WelcomeBackVariant;
+}
+
+export function getWelcomeBack(
+  lastMessageAt: string | undefined,
+  moodTrend: UserContext['moodTrend'] | undefined,
+  now: Date = new Date(),
+): WelcomeBack | null {
+  if (!lastMessageAt) return null;
+
+  const days = Math.floor((now.getTime() - new Date(lastMessageAt).getTime()) / (24 * 60 * 60 * 1000));
+  if (days < WELCOME_BACK_THRESHOLD_DAYS) return null;
+
+  const variant: WelcomeBackVariant =
+    moodTrend === 'declining' ? 'moodDeclining' : moodTrend === 'improving' ? 'moodImproving' : 'generic';
+
+  return { days, variant };
+}
+
 // ─── Conversation history ─────────────────────────────────────────────────────
 
 export async function getHistory(): Promise<AIMessage[]> {

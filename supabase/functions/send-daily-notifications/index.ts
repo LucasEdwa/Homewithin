@@ -301,14 +301,17 @@ Deno.serve(async (req: Request) => {
     }
 
     // Circle notifications (cap at 2 per user)
+    // Body text must never include the circle name or message content — circle
+    // names (e.g. "Newly Out", "Family Rejection Survivors") are identifying,
+    // and these notifications can appear on a lock screen a hostile person sees.
     for (const circle of unreadCircles.slice(0, 2)) {
       pushBatch.push({
         to: token,
         title: "Your support circle 💬",
         body:
           circle.count === 1
-            ? `New message in ${circle.circleName}`
-            : `${circle.count} new messages in ${circle.circleName}`,
+            ? "New message waiting for you"
+            : `${circle.count} new messages waiting for you`,
         data: { screen: "circle", circleId: circle.circleId },
         sound: "default",
         channelId: "circles",
